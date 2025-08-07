@@ -1,52 +1,91 @@
 package com.org.testApi.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Représente un membre d'une association.
+ * <p>
+ * Un membre est lié à un {@link User} et une {@link Association}.
+ * Il peut avoir différents types (régulier, honoraire, bénévole, etc.)
+ * et possède une historique des rôles ainsi que des cotisations.
+ * </p>
+ */
 @Entity
 @Table(name = "members")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Member {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class Member extends BaseEntity {
 
+    /**
+     * Utilisateur associé au membre.
+     * Ce lien est obligatoire.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @ToString.Exclude
     private User user;
 
+    /**
+     * Association à laquelle appartient ce membre.
+     * Ce lien est obligatoire.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "association_id", nullable = false)
     @ToString.Exclude
     private Association association;
 
+    /**
+     * Date d'adhésion du membre à l'association.
+     * Si non renseignée, sera initialisée à la date courante lors de la création.
+     */
     private LocalDate joinDate;
+
+    /**
+     * Date de départ ou de désinscription du membre.
+     * Permet de savoir si un membre est actif ou non.
+     */
     private LocalDate leaveDate;
 
+    /**
+     * Type du membre (régulier, honoraire, bénévole, etc.).
+     * Par défaut, un membre est de type REGULAR.
+     */
     @Enumerated(EnumType.STRING)
     private MemberType type = MemberType.REGULAR;
 
+    /**
+     * Liste des cotisations (fees) associées à ce membre.
+     */
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
     private List<MembershipFee> fees = new ArrayList<>();
 
+    /**
+     * Historique des rôles que ce membre a eus au sein de l'association.
+     */
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
     private List<MemberRoleHistory> roleHistory = new ArrayList<>();
 
+    /**
+     * Indique si ce membre a des droits d'administrateur.
+     */
     @Column(columnDefinition = "boolean default false")
     private boolean isAdmin;
 
+    /**
+     * Initialise la date d'adhésion si elle n'a pas été définie avant la persistance.
+     */
     @PrePersist
     protected void onCreate() {
         if (this.joinDate == null) {
@@ -54,12 +93,23 @@ public class Member {
         }
     }
 
+    /**
+     * Indique si le membre est actuellement actif (pas de date de départ définie).
+     *
+     * @return true si le membre est actif, false sinon.
+     */
     public boolean isActive() {
         return leaveDate == null;
     }
 
+    /**
+     * Enumération des différents types de membres possibles.
+     */
     public enum MemberType {
-        REGULAR, HONORARY, BENEFACTOR, VOLUNTEER, BOARD_MEMBER
+        REGULAR,       // Membre régulier
+        HONORARY,      // Membre honoraire
+        BENEFACTOR,    // Bienfaiteur
+        VOLUNTEER,     // Bénévole
+        BOARD_MEMBER   // Membre du conseil d'administration
     }
 }
-
