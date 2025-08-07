@@ -1,0 +1,247 @@
+_________________________________________________________
+<<Configuration>>  
+JpaAuditingConfiguration  
+_________________________________________________________  
+◉ @EnableJpaAuditing(auditorAwareRef = "auditorProvider")  
+_________________________________________________________  
++ «Bean» auditorProvider() : AuditorAware<String>  
+_________________________________________________________
+
+
+__________________________________________________________________________________________
+<<Entity>> «Table(name="activities")»  
+Activity (extends BaseEntity)  
+__________________________________________________________________________________________
+- title : String {NOT NULL, Size(max=100)}  
+- description : String {Size(max=1000)}  
+- type : ActivityType {EnumType.STRING}  
+- startDateTime : LocalDateTime {FutureOrPresent}  
+- endDateTime : LocalDateTime  
+- location : String {Size(max=100)}  
+- status : ActivityStatus = PLANNED {EnumType.STRING}  
+__________________________________________________________________________________________
++ association : Association {ManyToOne, FetchType.LAZY, NOT NULL}  
++ project : Project {ManyToOne, FetchType.LAZY}  
++ creator : User {ManyToOne, FetchType.LAZY}  
++ participants : List<User> {ManyToMany, JoinTable}  
++ transactions : List<FinancialTransaction> {OneToMany, CascadeType.ALL}  
+__________________________________________________________________________________________
++ isEndDateValid() : boolean {AssertTrue}  
+__________________________________________________________________________________________
+«Enumeration»  
+ActivityType [CONFERENCE, WORKSHOP, MEETING, PROJECT, TRAINING, SOCIAL_EVENT, OTHER]  
+
+«Enumeration»  
+ActivityStatus [PLANNED, ONGOING, COMPLETED, CANCELLED]  
+
+_________________________________________________________
+<<Entity>> «Table(name="associations")»
+Association (extends BaseEntity)
+_________________________________________________________
+- name : String <<Column nullable=false, length=100>> «Size(max=100)»
+- description : String <<Column length=500>> «Size(max=500)»
+- location : String <<Column length=100>>
+- legalStatus : String <<Column length=20>>
+- siret : String <<Column length=50>>
+_________________________________________________________
++ members : List<Member> «OneToMany mappedBy=association, cascade=ALL, orphanRemoval»
++ activities : List<Activity> «OneToMany mappedBy=association, cascade=ALL»
++ transactions : List<FinancialTransaction> «OneToMany mappedBy=association, cascade=ALL»
++ documents : List<Document> «OneToMany mappedBy=association, cascade=ALL»
+_________________________________________________________
+
+
+_________________________________________________________
+<<MappedSuperclass>> «EntityListeners(Auditing...)» 
+BaseEntity (abstract)
+_________________________________________________________
+# id : Long <<Id>> <<GeneratedValue(strategy=IDENTITY)>>
+# createdDate : LocalDateTime <<Column(name="created_date", updatable=false)>> <<CreatedDate>>
+# lastModifiedDate : LocalDateTime <<Column(name="last_modified_date")>> <<LastModifiedDate>>
+# createdBy : String <<Column(name="created_by", updatable=false)>> <<CreatedBy>>
+# lastModifiedBy : String <<Column(name="last_modified_by")>> <<LastModifiedBy>>
+# active : boolean = true <<Column(name="is_active")>>
+_________________________________________________________
+
+
+_________________________________________________________
+<<Entity>> «Table(name="documents")»
+Document (extends BaseEntity)
+_________________________________________________________
+- name : String <<Column(nullable=false, length=100)>> «Size(max=100)»
+- fileType : String <<Column(length=50)>> «Size(max=50)»
+- filePath : String <<Column(nullable=false)>>
+- uploadDate : LocalDateTime
+- fileSize : Long
+_________________________________________________________
++ association : Association <<ManyToOne fetch=LAZY>> «JoinColumn(name="association_id")»
++ uploadedBy : User <<ManyToOne fetch=LAZY>> «JoinColumn(name="uploaded_by")»
+_________________________________________________________
++ onCreate() : void <<PrePersist>>
+_________________________________________________________
+
+
+_________________________________________________________
+<<Entity>> «Table(name="financial_categories")»
+FinancialCategory (extends BaseEntity)
+_________________________________________________________
+- name : String <<Column(nullable=false, length=50)>>
+- description : String <<Column(length=200)>>
+- type : TransactionType <<Enumerated(STRING)>>
+_________________________________________________________
++ association : Association <<ManyToOne fetch=LAZY>> «JoinColumn(nullable=false)>>
+_________________________________________________________
+
+
+_________________________________________________________
+<<Entity>> «Table(name="financial_transactions")»
+FinancialTransaction (extends BaseEntity)
+_________________________________________________________
+- amount : BigDecimal <<Column(nullable=false)>>
+- transactionDate : LocalDate <<Column(nullable=false)>>
+- description : String <<Column(length=100)>>
+- type : TransactionType <<Enumerated(STRING)>>
+_________________________________________________________
++ association : Association <<ManyToOne fetch=LAZY>> «JoinColumn(nullable=false)»
++ activity : Activity <<ManyToOne fetch=LAZY>> «JoinColumn»
++ project : Project <<ManyToOne fetch=LAZY>> «JoinColumn»
++ category : FinancialCategory <<ManyToOne fetch=LAZY>> «JoinColumn»
+_________________________________________________________
++ onCreate() : void <<PrePersist>>
+_________________________________________________________
+<<Enumeration>>
+TransactionType [INCOME, EXPENSE]
+_________________________________________________________
+
+
+_________________________________________________________
+<<Entity>> «Table(name="members")»
+Member (extends BaseEntity)
+_________________________________________________________
+- joinDate : LocalDate
+- leaveDate : LocalDate
+- type : MemberType = REGULAR <<Enumerated(STRING)>>
+- isAdmin : boolean = false <<Column(columnDefinition="boolean default false")>>
+_________________________________________________________
++ user : User <<ManyToOne fetch=LAZY>> «JoinColumn(nullable=false)»
++ association : Association <<ManyToOne fetch=LAZY>> «JoinColumn(nullable=false)»
++ fees : List<MembershipFee> <<OneToMany mappedBy=member, cascade=ALL>>
++ roleHistory : List<MemberRoleHistory> <<OneToMany mappedBy=member, cascade=ALL>>
+_________________________________________________________
++ onCreate() : void <<PrePersist>>
++ isActive() : boolean
+_________________________________________________________
+<<Enumeration>>
+MemberType [REGULAR, HONORARY, BENEFACTOR, VOLUNTEER, BOARD_MEMBER]
+_________________________________________________________
+
+_________________________________________________________
+<<Entity>> «Table(name="member_role_history")»
+MemberRoleHistory (extends BaseEntity)
+_________________________________________________________
+- role : String <<Column(length=50)>>
+- startDate : LocalDate
+- endDate : LocalDate
+- isAdmin : boolean = false <<Column(columnDefinition="boolean default false")>>
+_________________________________________________________
++ member : Member <<ManyToOne fetch=LAZY>> «JoinColumn(nullable=false)»
+_________________________________________________________
+
+_________________________________________________________
+<<Entity>> «Table(name="membership_fees")»
+MembershipFee (extends BaseEntity)
+_________________________________________________________
+- amount : BigDecimal <<Column(nullable=false)>>
+- paymentDate : LocalDate <<Column(nullable=false)>>
+- startDate : LocalDate
+- endDate : LocalDate
+- reference : String <<Column(length=50)>>
+- paymentMethod : PaymentMethod <<Enumerated(STRING)>>
+_________________________________________________________
++ member : Member <<ManyToOne fetch=LAZY>> «JoinColumn(nullable=false)»
++ transaction : FinancialTransaction <<ManyToOne fetch=LAZY>> «JoinColumn»
+_________________________________________________________
+<<Enumeration>>
+PaymentMethod [CASH, CHECK, BANK_TRANSFER, CREDIT_CARD, OTHER]
+_________________________________________________________
+
+
+_________________________________________________________
+<<Entity>> «Table(name="projects")»
+Project (extends BaseEntity)
+_________________________________________________________
+- name : String <<Column(nullable=false, length=100)>> «Size(max=100)»
+- description : String <<Column(columnDefinition="TEXT")>> «Size(max=2000)»
+- startDate : LocalDate
+- endDate : LocalDate
+- status : ProjectStatus = PLANNING <<Enumerated(STRING)>>
+_________________________________________________________
++ association : Association <<ManyToOne fetch=LAZY>> «JoinColumn(nullable=false)»
++ manager : User <<ManyToOne fetch=LAZY>> «JoinColumn»
++ activities : List<Activity> <<OneToMany mappedBy=project, cascade=ALL>>
++ members : List<ProjectMember> <<OneToMany mappedBy=project, cascade=ALL>>
++ transactions : List<FinancialTransaction> <<OneToMany mappedBy=project, cascade=ALL>>
+_________________________________________________________
+<<Enumeration>>
+ProjectStatus [PLANNING, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED]
+_________________________________________________________
+
+_________________________________________________________
+<<Entity>> «Table(name="project_members")»
+ProjectMember (extends BaseEntity)
+_________________________________________________________
+- roleInProject : String <<Column(length=50)>>
+- joinDate : LocalDate
+- leaveDate : LocalDate
+_________________________________________________________
++ project : Project <<ManyToOne fetch=LAZY>> «JoinColumn(nullable=false)»
++ member : Member <<ManyToOne fetch=LAZY>> «JoinColumn(nullable=false)»
+_________________________________________________________
++ onCreate() : void <<PrePersist>>
++ isActive() : boolean
+_________________________________________________________
+
+_________________________________________________________
+<<Entity>> «Table(name="roles")»
+Role
+_________________________________________________________
+- id : Integer <<Id>> <<GeneratedValue(strategy=IDENTITY)>>
+- name : ERole <<Enumerated(STRING)>> <<Column(length=20)>>
+- description : String <<Size(max=20)>>
+_________________________________________________________
+<<Enumeration>>
+ERole [
+  ROLE_ADMIN,      // Administrateur avec tous les droits
+  ROLE_MODERATOR,  // Modérateur avec droits spécifiques
+  ROLE_MEMBER,     // Membre standard
+  ROLE_GUEST       // Invité avec accès limité
+]
+_________________________________________________________
+
+
+_________________________________________________________
+<<Entity>> 
+User (extends BaseEntity)
+<<Table(name="users",
+        uniqueConstraints={
+          @UniqueConstraint(columnNames="username"),
+          @UniqueConstraint(columnNames="email")
+        })>>
+_________________________________________________________
+- username : String <<Column(nullable=false, length=50)>>
+- email : String <<Column(nullable=false, length=100)>> <<Email>> <<Size(max=100)>>
+- password : String <<Column(nullable=false)>>
+- firstName : String
+- lastName : String
+- phoneNumber : String
+- lastLogin : LocalDateTime
+- loginAttempts : int = 0
+- profilePhotoPath : String
+- profilePhotoMimeType : String
+- profilePhotoSize : Long
+_________________________________________________________
++ roles : Set<Role> <<ManyToMany>> «JoinTable(name="user_roles")»
++ createdEvents : List<Activity> <<OneToMany mappedBy="createdBy", cascade=ALL>>
++ attendedEvents : List<Activity> <<ManyToMany mappedBy="participants">>
+_________________________________________________________
+

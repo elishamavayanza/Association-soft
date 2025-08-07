@@ -105,4 +105,21 @@ public class User extends BaseEntity {
      */
     private int loginAttempts = 0;
 
+    /**
+     * Chemin vers la photo de profil dans le système de fichiers.
+     * Ex: "/uploads/profiles/user123.jpg"
+     */
+    private String profilePhotoPath;
+
+    /**
+     * Type MIME de la photo de profil.
+     * Ex: "image/jpeg", "image/png"
+     */
+    private String profilePhotoMimeType;
+
+    /**
+     * Taille de la photo de profil en octets.
+     */
+    private Long profilePhotoSize;
+
 }
