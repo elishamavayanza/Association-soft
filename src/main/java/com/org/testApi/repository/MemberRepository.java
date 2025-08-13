@@ -41,4 +41,7 @@ public interface MemberRepository extends BaseRepository<Member, Long> {
 
     @Query("SELECT m FROM Member m WHERE m.association.id = :associationId AND m.leaveDate IS NULL")
     List<Member> findActiveMembersByAssociationId(@Param("associationId") Long associationId);
+
+    // Méthode ajoutée pour le ReportService
+    long countByIsActiveTrue();
 }

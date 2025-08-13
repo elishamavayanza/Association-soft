@@ -122,4 +122,9 @@ public class User extends BaseEntity {
      */
     private Long profilePhotoSize;
 
+    /**
+     * Token de l'appareil pour les notifications push.
+     */
+    private String deviceToken;
+
 }

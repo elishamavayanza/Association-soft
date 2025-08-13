@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,4 +43,14 @@ public interface FinancialTransactionRepository extends BaseRepository<Financial
 
     @Query("SELECT ft FROM FinancialTransaction ft JOIN FETCH ft.association WHERE ft.id = :id")
     Optional<FinancialTransaction> findByIdWithAssociation(@Param("id") Long id);
+
+    // Méthodes ajoutées pour le ReportService
+    List<FinancialTransaction> findByTransactionDateBetweenAndAmountGreaterThan(
+            LocalDateTime startDate, LocalDateTime endDate, double amount);
+
+    List<FinancialTransaction> findByTransactionDateBetweenAndAmountLessThan(
+            LocalDateTime startDate, LocalDateTime endDate, double amount);
+
+    List<FinancialTransaction> findByTransactionDateBetween(
+            LocalDateTime startDate, LocalDateTime endDate);
 }

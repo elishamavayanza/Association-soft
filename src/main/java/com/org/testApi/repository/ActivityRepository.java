@@ -5,6 +5,7 @@ import com.org.testApi.repository.base.BaseRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -33,4 +34,10 @@ public interface ActivityRepository extends BaseRepository<Activity, Long> {
 
     @Query("SELECT a FROM Activity a JOIN FETCH a.association WHERE a.id = :id")
     Optional<Activity> findByIdWithAssociation(Long id);
+
+    // Méthodes ajoutées pour le ReportService
+    List<Activity> findByStartDateTimeBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+    @Query("SELECT COUNT(a) FROM Activity a WHERE a.startDateTime BETWEEN :startDate AND :endDate")
+    long countByStartDateTimeBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }
