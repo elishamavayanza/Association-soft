@@ -4,6 +4,7 @@ import com.org.testApi.models.Member;
 import com.org.testApi.repository.base.BaseRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -41,6 +42,15 @@ public interface MemberRepository extends BaseRepository<Member, Long> {
 
     @Query("SELECT m FROM Member m WHERE m.association.id = :associationId AND m.leaveDate IS NULL")
     List<Member> findActiveMembersByAssociationId(@Param("associationId") Long associationId);
+
+    /**
+     * Trouve un membre par ID avec ses prêts.
+     *
+     * @param id l'identifiant du membre
+     * @return le membre avec ses prêts
+     */
+    @EntityGraph(attributePaths = {"loans"})
+    Optional<Member> findWithLoansById(Long id);
 
     // Méthode ajoutée pour le ReportService
     long countByIsActiveTrue();

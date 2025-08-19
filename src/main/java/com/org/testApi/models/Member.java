@@ -77,11 +77,21 @@ public class Member extends BaseEntity {
     @ToString.Exclude
     private List<MemberRoleHistory> roleHistory = new ArrayList<>();
 
+
+    /**
+     * Liste des prêts associés à ce membre.
+     */
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @Builder.Default
+    @ToString.Exclude
+    private List<Loan> loans = new ArrayList<>();
+
     /**
      * Indique si ce membre a des droits d'administrateur.
      */
     @Column(columnDefinition = "boolean default false")
     private boolean isAdmin;
+
 
     /**
      * Initialise la date d'adhésion si elle n'a pas été définie avant la persistance.
@@ -101,6 +111,40 @@ public class Member extends BaseEntity {
     public boolean isActive() {
         return leaveDate == null;
     }
+
+    /**
+     * Vérifie si le membre est éligible pour emprunter.
+     * Un membre est éligible s'il:
+     * 1. Est actif
+     * 2. A payé au moins une cotisation
+     * 3. N'a pas de prêts en retard
+     *
+     * @return true si le membre est éligible, false sinon
+     */
+    public boolean isEligibleForLoan() {
+        // Vérifier si le membre est actif
+        if (!isActive()) {
+            return false;
+        }
+
+        // Vérifier si le membre a payé au moins une cotisation
+        if (fees == null || fees.isEmpty()) {
+            return false;
+        }
+
+        // Vérifier si le membre a des prêts en retard
+        if (loans != null) {
+            boolean hasOverdueLoans = loans.stream()
+                    .anyMatch(loan -> loan.isOverdue());
+            if (hasOverdueLoans) {
+                return false;
+            }
+        }
+
+        // Si toutes les conditions sont remplies, le membre est éligible
+        return true;
+    }
+
 
     /**
      * Enumération des différents types de membres possibles.
