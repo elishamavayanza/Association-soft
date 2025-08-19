@@ -2,6 +2,7 @@ package com.org.testApi.repository;
 
 import com.org.testApi.models.Member;
 import com.org.testApi.repository.base.BaseRepository;
+import com.org.testApi.repository.custom.MemberRepositoryCustom;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MemberRepository extends BaseRepository<Member, Long> {
+public interface MemberRepository extends BaseRepository<Member, Long>, MemberRepositoryCustom {
 
     List<Member> findByUserId(Long userId);
 

@@ -2,6 +2,7 @@ package com.org.testApi.models;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -37,6 +38,8 @@ public class User extends BaseEntity {
      * Nom d'utilisateur unique.
      */
     @Column(nullable = false, length = 50)
+    @NotBlank(message = "Le nom d'utilisateur ne peut pas être vide")
+    @Size(min = 3, max = 50, message = "Le nom d'utilisateur doit contenir entre 3 et 50 caractères")
     private String username;
 
     /**
@@ -44,6 +47,7 @@ public class User extends BaseEntity {
      * Limité à 100 caractères.
      */
     @Column(nullable = false, length = 100)
+    @NotBlank(message = "L'email ne peut pas être vide")
     @Email(message = "L'email doit être une adresse valide")
     @Size(max = 100, message = "L'email ne doit pas dépasser 100 caractères")
     private String email;
@@ -52,6 +56,8 @@ public class User extends BaseEntity {
      * Mot de passe hashé de l'utilisateur.
      */
     @Column(nullable = false)
+    @NotBlank(message = "Le mot de passe ne peut pas être vide")
+    @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
     private String password;
 
     /**
@@ -83,16 +89,19 @@ public class User extends BaseEntity {
     /**
      * Prénom de l'utilisateur.
      */
+    @Size(max = 50, message = "Le prénom ne doit pas dépasser 50 caractères")
     private String firstName;
 
     /**
      * Nom de famille de l'utilisateur.
      */
+    @Size(max = 50, message = "Le nom de famille ne doit pas dépasser 50 caractères")
     private String lastName;
 
     /**
      * Numéro de téléphone de l'utilisateur.
      */
+    @Size(max = 20, message = "Le numéro de téléphone ne doit pas dépasser 20 caractères")
     private String phoneNumber;
 
     /**

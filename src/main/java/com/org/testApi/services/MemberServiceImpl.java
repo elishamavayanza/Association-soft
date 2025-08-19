@@ -64,6 +64,18 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    public List<Member> searchMembersComplexQuery(String name, String email, Member.MemberType memberType, Long associationId, Boolean isActive) {
+        return memberRepository.searchMembersComplexQuery(name, email, memberType, associationId, isActive);
+    }
+
+    @Override
+    public boolean isMemberEligibleForLoan(Long memberId) {
+        return memberRepository.findById(memberId)
+                .map(Member::isEligibleForLoan)
+                .orElse(false);
+    }
+
+    @Override
     public void addObserver(Observer<Member> observer) {
         observers.add(observer);
     }

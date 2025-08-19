@@ -64,6 +64,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<User> searchUsersComplexQuery(String username, String email, String firstName, String lastName, Integer roleId) {
+        return userRepository.searchUsersComplexQuery(username, email, firstName, lastName, roleId);
+    }
+
+    @Override
     public void addObserver(Observer<User> observer) {
         observers.add(observer);
     }
