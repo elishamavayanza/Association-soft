@@ -9,6 +9,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import jakarta.annotation.PostConstruct;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,10 +38,19 @@ public class FileUploadServiceImpl implements FileUploadService {
     private S3Client s3Client;
 
     public FileUploadServiceImpl() {
+        // Le constructeur est maintenant vide car l'injection de dépendance
+        // n'a pas encore eu lieu à ce stade
+    }
+
+    @PostConstruct
+    public void init() {
+        // Cette méthode est appelée après l'injection des dépendances
         // Créer le répertoire d'upload s'il n'existe pas (pour le stockage local)
-        File uploadDirectory = new File(uploadDir);
-        if (!uploadDirectory.exists()) {
-            uploadDirectory.mkdirs();
+        if ("local".equals(storageType)) {
+            File uploadDirectory = new File(uploadDir);
+            if (!uploadDirectory.exists()) {
+                uploadDirectory.mkdirs();
+            }
         }
     }
 

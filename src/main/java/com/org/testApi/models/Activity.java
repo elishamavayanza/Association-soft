@@ -68,6 +68,10 @@ public class Activity extends BaseEntity {
     @Column(length = 100)
     private String location;
 
+    @Builder.Default
+    private Boolean deleted = false;
+
+
     /**
      * Association à laquelle est liée cette activité.
      * Ce lien est obligatoire.

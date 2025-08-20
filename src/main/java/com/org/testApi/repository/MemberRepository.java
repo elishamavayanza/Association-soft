@@ -23,6 +23,7 @@ public interface MemberRepository extends BaseRepository<Member, Long>, MemberRe
 
     List<Member> findByType(Member.MemberType type);
 
+    @Query("SELECT m FROM Member m WHERE m.leaveDate IS NULL")
     List<Member> findByIsActiveTrue();
 
     List<Member> findByJoinDateBetween(LocalDate startDate, LocalDate endDate);
@@ -44,6 +45,7 @@ public interface MemberRepository extends BaseRepository<Member, Long>, MemberRe
     @Query("SELECT m FROM Member m WHERE m.association.id = :associationId AND m.leaveDate IS NULL")
     List<Member> findActiveMembersByAssociationId(@Param("associationId") Long associationId);
 
+
     /**
      * Trouve un membre par ID avec ses prêts.
      *
@@ -53,6 +55,6 @@ public interface MemberRepository extends BaseRepository<Member, Long>, MemberRe
     @EntityGraph(attributePaths = {"loans"})
     Optional<Member> findWithLoansById(Long id);
 
-    // Méthode ajoutée pour le ReportService
+    @Query("SELECT COUNT(m) FROM Member m WHERE m.leaveDate IS NULL")
     long countByIsActiveTrue();
 }
