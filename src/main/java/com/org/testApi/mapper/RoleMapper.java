@@ -11,7 +11,8 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface RoleMapper extends BaseMapper<Role, RoleDTO> {
 
-    @Mapping(target = "name", source = "name.name()")
+    // Correction: Utiliser directement "name" au lieu de "name.name()"
+    @Mapping(target = "name", source = "name")
     RoleDTO toDto(Role entity);
 
     @Mapping(target = "name", source = "name")

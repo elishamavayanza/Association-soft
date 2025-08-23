@@ -19,12 +19,6 @@ public interface LoanMapper extends BaseMapper<Loan, LoanDTO> {
     @Mapping(target = "memberId", source = "member.id")
     LoanResponseDTO toResponseDto(Loan entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "lastModifiedDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "lastModifiedBy", ignore = true)
-    @Mapping(target = "active", ignore = true)
     @Mapping(target = "member", ignore = true)
     Loan toEntityFromRequest(LoanRequestDTO requestDTO);
 }

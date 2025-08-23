@@ -16,24 +16,14 @@ public interface ProjectMapper extends BaseMapper<Project, ProjectDTO> {
     @Mapping(target = "manager", ignore = true)
     @Mapping(target = "association", ignore = true)
     @Mapping(target = "activities", ignore = true)
-    @Mapping(target = "projectMembers", ignore = true)
-    @Mapping(target = "financialTransactions", ignore = true)
     Project toEntity(ProjectDTO dto);
 
     @Mapping(target = "managerId", source = "manager.id")
     @Mapping(target = "associationId", source = "association.id")
     ProjectResponseDTO toResponseDto(Project entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "lastModifiedDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "lastModifiedBy", ignore = true)
-    @Mapping(target = "active", ignore = true)
     @Mapping(target = "manager", ignore = true)
     @Mapping(target = "association", ignore = true)
     @Mapping(target = "activities", ignore = true)
-    @Mapping(target = "projectMembers", ignore = true)
-    @Mapping(target = "financialTransactions", ignore = true)
     Project toEntityFromRequest(ProjectRequestDTO requestDTO);
 }

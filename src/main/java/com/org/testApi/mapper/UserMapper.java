@@ -13,21 +13,11 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface UserMapper extends BaseMapper<User, UserDTO> {
 
-    @Mapping(target = "members", ignore = true)
     @Mapping(target = "password", ignore = true)
     User toEntity(UserDTO dto);
 
-    @Mapping(target = "members", ignore = true)
-    @Mapping(target = "password", ignore = true)
     UserResponseDTO toResponseDto(User entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "lastModifiedDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "lastModifiedBy", ignore = true)
-    @Mapping(target = "active", ignore = true)
-    @Mapping(target = "members", ignore = true)
     @Mapping(target = "password", ignore = true)
     User toEntityFromRequest(UserRequestDTO requestDTO);
 }

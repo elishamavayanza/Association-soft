@@ -13,7 +13,7 @@ public class AssociationResponseDTO extends BaseEntityDTO {
 
     private String name;
     private String description;
-    private String address;
+    private String address; // Pour la réponse, on peut garder "address"
     private String email;
     private String phone;
     private Double membershipFeeAmount;

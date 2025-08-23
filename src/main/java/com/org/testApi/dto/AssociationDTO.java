@@ -5,7 +5,6 @@ import lombok.Setter;
 
 /**
  * DTO pour l'entité Association.
- * Utilisé comme DTO générique pour mapper les données principales de l'association.
  */
 @Getter
 @Setter
@@ -13,10 +12,10 @@ public class AssociationDTO extends BaseEntityDTO {
 
     private String name;
     private String description;
-    private String location;
+    private String location; // Gardez le même nom que l'entité
     private String legalStatus;
     private String siret;
-    private String email; // optionnel si tu veux garder contact
-    private String phone; // idem
-    private Double membershipFeeAmount; // correspond à membershipFeeAmount dans Request/Response DTO
+    private String email;
+    private String phone;
+    private Double membershipFeeAmount;
 }

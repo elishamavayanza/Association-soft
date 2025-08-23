@@ -15,23 +15,13 @@ public interface AssociationMapper extends BaseMapper<Association, AssociationDT
 
     @Mapping(target = "members", ignore = true)
     @Mapping(target = "activities", ignore = true)
-    @Mapping(target = "projects", ignore = true)
-    @Mapping(target = "financialTransactions", ignore = true)
     Association toEntity(AssociationDTO dto);
 
     @Mapping(target = "address", source = "location") // Mapping spécifique pour le champ address
     AssociationResponseDTO toResponseDto(Association entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "lastModifiedDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "lastModifiedBy", ignore = true)
-    @Mapping(target = "active", ignore = true)
     @Mapping(target = "members", ignore = true)
     @Mapping(target = "activities", ignore = true)
-    @Mapping(target = "projects", ignore = true)
-    @Mapping(target = "financialTransactions", ignore = true)
     @Mapping(target = "location", source = "address") // Mapping spécifique pour le champ location
     Association toEntityFromRequest(AssociationRequestDTO requestDTO);
 }

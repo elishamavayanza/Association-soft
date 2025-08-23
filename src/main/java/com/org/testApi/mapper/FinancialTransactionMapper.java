@@ -21,6 +21,7 @@ public interface FinancialTransactionMapper extends BaseMapper<FinancialTransact
     @Mapping(target = "activityId", source = "activity.id")
     @Mapping(target = "projectId", source = "project.id")
     @Mapping(target = "categoryId", source = "category.id")
-    @Mapping(target = "type", source = "type.name()")
+    @Mapping(target = "type", source = "type")
     FinancialTransactionDTO toDto(FinancialTransaction entity);
+
 }

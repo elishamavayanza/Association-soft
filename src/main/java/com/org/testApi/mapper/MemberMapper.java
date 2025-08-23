@@ -24,12 +24,6 @@ public interface MemberMapper extends BaseMapper<Member, MemberDTO> {
     @Mapping(target = "associationId", source = "association.id")
     MemberResponseDTO toResponseDto(Member entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "lastModifiedDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "lastModifiedBy", ignore = true)
-    @Mapping(target = "active", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "association", ignore = true)
     @Mapping(target = "fees", ignore = true)

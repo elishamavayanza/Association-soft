@@ -14,6 +14,7 @@ public interface FinancialCategoryMapper extends BaseMapper<FinancialCategory, F
     @Mapping(target = "association", ignore = true)
     FinancialCategory toEntity(FinancialCategoryDTO dto);
 
-    @Mapping(target = "type", source = "type.name()")
+    // CORRECTION: Utiliser simplement "type" au lieu de "type.name()"
+    @Mapping(target = "type", source = "type")
     FinancialCategoryDTO toDto(FinancialCategory entity);
 }

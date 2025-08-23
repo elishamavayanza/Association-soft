@@ -16,6 +16,6 @@ public interface MemberRoleHistoryMapper extends BaseMapper<MemberRoleHistory, M
     MemberRoleHistory toEntity(MemberRoleHistoryDTO dto);
 
     @Mapping(target = "memberId", source = "member.id")
-    @Mapping(target = "roleId", source = "role.id")
+        // Correction: role est une String dans le modèle, pas une entité
     MemberRoleHistoryDTO toDto(MemberRoleHistory entity);
 }
