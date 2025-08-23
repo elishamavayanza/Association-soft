@@ -1,0 +1,121 @@
+# ==============================================
+# CONFIGURATION DE LA BASE DE DONNÉES SQLite
+# ==============================================
+spring:
+  datasource:
+    url: jdbc:sqlite:./association.db
+    driver-class-name: org.sqlite.JDBC
+    username:
+    password:
+  
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        globally_quoted_identifiers: true
+  
+  h2:
+    console:
+      enabled: false
+
+  # ==============================================
+  # CONFIGURATION DES EMAILS
+  # ==============================================
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: votre-email@gmail.com
+    password: votre-mot-de-passe-app
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  security:
+    filter:
+      order: 10
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  mvc:
+    async:
+      request-timeout: 30s
+
+# ==============================================
+# CONFIGURATION DU STOCKAGE DE FICHIERS
+# ==============================================
+file:
+  upload-dir: uploads/
+  storage:
+    type: local
+
+cloud:
+  aws:
+    s3:
+      bucket-name: votre-bucket-s3
+      region: us-east-1
+
+# ==============================================
+# CONFIGURATION AWS
+# ==============================================
+aws:
+  accessKeyId: votre-access-key
+  secretKey: votre-secret-key
+  region: us-east-1
+
+# ==============================================
+# CONFIGURATION TWILIO
+# ==============================================
+twilio:
+  account:
+    sid: votre-account-sid
+  auth:
+    token: votre-auth-token
+  phone:
+    number: "+1234567890"
+
+# ==============================================
+# CONFIGURATION FIREBASE
+# ==============================================
+firebase:
+  service:
+    account:
+      path: firebase-service-account.json
+
+# ==============================================
+# CONFIGURATION APNs
+# ==============================================
+apns:
+  auth:
+    key:
+      path: apns-auth-key.p8
+  team:
+    id: votre-team-id
+  key:
+    id: votre-key-id
+  topic: votre-app-bundle-id
+
+# ==============================================
+# CONFIGURATIONS DIVERSES
+# ==============================================
+server:
+  port: 8080
+
+logging:
+  level:
+    com.org.Association-soft: DEBUG
+    org.springframework: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
