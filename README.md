@@ -6,7 +6,7 @@ Application Java Spring Boot permettant la gestion complète d’associations, c
 - Java 17+
 - Spring Boot 3+
 - Spring Data JPA
-- Base de données H2 (persistante)
+- Base de données SQLite (persistante)
 - Lombok
 - Hibernate
 
