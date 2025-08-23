@@ -2,11 +2,11 @@ package com.org.testApi.services;
 
 import com.org.testApi.models.User;
 import com.org.testApi.repository.UserRepository;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,17 +18,18 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Service
 public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private UserRepository userRepository;
 
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
 
     private List<Observer<User>> observers = new ArrayList<>();
 
-    // Clé secrète pour signer les JWT
+    // Clé secrète pour signer les JWT - CORRIGÉ
     private SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
 
     // Durée de validité du token (24 heures)
@@ -60,10 +61,10 @@ public class AuthServiceImpl implements AuthService {
         Date expiryDate = new Date(now.getTime() + tokenValidity);
 
         String token = Jwts.builder()
-                .setSubject(user.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(expiryDate)
-                .signWith(secretKey)
+                .subject(user.getUsername())
+                .issuedAt(new Date())
+                .expiration(expiryDate)
+                .signWith(secretKey, Jwts.SIG.HS512) // Spécifier explicitement l'algorithme
                 .compact();
 
         notifyObservers("TOKEN_GENERATION", user);
@@ -73,7 +74,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token);
             return true;
         } catch (Exception e) {
             // Token invalide
@@ -92,6 +96,20 @@ public class AuthServiceImpl implements AuthService {
             return user;
         }
         throw new RuntimeException("No authenticated user found");
+    }
+
+    // Méthode utilitaire pour extraire les claims d'un token
+    public Claims extractClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    // Méthode utilitaire pour extraire le username d'un token
+    public String extractUsername(String token) {
+        return extractClaims(token).getSubject();
     }
 
     @Override
