@@ -1,7 +1,9 @@
 package com.org.testApi.controllers;
 
 import com.org.testApi.models.Loan;
+import com.org.testApi.payload.LoanPayload;
 import com.org.testApi.services.LoanService;
+import com.org.testApi.mapper.LoanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,9 @@ public class LoanController {
     @Autowired
     private LoanService loanService;
 
+    @Autowired
+    private LoanMapper loanMapper;
+
     /**
      * Crée un nouveau prêt pour un membre.
      */
@@ -28,6 +33,23 @@ public class LoanController {
                                            @RequestParam LocalDate dueDate) {
         Loan loan = loanService.createLoan(memberId, amount, interestRate, penaltyRate, dueDate);
         return ResponseEntity.ok(loan);
+    }
+
+    /**
+     * Crée un prêt à partir d'un payload.
+     */
+    @PostMapping("/payload")
+    public ResponseEntity<Loan> createLoanFromPayload(@RequestBody LoanPayload payload) {
+        Loan loan = loanMapper.toEntityFromPayload(payload);
+        // Extraire les paramètres nécessaires du payload
+        Loan savedLoan = loanService.createLoan(
+                payload.getMemberId(),
+                payload.getAmount(),
+                payload.getInterestRate(),
+                payload.getPenaltyRate(),
+                payload.getDueDate()
+        );
+        return ResponseEntity.ok(savedLoan);
     }
 
     /**
@@ -148,5 +170,20 @@ public class LoanController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /**
+     * Met à jour un prêt avec un payload.
+     */
+    @PutMapping("/{id}/payload")
+    public ResponseEntity<Loan> updateLoanWithPayload(@PathVariable Long id, @RequestBody LoanPayload payload) {
+        return loanService.findLoanById(id)
+                .map(loan -> {
+                    loanMapper.updateEntityFromPayload(payload, loan);
+                    // Pour les prêts, certaines propriétés doivent être mises à jour via les méthodes du service
+                    Loan updatedLoan = loanService.updateLoan(id, loan);
+                    return ResponseEntity.ok(updatedLoan);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }

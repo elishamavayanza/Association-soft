@@ -163,5 +163,18 @@ public class LoanServiceImpl implements LoanService {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
+    @Override
+    public Loan updateLoan(Long id, Loan loan) {
+        Loan existingLoan = loanRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Prêt non trouvé avec l'ID: " + id));
 
+        // Mettre à jour les propriétés modifiables
+        existingLoan.setAmount(loan.getAmount());
+        existingLoan.setInterestRate(loan.getInterestRate());
+        existingLoan.setPenaltyRate(loan.getPenaltyRate());
+        existingLoan.setDueDate(loan.getDueDate());
+        existingLoan.setStatus(loan.getStatus());
+
+        return loanRepository.save(existingLoan);
+    }
 }

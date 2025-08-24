@@ -1,7 +1,9 @@
 package com.org.testApi.controllers;
 
 import com.org.testApi.models.User;
+import com.org.testApi.payload.UserPayload;
 import com.org.testApi.services.UserService;
+import com.org.testApi.mapper.UserMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private UserMapper userMapper;
 
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
@@ -35,6 +40,13 @@ public class UserController {
         return ResponseEntity.ok(savedUser);
     }
 
+    @PostMapping("/payload")
+    public ResponseEntity<User> createUserFromPayload(@Valid @RequestBody UserPayload payload) {
+        User user = userMapper.toEntityFromPayload(payload);
+        User savedUser = userService.saveUser(user);
+        return ResponseEntity.ok(savedUser);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody User user) {
         try {
@@ -43,6 +55,17 @@ public class UserController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PutMapping("/{id}/payload")
+    public ResponseEntity<User> updateUserWithPayload(@PathVariable Long id, @Valid @RequestBody UserPayload payload) {
+        return userService.getUserById(id)
+                .map(user -> {
+                    userMapper.updateEntityFromPayload(payload, user);
+                    User updatedUser = userService.updateUser(id, user);
+                    return ResponseEntity.ok(updatedUser);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")

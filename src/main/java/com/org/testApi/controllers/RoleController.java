@@ -1,7 +1,9 @@
 package com.org.testApi.controllers;
 
 import com.org.testApi.models.Role;
+import com.org.testApi.payload.RolePayload;
 import com.org.testApi.services.RoleService;
+import com.org.testApi.mapper.RoleMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,9 @@ public class RoleController {
 
     @Autowired
     private RoleService roleService;
+
+    @Autowired
+    private RoleMapper roleMapper;
 
     @GetMapping
     public ResponseEntity<List<Role>> getAllRoles() {
@@ -34,6 +39,13 @@ public class RoleController {
         return ResponseEntity.ok(savedRole);
     }
 
+    @PostMapping("/payload")
+    public ResponseEntity<Role> createRoleFromPayload(@RequestBody RolePayload payload) {
+        Role role = roleMapper.toEntityFromPayload(payload);
+        Role savedRole = roleService.saveRole(role);
+        return ResponseEntity.ok(savedRole);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Role> updateRole(@PathVariable Long id, @RequestBody Role role) {
         try {
@@ -42,6 +54,17 @@ public class RoleController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PutMapping("/{id}/payload")
+    public ResponseEntity<Role> updateRoleWithPayload(@PathVariable Long id, @RequestBody RolePayload payload) {
+        return roleService.getRoleById(id)
+                .map(role -> {
+                    roleMapper.updateEntityFromPayload(payload, role);
+                    Role updatedRole = roleService.updateRole(id, role);
+                    return ResponseEntity.ok(updatedRole);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")

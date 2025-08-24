@@ -121,4 +121,13 @@ public interface LoanService {
      * @return le montant maximum pouvant être emprunté
      */
     BigDecimal calculateMaxLoanAmount(Long memberId);
+
+    /**
+     * Met à jour un prêt existant.
+     *
+     * @param id l'identifiant du prêt
+     * @param loan le prêt mis à jour
+     * @return le prêt mis à jour
+     */
+    Loan updateLoan(Long id, Loan loan);
 }

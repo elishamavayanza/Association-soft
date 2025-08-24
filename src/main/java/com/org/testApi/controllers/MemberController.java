@@ -1,7 +1,9 @@
 package com.org.testApi.controllers;
 
 import com.org.testApi.models.Member;
+import com.org.testApi.payload.MemberPayload;
 import com.org.testApi.services.MemberService;
+import com.org.testApi.mapper.MemberMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,9 @@ public class MemberController {
 
     @Autowired
     private MemberService memberService;
+
+    @Autowired
+    private MemberMapper memberMapper;
 
     @GetMapping
     public ResponseEntity<List<Member>> getAllMembers() {
@@ -34,6 +39,13 @@ public class MemberController {
         return ResponseEntity.ok(savedMember);
     }
 
+    @PostMapping("/payload")
+    public ResponseEntity<Member> createMemberFromPayload(@RequestBody MemberPayload payload) {
+        Member member = memberMapper.toEntityFromPayload(payload);
+        Member savedMember = memberService.saveMember(member);
+        return ResponseEntity.ok(savedMember);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Member> updateMember(@PathVariable Long id, @RequestBody Member member) {
         try {
@@ -42,6 +54,17 @@ public class MemberController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PutMapping("/{id}/payload")
+    public ResponseEntity<Member> updateMemberWithPayload(@PathVariable Long id, @RequestBody MemberPayload payload) {
+        return memberService.getMemberById(id)
+                .map(member -> {
+                    memberMapper.updateEntityFromPayload(payload, member);
+                    Member updatedMember = memberService.updateMember(id, member);
+                    return ResponseEntity.ok(updatedMember);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")

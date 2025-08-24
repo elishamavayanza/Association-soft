@@ -1,7 +1,9 @@
 package com.org.testApi.controllers;
 
 import com.org.testApi.models.Activity;
+import com.org.testApi.payload.ActivityPayload;
 import com.org.testApi.services.ActivityService;
+import com.org.testApi.mapper.ActivityMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,9 @@ public class ActivityController {
 
     @Autowired
     private ActivityService activityService;
+
+    @Autowired
+    private ActivityMapper activityMapper;
 
     @GetMapping
     public ResponseEntity<List<Activity>> getAllActivities() {
@@ -34,6 +39,13 @@ public class ActivityController {
         return ResponseEntity.ok(savedActivity);
     }
 
+    @PostMapping("/payload")
+    public ResponseEntity<Activity> createActivityFromPayload(@RequestBody ActivityPayload payload) {
+        Activity activity = activityMapper.toEntityFromPayload(payload);
+        Activity savedActivity = activityService.saveActivity(activity);
+        return ResponseEntity.ok(savedActivity);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Activity> updateActivity(@PathVariable Long id, @RequestBody Activity activity) {
         try {
@@ -42,6 +54,17 @@ public class ActivityController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PutMapping("/{id}/payload")
+    public ResponseEntity<Activity> updateActivityWithPayload(@PathVariable Long id, @RequestBody ActivityPayload payload) {
+        return activityService.getActivityById(id)
+                .map(activity -> {
+                    activityMapper.updateEntityFromPayload(payload, activity);
+                    Activity updatedActivity = activityService.updateActivity(id, activity);
+                    return ResponseEntity.ok(updatedActivity);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
