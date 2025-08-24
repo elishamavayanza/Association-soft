@@ -6,7 +6,8 @@ import com.org.testApi.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -17,6 +18,19 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
+//    @PostMapping("/login")
+//    public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
+//        try {
+//            User user = authService.authenticateUser(username, password);
+//            String token = authService.generateToken(user);
+//            return ResponseEntity.ok(token);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(401).build();
+//        }
+//    }
+
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
         try {
@@ -24,9 +38,11 @@ public class AuthController {
             String token = authService.generateToken(user);
             return ResponseEntity.ok(token);
         } catch (Exception e) {
-            return ResponseEntity.status(401).build();
+            logger.error("Authentication failed for username: " + username, e);
+            return ResponseEntity.status(401).body("Authentication failed: " + e.getMessage());
         }
     }
+
 
     @PostMapping("/register")
     public ResponseEntity<User> register(@RequestBody User user) {
