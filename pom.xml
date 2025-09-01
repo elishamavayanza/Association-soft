@@ -86,6 +86,13 @@
             <version>2.6.0</version>
         </dependency>
 
+        <!-- Swagger Annotations -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>2.2.27</version>
+        </dependency>
+
 
         <!-- SQLite Dialect for Hibernate 6 (COMPATIBLE) -->
         <dependency>

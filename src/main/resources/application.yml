@@ -18,12 +18,16 @@ spring:
         format_sql: true
         globally_quoted_identifiers: true
   
+  # CONFIGURATION POUR AUTORISER L'OVERRIDE DES BEANS
+  main:
+    allow-bean-definition-overriding: true  # ← BON EMPLACEMENT !
+
   h2:
     console:
       enabled: false
 
   # ==============================================
-  # CONFIGURATION DES EMAILS
+  # CONFIGURATION DES EMAILS (reste inchangé)
   # ==============================================
   mail:
     host: smtp.gmail.com
@@ -125,10 +129,16 @@ springdoc:
   api-docs:
     path: /v3/api-docs
   show-actuator: true
+  paths-to-match:
+    - /api/**
 
+# ====================================================
+# CONFIGURATION LOGGING
+# ====================================================
 logging:
   level:
     com.org.Association-soft: DEBUG
     org.springframework: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+

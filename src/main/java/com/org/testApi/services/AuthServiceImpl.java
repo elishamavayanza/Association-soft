@@ -98,6 +98,10 @@ public class AuthServiceImpl implements AuthService {
         throw new RuntimeException("No authenticated user found");
     }
 
+    @Override
+    public String getCurrentUsernameFromToken(String token) {
+        return extractUsername(token);
+    }
     // Méthode utilitaire pour extraire les claims d'un token
     public Claims extractClaims(String token) {
         return Jwts.parser()

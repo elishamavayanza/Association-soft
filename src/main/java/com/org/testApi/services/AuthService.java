@@ -7,4 +7,5 @@ public interface AuthService extends ObservableService<User> {
     String generateToken(User user);
     boolean validateToken(String token);
     User getCurrentUser();
+    String getCurrentUsernameFromToken(String token); // Ajout de cette méthode
 }
