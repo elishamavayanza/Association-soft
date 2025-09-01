@@ -3,6 +3,8 @@ package com.org.testApi.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 /**
  * DTO pour l'entité User.
  */
@@ -16,4 +18,5 @@ public class UserDTO extends BaseEntityDTO {
     private String lastName;
     private String phoneNumber;
     private boolean enabled;
+    private Set<RoleDTO> roles;
 }

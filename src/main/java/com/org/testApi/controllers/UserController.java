@@ -1,5 +1,6 @@
 package com.org.testApi.controllers;
 
+import com.org.testApi.dto.UserDTO;
 import com.org.testApi.models.User;
 import com.org.testApi.payload.UserPayload;
 import com.org.testApi.services.UserService;
@@ -36,6 +37,16 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
+        User savedUser = userService.saveUser(user);
+        return ResponseEntity.ok(savedUser);
+    }
+
+    @PostMapping("/extended")
+    public ResponseEntity<User> createUserWithRoles(@Valid @RequestBody UserDTO userDTO) {
+        User user = userMapper.toEntity(userDTO);
+        if (userDTO.getRoles() != null && !userDTO.getRoles().isEmpty()) {
+            user.setRoles(userMapper.toRoleEntitySet(userDTO.getRoles()));
+        }
         User savedUser = userService.saveUser(user);
         return ResponseEntity.ok(savedUser);
     }
@@ -93,4 +104,5 @@ public class UserController {
         List<User> users = userService.searchUsersComplexQuery(username, email, firstName, lastName, roleId);
         return ResponseEntity.ok(users);
     }
+
 }

@@ -47,15 +47,10 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsById(id)) {
             user.setId(id);
 
-            // Si un nouveau mot de passe est fourni, le hasher
-            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-                user.setPassword(passwordEncoder.encode(user.getPassword()));
-            } else {
-                // Si aucun mot de passe n'est fourni, conserver l'ancien mot de passe
-                User existingUser = userRepository.findById(id)
-                        .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
-                user.setPassword(existingUser.getPassword());
-            }
+            // Toujours récupérer le mot de passe existant depuis la base de données
+            User existingUser = userRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+            user.setPassword(existingUser.getPassword());
 
             User updatedUser = userRepository.save(user);
             notifyObservers("UPDATE", updatedUser);
@@ -63,6 +58,7 @@ public class UserServiceImpl implements UserService {
         }
         throw new RuntimeException("User not found with id: " + id);
     }
+
     @Override
     public void deleteUser(Long id) {
         User user = userRepository.findById(id).orElse(null);

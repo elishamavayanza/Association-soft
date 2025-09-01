@@ -5,9 +5,13 @@ import com.org.testApi.dto.request.UserRequestDTO;
 import com.org.testApi.dto.response.UserResponseDTO;
 import com.org.testApi.models.User;
 import com.org.testApi.payload.UserPayload;
+import com.org.testApi.models.Role;
+import com.org.testApi.dto.RoleDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+
+import java.util.Set;
 
 /**
  * Mapper pour l'entité User et ses DTOs associés.
@@ -31,4 +35,6 @@ public interface UserMapper extends BaseMapper<User, UserDTO> {
 
     @Mapping(target = "password", ignore = true)
     void updateEntityFromPayload(UserPayload payload, @MappingTarget User entity);
+
+    Set<Role> toRoleEntitySet(Set<RoleDTO> roleDTOs);
 }
