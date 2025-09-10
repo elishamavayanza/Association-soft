@@ -12,11 +12,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.org.testApi.payload.RegistrationRequest;
 
 import java.util.stream.Collectors;
 
@@ -47,9 +49,10 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Échec de l'authentification"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-
     public ResponseEntity<String> login(
-            @Parameter(description = "Informations de connexion de l'utilisateur",
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Informations de connexion de l'utilisateur",
+                    required = true,
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = LoginRequest.class),
@@ -58,7 +61,8 @@ public class AuthController {
                                     summary = "Exemple de demande de connexion",
                                     value = "{\n  \"username\": \"muhongo\",\n  \"password\": \"Ma1234\"\n}"
                             )
-                    )) @RequestBody LoginRequest loginRequest) {
+                    )
+            ) @Valid @RequestBody LoginRequest loginRequest) {
         try {
             User user = authService.authenticateUser(loginRequest.getUsername(), loginRequest.getPassword());
             String token = authService.generateToken(user);
@@ -74,7 +78,17 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Utilisateur enregistré avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = User.class),
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "400", description = "Données invalides ou utilisateur déjà existant"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<User> register(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Informations de l'utilisateur à inscrire",
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = RegistrationRequest.class),
                             examples = @ExampleObject(
                                     name = "Exemple d'utilisateur",
                                     summary = "Exemple de création d'utilisateur",
@@ -86,19 +100,27 @@ public class AuthController {
                                             "  \"lastName\": \"VAYANZA\",\n" +
                                             "  \"phoneNumber\": \"+234991471988\"\n" +
                                             "}"
-                            ))}),
-            @ApiResponse(responseCode = "400", description = "Données invalides ou utilisateur déjà existant"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
-    })
-    public ResponseEntity<User> register(
-            @Parameter(description = "Informations de l'utilisateur à inscrire") @RequestBody User user) {
+                            )
+                    )
+            ) @Valid @RequestBody RegistrationRequest registrationRequest) {
         try {
+            // Convertir RegistrationRequest en User
+            User user = new User();
+            user.setUsername(registrationRequest.getUsername());
+            user.setEmail(registrationRequest.getEmail());
+            user.setPassword(registrationRequest.getPassword());
+            user.setFirstName(registrationRequest.getFirstName());
+            user.setLastName(registrationRequest.getLastName());
+            user.setPhoneNumber(registrationRequest.getPhoneNumber());
+
             // Vérifier si l'utilisateur existe déjà
             if (userService.getAllUsers().stream()
                     .anyMatch(u -> u.getUsername().equals(user.getUsername()) || u.getEmail().equals(user.getEmail()))) {
                 return ResponseEntity.badRequest().build();
             }
 
+            // Dans une vraie application, vous voudrez hasher le mot de passe
+            // et effectuer d'autres vérifications
             User registeredUser = userService.saveUser(user);
             return ResponseEntity.ok(registeredUser);
         } catch (Exception e) {
