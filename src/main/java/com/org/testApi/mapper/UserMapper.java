@@ -10,34 +10,53 @@ import com.org.testApi.dto.RoleDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import com.org.testApi.repository.RoleRepository;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Mapper pour l'entité User et ses DTOs associés.
  */
 @Mapper(componentModel = "spring")
-public interface UserMapper extends BaseMapper<User, UserDTO> {
+public abstract class UserMapper implements BaseMapper<User, UserDTO> {
+
+    @Autowired
+    protected RoleRepository roleRepository;
 
     @Mapping(target = "password", ignore = true)
-    User toEntity(UserDTO dto);
+    public abstract User toEntity(UserDTO dto);
 
-    UserResponseDTO toResponseDto(User entity);
+    public abstract UserResponseDTO toResponseDto(User entity);
 
     @Mapping(target = "password", ignore = true)
-    User toEntityFromRequest(UserRequestDTO requestDTO);
+    public abstract User toEntityFromRequest(UserRequestDTO requestDTO);
 
     // Payload mappings
     @Mapping(target = "password", ignore = true)
-    User toEntityFromPayload(UserPayload payload);
+    public abstract User toEntityFromPayload(UserPayload payload);
 
     // Nouvelle méthode pour la création d'utilisateur qui inclut le mot de passe
-    User toNewEntityFromPayload(UserPayload payload);
+    public abstract User toNewEntityFromPayload(UserPayload payload);
 
-    UserPayload toPayload(User entity);
+    public abstract UserPayload toPayload(User entity);
 
     @Mapping(target = "password", ignore = true)
-    void updateEntityFromPayload(UserPayload payload, @MappingTarget User entity);
+    public abstract void updateEntityFromPayload(UserPayload payload, @MappingTarget User entity);
 
-    Set<Role> toRoleEntitySet(Set<RoleDTO> roleDTOs);
+    public Set<Role> toRoleEntitySet(Set<RoleDTO> roleDTOs) {
+        if (roleDTOs == null) {
+            return null;
+        }
+
+        return roleDTOs.stream()
+                .map(roleDTO -> {
+                    if (roleDTO.getId() != null) {
+                        return roleRepository.findById(roleDTO.getId()).orElse(null);
+                    }
+                    return null;
+                })
+                .filter(role -> role != null)
+                .collect(Collectors.toSet());
+    }
 }

@@ -105,7 +105,6 @@ public class UserController {
         return ResponseEntity.ok(savedUser);
     }
 
-
     @Operation(
             summary = "Créer un nouvel utilisateur avec des rôles",
             description = "Crée un nouvel utilisateur avec les détails fournis et les rôles associés"
@@ -127,17 +126,18 @@ public class UserController {
                             name = "Exemple d'utilisateur avec rôles",
                             summary = "Exemple de création d'utilisateur avec rôles",
                             value = "{\n" +
-                                    "  \"username\": \"janesmith\",\n" +
-                                    "  \"email\": \"jane.smith@example.com\",\n" +
-                                    "  \"firstName\": \"Jane\",\n" +
-                                    "  \"lastName\": \"Smith\",\n" +
-                                    "  \"phoneNumber\": \"+1987654321\",\n" +
+                                    "  \"username\": \"elishamavayanza\",\n" +
+                                    "  \"email\": \"elishama.vayanza@example.com\",\n" +
+                                    "  \"password\": \"motdepasse123\",\n" +
+                                    "  \"firstName\": \"Elishama\",\n" +
+                                    "  \"lastName\": \"VAYANZA\",\n" +
+                                    "  \"phoneNumber\": \"+234991471988\",\n" +
                                     "  \"enabled\": true,\n" +
                                     "  \"roles\": [\n" +
                                     "    {\n" +
-                                    "      \"id\": 1,\n" +
+                                    "      \"id\": 2,\n" +
                                     "      \"name\": \"ROLE_MEMBER\",\n" +
-                                    "      \"description\": \"Rôle membre\"\n" +
+                                    "      \"description\": \"Membre standard\"\n" +
                                     "    }\n" +
                                     "  ]\n" +
                                     "}"
@@ -147,6 +147,10 @@ public class UserController {
     @PostMapping("/extended")
     public ResponseEntity<User> createUserWithRoles(@Valid @RequestBody UserDTO userDTO) {
         User user = userMapper.toEntity(userDTO);
+        // Copier manuellement le mot de passe si présent
+        if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
+            user.setPassword(userDTO.getPassword());
+        }
         if (userDTO.getRoles() != null && !userDTO.getRoles().isEmpty()) {
             user.setRoles(userMapper.toRoleEntitySet(userDTO.getRoles()));
         }

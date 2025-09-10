@@ -71,6 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated()
 
+
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
