@@ -31,6 +31,9 @@ public interface UserMapper extends BaseMapper<User, UserDTO> {
     @Mapping(target = "password", ignore = true)
     User toEntityFromPayload(UserPayload payload);
 
+    // Nouvelle méthode pour la création d'utilisateur qui inclut le mot de passe
+    User toNewEntityFromPayload(UserPayload payload);
+
     UserPayload toPayload(User entity);
 
     @Mapping(target = "password", ignore = true)

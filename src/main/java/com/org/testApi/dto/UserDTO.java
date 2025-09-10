@@ -19,4 +19,5 @@ public class UserDTO extends BaseEntityDTO {
     private String phoneNumber;
     private boolean enabled;
     private Set<RoleDTO> roles;
+    private String password;
 }
