@@ -1,6 +1,7 @@
 package com.org.testApi.controllers;
 
 import com.org.testApi.dto.UserDTO;
+import com.org.testApi.models.Role;
 import com.org.testApi.models.User;
 import com.org.testApi.payload.UserPayload;
 import com.org.testApi.services.UserService;
@@ -180,9 +181,12 @@ public class UserController {
                             name = "Exemple de payload utilisateur",
                             summary = "Exemple de création de payload utilisateur",
                             value = "{\n" +
-                                    "  \"username\": \"mikejohnson\",\n" +
-                                    "  \"email\": \"mike.johnson@example.com\",\n" +
-                                    "  \"password\": \"motdepassesecurise\",\n" +
+                                    "  \"username\": \"elishamavayanza\",\n" +
+                                    "  \"email\": \"elishama.vayanza@example.com\",\n" +
+                                    "  \"password\": \"motdepasse123\",\n" +
+                                    "  \"firstName\": \"Elishama\",\n" +
+                                    "  \"lastName\": \"VAYANZA\",\n" +
+                                    "  \"phoneNumber\": \"+234991471988\",\n" +
                                     "  \"enabled\": true,\n" +
                                     "  \"roleId\": 2\n" +
                                     "}"
@@ -192,10 +196,16 @@ public class UserController {
     @PostMapping("/payload")
     public ResponseEntity<User> createUserFromPayload(@Valid @RequestBody UserPayload payload) {
         User user = userMapper.toNewEntityFromPayload(payload);
+        // Gérer le rôle si roleId est fourni
+        if (payload.getRoleId() != null) {
+            Role role = userMapper.toRoleEntity(payload.getRoleId());
+            if (role != null) {
+                user.getRoles().add(role);
+            }
+        }
         User savedUser = userService.saveUser(user);
         return ResponseEntity.ok(savedUser);
     }
-
     @PutMapping("/{id}")
     @Operation(
             summary = "Mettre à jour un utilisateur",

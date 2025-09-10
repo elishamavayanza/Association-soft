@@ -37,6 +37,8 @@ public abstract class UserMapper implements BaseMapper<User, UserDTO> {
     public abstract User toEntityFromPayload(UserPayload payload);
 
     // Nouvelle méthode pour la création d'utilisateur qui inclut le mot de passe
+    @Mapping(target = "password", source = "password")
+    @Mapping(target = "roles", ignore = true)
     public abstract User toNewEntityFromPayload(UserPayload payload);
 
     public abstract UserPayload toPayload(User entity);
@@ -58,5 +60,14 @@ public abstract class UserMapper implements BaseMapper<User, UserDTO> {
                 })
                 .filter(role -> role != null)
                 .collect(Collectors.toSet());
+    }
+
+    // Méthode pour convertir un roleId en Role
+    public Role toRoleEntity(Long roleId) {
+        if (roleId == null) {
+            return null;
+        }
+        // Convertir Long en Integer car le repository attend un Integer
+        return roleRepository.findById(roleId.intValue()).orElse(null);
     }
 }
