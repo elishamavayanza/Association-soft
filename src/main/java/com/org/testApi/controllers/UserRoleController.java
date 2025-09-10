@@ -4,6 +4,13 @@ import com.org.testApi.models.Role;
 import com.org.testApi.models.User;
 import com.org.testApi.services.UserService;
 import com.org.testApi.services.RoleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,6 +21,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "Utilisateur - Rôles", description = "Gestion des rôles des utilisateurs")
 public class UserRoleController {
 
     @Autowired
@@ -24,9 +32,18 @@ public class UserRoleController {
 
     @PostMapping("/{userId}/roles/{roleId}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Attribuer un rôle à un utilisateur", description = "Attribue un rôle spécifique à un utilisateur existant")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Rôle attribué avec succès à l'utilisateur",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur ou rôle non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
     public ResponseEntity<User> assignRoleToUser(
-            @PathVariable Long userId,
-            @PathVariable Long roleId) {
+            @Parameter(description = "ID de l'utilisateur") @PathVariable Long userId,
+            @Parameter(description = "ID du rôle à attribuer") @PathVariable Long roleId) {
 
         // Récupérer l'utilisateur
         User user = userService.getUserById(userId)
@@ -52,9 +69,18 @@ public class UserRoleController {
 
     @DeleteMapping("/{userId}/roles/{roleId}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Retirer un rôle d'un utilisateur", description = "Retire un rôle spécifique d'un utilisateur existant")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Rôle retiré avec succès de l'utilisateur",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur ou rôle non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
     public ResponseEntity<User> removeRoleFromUser(
-            @PathVariable Long userId,
-            @PathVariable Long roleId) {
+            @Parameter(description = "ID de l'utilisateur") @PathVariable Long userId,
+            @Parameter(description = "ID du rôle à retirer") @PathVariable Long roleId) {
 
         // Récupérer l'utilisateur
         User user = userService.getUserById(userId)

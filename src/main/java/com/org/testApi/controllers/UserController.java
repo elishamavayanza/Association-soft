@@ -6,8 +6,14 @@ import com.org.testApi.payload.UserPayload;
 import com.org.testApi.services.UserService;
 import com.org.testApi.mapper.UserMapper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -15,14 +21,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "Utilisateur", description = "Gestion des utilisateurs")
 public class UserController {
 
     @Autowired
@@ -32,13 +36,35 @@ public class UserController {
     private UserMapper userMapper;
 
     @GetMapping
+    @Operation(
+            summary = "Récupérer tous les utilisateurs",
+            description = "Retourne une liste de tous les utilisateurs enregistrés dans le système"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    @Operation(
+            summary = "Récupérer un utilisateur par ID",
+            description = "Retourne un utilisateur spécifique en fonction de son identifiant"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur trouvé",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<User> getUserById(
+            @Parameter(description = "ID de l'utilisateur à récupérer") @PathVariable Long id) {
         return userService.getUserById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -48,6 +74,13 @@ public class UserController {
             summary = "Créer un nouvel utilisateur",
             description = "Crée un nouvel utilisateur avec les détails fournis"
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur créé avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
     @RequestBody(
             description = "Objet utilisateur à créer",
             required = true,
@@ -79,6 +112,13 @@ public class UserController {
             summary = "Créer un nouvel utilisateur avec des rôles",
             description = "Crée un nouvel utilisateur avec les détails fournis et les rôles associés"
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur créé avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
     @RequestBody(
             description = "DTO utilisateur avec rôles à créer",
             required = true,
@@ -121,6 +161,13 @@ public class UserController {
             summary = "Créer un nouvel utilisateur à partir d'un payload",
             description = "Crée un nouvel utilisateur en utilisant la structure UserPayload"
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur créé avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
     @RequestBody(
             description = "Payload utilisateur à créer",
             required = true,
@@ -148,7 +195,21 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody User user) {
+    @Operation(
+            summary = "Mettre à jour un utilisateur",
+            description = "Met à jour un utilisateur existant avec les données fournies"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<User> updateUser(
+            @Parameter(description = "ID de l'utilisateur à mettre à jour") @PathVariable Long id,
+            @Parameter(description = "Données de mise à jour de l'utilisateur") @Valid @RequestBody User user) {
         try {
             User updatedUser = userService.updateUser(id, user);
             return ResponseEntity.ok(updatedUser);
@@ -156,6 +217,7 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<String> handleValidationExceptions(MethodArgumentNotValidException ex) {
         StringBuilder errors = new StringBuilder();
@@ -170,7 +232,21 @@ public class UserController {
     }
 
     @PutMapping("/{id}/payload")
-    public ResponseEntity<User> updateUserWithPayload(@PathVariable Long id, @Valid @RequestBody UserPayload payload) {
+    @Operation(
+            summary = "Mettre à jour un utilisateur avec payload",
+            description = "Met à jour un utilisateur existant en utilisant un objet payload"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
+            @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<User> updateUserWithPayload(
+            @Parameter(description = "ID de l'utilisateur à mettre à jour") @PathVariable Long id,
+            @Parameter(description = "Données du payload pour mettre à jour l'utilisateur") @Valid @RequestBody UserPayload payload) {
         return userService.getUserById(id)
                 .map(user -> {
                     userMapper.updateEntityFromPayload(payload, user);
@@ -181,13 +257,33 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    @Operation(
+            summary = "Supprimer un utilisateur",
+            description = "Supprime définitivement un utilisateur"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Utilisateur supprimé avec succès"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<Void> deleteUser(
+            @Parameter(description = "ID de l'utilisateur à supprimer") @PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}/soft")
-    public ResponseEntity<Void> softDeleteUser(@PathVariable Long id) {
+    @Operation(
+            summary = "Supprimer logiquement un utilisateur",
+            description = "Marque un utilisateur comme supprimé sans le retirer de la base de données"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Utilisateur supprimé logiquement avec succès"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<Void> softDeleteUser(
+            @Parameter(description = "ID de l'utilisateur à supprimer logiquement") @PathVariable Long id) {
         userService.softDeleteUser(id);
         return ResponseEntity.noContent().build();
     }
@@ -196,12 +292,22 @@ public class UserController {
      * Recherche des utilisateurs avec des filtres complexes.
      */
     @GetMapping("/search")
+    @Operation(
+            summary = "Rechercher des utilisateurs",
+            description = "Recherche des utilisateurs avec des filtres complexes"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Résultats de recherche récupérés avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
     public ResponseEntity<List<User>> searchUsers(
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String firstName,
-            @RequestParam(required = false) String lastName,
-            @RequestParam(required = false) Integer roleId) {
+            @Parameter(description = "Nom d'utilisateur (optionnel)") @RequestParam(required = false) String username,
+            @Parameter(description = "Adresse email (optionnel)") @RequestParam(required = false) String email,
+            @Parameter(description = "Prénom (optionnel)") @RequestParam(required = false) String firstName,
+            @Parameter(description = "Nom de famille (optionnel)") @RequestParam(required = false) String lastName,
+            @Parameter(description = "ID du rôle (optionnel)") @RequestParam(required = false) Integer roleId) {
         List<User> users = userService.searchUsersComplexQuery(username, email, firstName, lastName, roleId);
         return ResponseEntity.ok(users);
     }
