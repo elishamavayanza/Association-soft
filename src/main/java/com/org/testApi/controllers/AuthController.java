@@ -7,6 +7,7 @@ import com.org.testApi.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -37,10 +38,16 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Authentification réussie, jeton JWT retourné",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = String.class))}),
+                            schema = @Schema(implementation = String.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de token",
+                                    summary = "Exemple de réponse avec token JWT",
+                                    value = "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\"\n}"
+                            ))}),
             @ApiResponse(responseCode = "401", description = "Échec de l'authentification"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+
     public ResponseEntity<String> login(
             @Parameter(description = "Informations de connexion de l'utilisateur") @RequestBody LoginRequest loginRequest) {
         try {
