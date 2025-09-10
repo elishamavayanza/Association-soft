@@ -49,7 +49,16 @@ public class AuthController {
     })
 
     public ResponseEntity<String> login(
-            @Parameter(description = "Informations de connexion de l'utilisateur") @RequestBody LoginRequest loginRequest) {
+            @Parameter(description = "Informations de connexion de l'utilisateur",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = LoginRequest.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de connexion",
+                                    summary = "Exemple de demande de connexion",
+                                    value = "{\n  \"username\": \"muhongo\",\n  \"password\": \"Ma1234\"\n}"
+                            )
+                    )) @RequestBody LoginRequest loginRequest) {
         try {
             User user = authService.authenticateUser(loginRequest.getUsername(), loginRequest.getPassword());
             String token = authService.generateToken(user);
@@ -65,7 +74,19 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Utilisateur enregistré avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = User.class))}),
+                            schema = @Schema(implementation = User.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple d'utilisateur",
+                                    summary = "Exemple de création d'utilisateur",
+                                    value = "{\n" +
+                                            "  \"username\": \"elishamavayanza\",\n" +
+                                            "  \"email\": \"elishama.vayanza@example.com\",\n" +
+                                            "  \"password\": \"motdepasse123\",\n" +
+                                            "  \"firstName\": \"Elishama\",\n" +
+                                            "  \"lastName\": \"VAYANZA\",\n" +
+                                            "  \"phoneNumber\": \"+234991471988\"\n" +
+                                            "}"
+                            ))}),
             @ApiResponse(responseCode = "400", description = "Données invalides ou utilisateur déjà existant"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
@@ -78,8 +99,6 @@ public class AuthController {
                 return ResponseEntity.badRequest().build();
             }
 
-            // Dans une vraie application, vous voudrez hasher le mot de passe
-            // et effectuer d'autres vérifications
             User registeredUser = userService.saveUser(user);
             return ResponseEntity.ok(registeredUser);
         } catch (Exception e) {
