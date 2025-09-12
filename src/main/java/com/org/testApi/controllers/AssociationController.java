@@ -7,6 +7,7 @@ import com.org.testApi.mapper.AssociationMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -67,10 +68,28 @@ public class AssociationController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Association> createAssociation(
-            @Parameter(description = "Données de l'association à créer") @RequestBody Association association) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données de l'association à créer",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Association.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple d'association",
+                                    summary = "Exemple de création d'association",
+                                    value = "{\n" +
+                                            "  \"name\": \"Association pour la Protection des Animaux\",\n" +
+                                            "  \"description\": \"Une association dédiée à la protection et au bien-être des animaux\",\n" +
+                                            "  \"location\": \"Paris, France\",\n" +
+                                            "  \"legalStatus\": \"ASBL\",\n" +
+                                            "  \"siret\": \"12345678901234\"\n" +
+                                            "}"
+                            )
+                    ))
+            @RequestBody Association association) {
         Association savedAssociation = associationService.saveAssociation(association);
         return ResponseEntity.ok(savedAssociation);
     }
+
 
     @PostMapping("/payload")
     @Operation(summary = "Créer une association à partir d'un payload", description = "Crée une association en utilisant un objet payload")
@@ -82,11 +101,29 @@ public class AssociationController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Association> createAssociationFromPayload(
-            @Parameter(description = "Données du payload pour créer l'association") @RequestBody AssociationPayload payload) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données du payload pour créer l'association",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AssociationPayload.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de payload association",
+                                    summary = "Exemple de création de payload association",
+                                    value = "{\n" +
+                                            "  \"name\": \"Association pour la Protection des Animaux\",\n" +
+                                            "  \"description\": \"Une association dédiée à la protection et au bien-être des animaux\",\n" +
+                                            "  \"location\": \"Paris, France\",\n" +
+                                            "  \"legalStatus\": \"ASBL\",\n" +
+                                            "  \"siret\": \"12345678901234\"\n" +
+                                            "}"
+                            )
+                    ))
+            @RequestBody AssociationPayload payload) {
         Association association = associationMapper.toEntityFromPayload(payload);
         Association savedAssociation = associationService.saveAssociation(association);
         return ResponseEntity.ok(savedAssociation);
     }
+
 
     @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour une association", description = "Met à jour une association existante avec les données fournies")
@@ -100,7 +137,24 @@ public class AssociationController {
     })
     public ResponseEntity<Association> updateAssociation(
             @Parameter(description = "ID de l'association à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données de mise à jour de l'association") @RequestBody Association association) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données de mise à jour de l'association",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Association.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de mise à jour d'association",
+                                    summary = "Exemple de données de mise à jour d'association",
+                                    value = "{\n" +
+                                            "  \"name\": \"Association pour la Protection des Animaux - Mis à jour\",\n" +
+                                            "  \"description\": \"Une association dédiée à la protection et au bien-être des animaux (mise à jour)\",\n" +
+                                            "  \"location\": \"Lyon, France\",\n" +
+                                            "  \"legalStatus\": \"ASBL\",\n" +
+                                            "  \"siret\": \"12345678901234\"\n" +
+                                            "}"
+                            )
+                    ))
+            @RequestBody Association association) {
         try {
             Association updatedAssociation = associationService.updateAssociation(id, association);
             return ResponseEntity.ok(updatedAssociation);
@@ -121,7 +175,24 @@ public class AssociationController {
     })
     public ResponseEntity<Association> updateAssociationWithPayload(
             @Parameter(description = "ID de l'association à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données du payload pour mettre à jour l'association") @RequestBody AssociationPayload payload) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données du payload pour mettre à jour l'association",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AssociationPayload.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de payload de mise à jour",
+                                    summary = "Exemple de données de payload de mise à jour d'association",
+                                    value = "{\n" +
+                                            "  \"name\": \"Association pour la Protection des Animaux - Mis à jour\",\n" +
+                                            "  \"description\": \"Une association dédiée à la protection et au bien-être des animaux (mise à jour)\",\n" +
+                                            "  \"location\": \"Lyon, France\",\n" +
+                                            "  \"legalStatus\": \"ASBL\",\n" +
+                                            "  \"siret\": \"12345678901234\"\n" +
+                                            "}"
+                            )
+                    ))
+            @RequestBody AssociationPayload payload) {
         return associationService.getAssociationById(id)
                 .map(association -> {
                     associationMapper.updateEntityFromPayload(payload, association);
