@@ -4,6 +4,10 @@ import com.org.testApi.models.Member;
 import com.org.testApi.payload.MemberPayload;
 import com.org.testApi.services.MemberService;
 import com.org.testApi.mapper.MemberMapper;
+import com.org.testApi.services.UserService;
+import com.org.testApi.services.AssociationService;
+import com.org.testApi.models.User;
+import com.org.testApi.models.Association;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,6 +31,12 @@ public class MemberController {
 
     @Autowired
     private MemberMapper memberMapper;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private AssociationService associationService;
 
     @GetMapping
     @Operation(summary = "Récupérer tous les membres", description = "Retourne une liste de tous les membres")
@@ -79,11 +89,22 @@ public class MemberController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Member.class))}),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur ou association non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Member> createMemberFromPayload(
             @Parameter(description = "Données du payload pour créer le membre") @RequestBody MemberPayload payload) {
+        // Check if user exists
+        User user = userService.getUserById(payload.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + payload.getUserId()));
+
+        // Check if association exists
+        Association association = associationService.getAssociationById(payload.getAssociationId())
+                .orElseThrow(() -> new RuntimeException("Association not found with id: " + payload.getAssociationId()));
+
         Member member = memberMapper.toEntityFromPayload(payload);
+        member.setUser(user);
+        member.setAssociation(association);
         Member savedMember = memberService.saveMember(member);
         return ResponseEntity.ok(savedMember);
     }
@@ -125,6 +146,17 @@ public class MemberController {
         return memberService.getMemberById(id)
                 .map(member -> {
                     memberMapper.updateEntityFromPayload(payload, member);
+                    // Update user and association if IDs are provided in payload
+                    if (payload.getUserId() != null) {
+                        User user = userService.getUserById(payload.getUserId())
+                                .orElseThrow(() -> new RuntimeException("User not found with id: " + payload.getUserId()));
+                        member.setUser(user);
+                    }
+                    if (payload.getAssociationId() != null) {
+                        Association association = associationService.getAssociationById(payload.getAssociationId())
+                                .orElseThrow(() -> new RuntimeException("Association not found with id: " + payload.getAssociationId()));
+                        member.setAssociation(association);
+                    }
                     Member updatedMember = memberService.updateMember(id, member);
                     return ResponseEntity.ok(updatedMember);
                 })
