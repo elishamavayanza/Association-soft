@@ -74,10 +74,37 @@ public class MemberController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Member.class))}),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur ou association non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Member> createMember(
-            @Parameter(description = "Données du membre à créer") @RequestBody Member member) {
+            @Parameter(description = "Données du membre à créer") 
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Exemple de données pour créer un membre",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Member.class),
+                            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "Exemple de création de membre avec entité complète",
+                                    summary = "Exemple de création de membre avec entité complète",
+                                    value = "{\n  \"user\": {\n    \"id\": 6\n  },\n  \"association\": {\n    \"id\": 3\n  }\n}"
+                            )
+                    )
+            ) @RequestBody Member member) {
+        // Check if user exists when user ID is provided directly in the member entity
+        if (member.getUser() != null && member.getUser().getId() != null) {
+            User user = userService.getUserById(member.getUser().getId())
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + member.getUser().getId()));
+            member.setUser(user);
+        }
+        
+        // Check if association exists when association ID is provided directly in the member entity
+        if (member.getAssociation() != null && member.getAssociation().getId() != null) {
+            Association association = associationService.getAssociationById(member.getAssociation().getId())
+                    .orElseThrow(() -> new RuntimeException("Association not found with id: " + member.getAssociation().getId()));
+            member.setAssociation(association);
+        }
+        
         Member savedMember = memberService.saveMember(member);
         return ResponseEntity.ok(savedMember);
     }
@@ -93,7 +120,19 @@ public class MemberController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Member> createMemberFromPayload(
-            @Parameter(description = "Données du payload pour créer le membre") @RequestBody MemberPayload payload) {
+            @Parameter(description = "Données du payload pour créer le membre") 
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Exemple de payload pour créer un membre",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MemberPayload.class),
+                            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "Exemple de création de membre",
+                                    summary = "Exemple de création de membre",
+                                    value = "{\n  \"userId\": 6,\n  \"associationId\": 3\n}"
+                            )
+                    )
+            ) @RequestBody MemberPayload payload) {
         // Check if user exists
         User user = userService.getUserById(payload.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + payload.getUserId()));
@@ -142,7 +181,19 @@ public class MemberController {
     })
     public ResponseEntity<Member> updateMemberWithPayload(
             @Parameter(description = "ID du membre à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données du payload pour mettre à jour le membre") @RequestBody MemberPayload payload) {
+            @Parameter(description = "Données du payload pour mettre à jour le membre") 
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Exemple de payload pour mettre à jour un membre",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MemberPayload.class),
+                            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "Exemple de mise à jour de membre",
+                                    summary = "Exemple de mise à jour de membre",
+                                    value = "{\n  \"userId\": 6,\n  \"associationId\": 3\n}"
+                            )
+                    )
+            ) @RequestBody MemberPayload payload) {
         return memberService.getMemberById(id)
                 .map(member -> {
                     memberMapper.updateEntityFromPayload(payload, member);
