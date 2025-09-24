@@ -39,7 +39,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
+   public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
@@ -69,8 +69,12 @@ public class SecurityConfig {
 
                         // Endpoints pour utilisateurs connectés
                         .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/users/payload", "/api/users/payload/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated()
-
+                        
+                        // Member endpoints - allow authenticated users to access all member operations
+                        .requestMatchers("/api/members/**").authenticated()
+                        .requestMatchers("/api/members/payload", "/api/members/payload/**").authenticated()
 
                         .anyRequest().authenticated()
                 )

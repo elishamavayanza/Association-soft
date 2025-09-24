@@ -17,12 +17,19 @@ import java.util.List;
 @Entity
 @Table(name = "members")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class Member extends BaseEntity {
+
+    /**
+     * Code unique du membre au sein de l'association.
+     * Ce code est généré automatiquement à la création du membre.
+     */
+    @Column(name = "member_code", unique = true)
+    private String memberCode;
 
     /**
      * Utilisateur associé au membre.
@@ -101,6 +108,23 @@ public class Member extends BaseEntity {
         if (this.joinDate == null) {
             this.joinDate = LocalDate.now();
         }
+        
+        // Générer un code unique si ce n'est pas déjà fait
+        if (this.memberCode == null) {
+            this.memberCode = generateMemberCode();
+        }
+    }
+
+    /**
+     * Génère un code unique pour le membre.
+     * Format: MBR-XXX-YYYYY (où XXX est l'ID de l'association et YYYYY est l'ID du membre)
+     * 
+     * @return Le code unique généré
+     */
+    private String generateMemberCode() {
+        // À implémenter correctement dans le service
+        // Cette implémentation basique sera remplacée par une plus robuste
+        return "MBR-" + System.currentTimeMillis();
     }
 
     /**

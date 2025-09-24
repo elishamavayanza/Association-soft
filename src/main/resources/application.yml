@@ -115,7 +115,7 @@ apns:
 # CONFIGURATIONS DIVERSES
 # ==============================================
 server:
-  port: 8084
+  port: 8085
 
 # ====================================================
 # CONFIGURATION SPRINGDOC OPENAPI (SWAGGER)

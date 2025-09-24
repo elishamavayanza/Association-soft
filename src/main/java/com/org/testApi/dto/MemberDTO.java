@@ -20,4 +20,5 @@ public class MemberDTO extends BaseEntityDTO {
     private LocalDate leaveDate;
     private String type;
     private boolean isAdmin;
+    private String memberCode;
 }
