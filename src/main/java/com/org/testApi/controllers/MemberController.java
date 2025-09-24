@@ -122,7 +122,28 @@ public class MemberController {
     }
 
     @PostMapping("/payload")
-    public ResponseEntity<?> createMemberFromPayload(@RequestBody MemberPayload payload) {
+    @Operation(summary = "Créer un membre à partir d'un payload", description = "Crée un nouveau membre en utilisant un objet payload contenant les informations du membre")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Membre créé avec succès",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = Member.class))}),
+        @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+        @ApiResponse(responseCode = "404", description = "Utilisateur ou association non trouvé"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> createMemberFromPayload(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données du membre à créer",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MemberPayload.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de création de membre",
+                                    summary = "Exemple de création de membre",
+                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2\n}"
+                            )
+                    )
+            ) @RequestBody MemberPayload payload) {
         try {
             logger.info("Starting member creation from payload: {}", payload);
 
@@ -208,16 +229,15 @@ public class MemberController {
     })
     public ResponseEntity<Member> updateMemberWithPayload(
             @Parameter(description = "ID du membre à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données du payload pour mettre à jour le membre")
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Exemple de payload pour mettre à jour un membre",
+                    description = "Données du payload pour mettre à jour le membre",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = MemberPayload.class),
                             examples = @ExampleObject(
                                     name = "Exemple de mise à jour de membre",
                                     summary = "Exemple de mise à jour de membre",
-                                    value = "{\n  \"userId\": 6,\n  \"associationId\": 3,\n  \"firstName\": \"Nadia\",\n  \"lastName\": \"kavira\",\n  \"email\": \"nadia.doe@example.com\",\n  \"phone\": \"+1234567890\",\n  \"memberCode\": \"MBR-00001\"\n}"
+                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2\n}"
                             )
                     )
             ) @RequestBody MemberPayload payload) {
