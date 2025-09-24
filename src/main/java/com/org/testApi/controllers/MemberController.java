@@ -85,7 +85,7 @@ public class MemberController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Member> createMember(
-            @Parameter(description = "Données du membre à créer") 
+            @Parameter(description = "Données du membre à créer")
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Exemple de données pour créer un membre",
                     content = @Content(
@@ -104,19 +104,19 @@ public class MemberController {
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + member.getUser().getId()));
             member.setUser(user);
         }
-        
+
         // Check if association exists when association ID is provided directly in the member entity
         if (member.getAssociation() != null && member.getAssociation().getId() != null) {
             Association association = associationService.getAssociationById(member.getAssociation().getId())
                     .orElseThrow(() -> new RuntimeException("Association not found with id: " + member.getAssociation().getId()));
             member.setAssociation(association);
         }
-        
+
         // Générer un code membre unique si ce n'est pas déjà fait
         if (member.getMemberCode() == null) {
             member.setMemberCode(generateUniqueMemberCode());
         }
-        
+
         Member savedMember = memberService.saveMember(member);
         return ResponseEntity.ok(savedMember);
     }
@@ -125,7 +125,7 @@ public class MemberController {
     public ResponseEntity<?> createMemberFromPayload(@RequestBody MemberPayload payload) {
         try {
             logger.info("Starting member creation from payload: {}", payload);
-            
+
             // Check if user exists
             logger.info("Checking if user exists with ID: {}", payload.getUserId());
             User user = userService.getUserById(payload.getUserId())
@@ -147,13 +147,13 @@ public class MemberController {
             if (member == null) {
                 logger.error("Failed to map payload to Member entity");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to map payload to Member entity");
+                        .body("Failed to map payload to Member entity");
             }
             member.setUser(user);
             member.setAssociation(association);
-            
+
             logger.debug("Mapped member entity: {}", member);
-            
+
             // Set member code if not provided
             logger.info("Setting member code");
             if (member.getMemberCode() == null) {
@@ -163,7 +163,7 @@ public class MemberController {
                     member.setMemberCode(generateUniqueMemberCode());
                 }
             }
-            
+
             logger.info("Saving member with code: {}", member.getMemberCode());
             Member savedMember = memberService.saveMember(member);
             logger.info("Member created successfully with ID: {}", savedMember.getId());
@@ -171,7 +171,7 @@ public class MemberController {
         } catch (Exception e) {
             logger.error("Error creating member from payload: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error creating member: " + e.getMessage());
+                    .body("Error creating member: " + e.getMessage());
         }
     }
 
@@ -208,7 +208,7 @@ public class MemberController {
     })
     public ResponseEntity<Member> updateMemberWithPayload(
             @Parameter(description = "ID du membre à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données du payload pour mettre à jour le membre") 
+            @Parameter(description = "Données du payload pour mettre à jour le membre")
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Exemple de payload pour mettre à jour un membre",
                     content = @Content(
@@ -230,30 +230,30 @@ public class MemberController {
                                 User user = userService.getUserById(payload.getUserId())
                                         .orElseThrow(() -> new RuntimeException("User not found with id: " + payload.getUserId()));
                                 member.setUser(user);
-                                
+
                                 // Mettre à jour les informations personnelles de l'utilisateur
                                 try {
                                     // Fetch the current user from database to ensure we have all properties
                                     User currentUser = userService.getUserById(user.getId())
                                             .orElseThrow(() -> new RuntimeException("User not found with id: " + user.getId()));
-                                    
+
                                     // Update only the fields provided in the payload
                                     if (payload.getFirstName() != null) {
                                         currentUser.setFirstName(payload.getFirstName());
                                     }
-                                    
+
                                     if (payload.getLastName() != null) {
                                         currentUser.setLastName(payload.getLastName());
                                     }
-                                    
+
                                     if (payload.getEmail() != null) {
                                         currentUser.setEmail(payload.getEmail());
                                     }
-                                    
+
                                     if (payload.getPhone() != null) {
                                         currentUser.setPhoneNumber(payload.getPhone());
                                     }
-                                    
+
                                     userService.updateUser(currentUser.getId(), currentUser);
                                 } catch (Exception e) {
                                     logger.error("Error updating user information: ", e);
@@ -351,7 +351,7 @@ public class MemberController {
         }
         return ResponseEntity.notFound().build();
     }
-    
+
     /**
      * Génère un code membre unique
      * @return Un code membre unique
