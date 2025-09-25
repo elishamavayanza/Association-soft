@@ -19,7 +19,11 @@ public class AssociationServiceImpl implements AssociationService {
 
     @Override
     public List<Association> getAllAssociations() {
-        return associationRepository.findAll();
+        try {
+            return associationRepository.findAll();
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching all associations", e);
+        }
     }
 
     @Override

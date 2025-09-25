@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/associations")
@@ -35,13 +36,22 @@ public class AssociationController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des associations récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Association.class))}),
+                            schema = @Schema(implementation = AssociationDTO.class))}),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<List<Association>> getAllAssociations() {
-        List<Association> associations = associationService.getAllAssociations();
-        return ResponseEntity.ok(associations);
+    public ResponseEntity<?> getAllAssociations() {
+        try {
+            List<Association> associations = associationService.getAllAssociations();
+            List<AssociationDTO> associationDTOs = associations.stream()
+                    .map(associationMapper::toDto)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(associationDTOs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Erreur lors de la récupération des associations: " + e.getMessage());
+        }
     }
+
 
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer une association par ID", description = "Retourne une association spécifique en fonction de son ID")
