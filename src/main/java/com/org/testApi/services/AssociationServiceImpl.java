@@ -24,9 +24,13 @@ public class AssociationServiceImpl implements AssociationService {
 
     @Override
     public Optional<Association> getAssociationById(Long id) {
-        return associationRepository.findById(id);
+        try {
+            // Make sure to properly fetch all related entities if needed
+            return associationRepository.findById(id);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching association with id: " + id, e);
+        }
     }
-
     @Override
     public Association saveAssociation(Association association) {
         Association savedAssociation = associationRepository.save(association);

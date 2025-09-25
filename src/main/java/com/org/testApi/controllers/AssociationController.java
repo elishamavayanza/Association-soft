@@ -1,5 +1,6 @@
 package com.org.testApi.controllers;
 
+import com.org.testApi.dto.AssociationDTO;
 import com.org.testApi.models.Association;
 import com.org.testApi.payload.AssociationPayload;
 import com.org.testApi.services.AssociationService;
@@ -47,16 +48,23 @@ public class AssociationController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Association trouvée",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Association.class))}),
+                            schema = @Schema(implementation = AssociationDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Association non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<Association> getAssociationById(
+    public ResponseEntity<?> getAssociationById(
             @Parameter(description = "ID de l'association à récupérer") @PathVariable Long id) {
-        return associationService.getAssociationById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            return associationService.getAssociationById(id)
+                    .map(associationMapper::toDto)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Erreur lors de la récupération de l'association: " + e.getMessage());
+        }
     }
+
 
     @PostMapping
     @Operation(summary = "Créer une nouvelle association", description = "Crée une nouvelle association avec les données fournies")

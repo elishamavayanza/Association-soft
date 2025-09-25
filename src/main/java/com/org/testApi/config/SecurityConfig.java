@@ -67,12 +67,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/roles/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
+                        // Endpoints pour les associations
+                        .requestMatchers("/api/associations/**").authenticated() // Ajout explicite
+
                         // Endpoints pour utilisateurs connectés
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/users/payload", "/api/users/payload/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated()
-                        
-                        // Member endpoints - allow authenticated users to access all member operations
+
+                        // Member endpoints
                         .requestMatchers("/api/members/**").authenticated()
                         .requestMatchers("/api/members/payload", "/api/members/payload/**").authenticated()
 
