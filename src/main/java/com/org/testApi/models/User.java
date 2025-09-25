@@ -1,5 +1,6 @@
 package com.org.testApi.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -68,6 +69,7 @@ public class User extends BaseEntity {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Builder.Default
+    @JsonIgnore
     private Set<Role> roles = new HashSet<>();
 
     /**
@@ -76,6 +78,7 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<Activity> createdEvents = new ArrayList<>();
 
     /**
@@ -84,6 +87,7 @@ public class User extends BaseEntity {
     @ManyToMany(mappedBy = "participants")
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<Activity> attendedEvents = new ArrayList<>();
 
     /**

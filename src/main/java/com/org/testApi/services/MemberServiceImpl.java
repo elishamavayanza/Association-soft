@@ -2,6 +2,7 @@ package com.org.testApi.services;
 
 import com.org.testApi.models.Member;
 import com.org.testApi.repository.MemberRepository;
+import com.org.testApi.services.Observer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public Optional<Member> getMemberById(Long id) {
-        return memberRepository.findById(id);
+        return memberRepository.findWithUserAndAssociationById(id);
     }
 
     @Override

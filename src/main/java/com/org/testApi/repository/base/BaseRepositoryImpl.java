@@ -90,8 +90,8 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
     public void softDelete(T entity) {
         // Implémentation générique du soft delete
         try {
-            // Essaye d'appeler setDeleted(true) si la méthode existe
-            entity.getClass().getMethod("setDeleted", Boolean.class).invoke(entity, true);
+            // Essaye d'appeler setActive(false) si la méthode existe
+            entity.getClass().getMethod("setActive", boolean.class).invoke(entity, false);
             save(entity);
         } catch (Exception e) {
             // Fallback: suppression physique

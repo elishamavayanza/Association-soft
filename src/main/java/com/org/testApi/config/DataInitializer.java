@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Component
@@ -39,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         // Créer un utilisateur admin par défaut s'il n'existe pas
-        if (!userRepository.existsByUsernameOrEmail("admin", "admin@association.org")) {
+        if (!userRepository.existsByUsername("admin")) {
             User adminUser = new User();
             adminUser.setUsername("admin");
             adminUser.setEmail("admin@association.org");
@@ -48,7 +49,11 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setLastName("User");
 
             Role adminRole = roleRepository.findByName(Role.ERole.ROLE_ADMIN).orElse(null);
-            adminUser.setRoles(Set.of(adminRole));
+            Set<Role> roles = new HashSet<>();
+            if (adminRole != null) {
+                roles.add(adminRole);
+            }
+            adminUser.setRoles(roles);
 
             userRepository.save(adminUser);
         }

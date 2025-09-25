@@ -17,7 +17,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
 
     @Override
     public List<Member> searchMembersComplexQuery(String name, String email, Member.MemberType memberType, Long associationId, Boolean isActive) {
-        StringBuilder jpql = new StringBuilder("SELECT m FROM Member m JOIN FETCH m.user WHERE 1=1");
+        StringBuilder jpql = new StringBuilder("SELECT m FROM Member m WHERE 1=1");
         if (name != null && !name.isEmpty()) {
             jpql.append(" AND LOWER(m.user.username) LIKE LOWER(CONCAT('%', :name, '%'))");
         }
@@ -61,8 +61,6 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     public List<Member> findMembersWithAssociations(Long associationId, int limit) {
         String jpql = """
             SELECT m FROM Member m 
-            JOIN FETCH m.user 
-            JOIN FETCH m.association 
             WHERE m.association.id = :associationId 
             ORDER BY m.joinDate DESC
             """;

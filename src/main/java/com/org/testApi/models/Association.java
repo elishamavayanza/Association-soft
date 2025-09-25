@@ -1,5 +1,6 @@
 package com.org.testApi.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
@@ -67,6 +68,7 @@ public class Association extends BaseEntity {
     @OneToMany(mappedBy = "association", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<Member> members = new ArrayList<>();
 
     /**
@@ -75,6 +77,7 @@ public class Association extends BaseEntity {
     @OneToMany(mappedBy = "association", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<Activity> activities = new ArrayList<>();
 
 
@@ -84,6 +87,7 @@ public class Association extends BaseEntity {
     @OneToMany(mappedBy = "association", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<FinancialTransaction> transactions = new ArrayList<>();
 
     /**
@@ -92,6 +96,7 @@ public class Association extends BaseEntity {
     @OneToMany(mappedBy = "association", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<Document> documents = new ArrayList<>();
 
 }

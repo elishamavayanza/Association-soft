@@ -28,6 +28,8 @@ public interface UserRepository extends BaseRepository<User, Long>, UserReposito
     Page<User> findAllByOrderByLastNameAsc(Pageable pageable);
 
     boolean existsByUsernameOrEmail(String username, String email);
+    
+    boolean existsByUsername(String username);
 
     @Query("SELECT u FROM User u JOIN u.attendedEvents a WHERE a.id = :activityId")
     List<User> findParticipantsByActivityId(Long activityId);

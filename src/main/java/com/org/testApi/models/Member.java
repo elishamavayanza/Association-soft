@@ -1,5 +1,6 @@
 package com.org.testApi.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -38,6 +39,7 @@ public class Member extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @ToString.Exclude
+    @JsonIgnore
     private User user;
 
     /**
@@ -47,6 +49,7 @@ public class Member extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "association_id", nullable = false)
     @ToString.Exclude
+    @JsonIgnore
     private Association association;
 
     /**
@@ -74,6 +77,7 @@ public class Member extends BaseEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<MembershipFee> fees = new ArrayList<>();
 
     /**
@@ -82,6 +86,7 @@ public class Member extends BaseEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<MemberRoleHistory> roleHistory = new ArrayList<>();
 
 
@@ -91,6 +96,7 @@ public class Member extends BaseEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<Loan> loans = new ArrayList<>();
 
     /**

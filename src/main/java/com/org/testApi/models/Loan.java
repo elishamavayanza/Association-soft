@@ -4,12 +4,14 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
- * Représente un prêt accordé à un membre.
+ * Représente un prêt effectué par un membre de l'association.
  * <p>
- * Un prêt a un montant, un taux d'intérêt, une date d'échéance et un statut.
- * Si la date d'échéance est dépassée, des intérêts supplémentaires s'accumulent quotidiennement.
+ * Un prêt peut concerner un livre, un document ou un autre objet.
+ * Il possède une date de début, une date de retour prévue,
+ * et un statut indiquant s'il est actif, en retard ou remboursé.
  * </p>
  */
 @Entity
@@ -23,7 +25,8 @@ import java.time.LocalDate;
 public class Loan extends BaseEntity {
 
     /**
-     * Membre ayant contracté le prêt.
+     * Membre ayant effectué le prêt.
+     * Ce lien est obligatoire.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
@@ -31,97 +34,119 @@ public class Loan extends BaseEntity {
     private Member member;
 
     /**
-     * Montant initial du prêt.
+     * Document ou objet prêté.
+     * Ce lien est obligatoire.
      */
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "document_id", nullable = false)
+    @ToString.Exclude
+    private Document document;
+
+    /**
+     * Montant du prêt.
+     */
     private BigDecimal amount;
 
     /**
-     * Taux d'intérêt annuel en pourcentage (exemple: 5 pour 5%).
+     * Taux d'intérêt appliqué au prêt.
      */
-    @Column(nullable = false)
     private BigDecimal interestRate;
 
     /**
-     * Taux de pénalité journalier en pourcentage appliqué après la date d'échéance.
+     * Taux de pénalité appliqué en cas de retard.
      */
-    @Column(nullable = false)
     private BigDecimal penaltyRate;
 
     /**
-     * Date à laquelle le prêt doit être remboursé.
+     * Date de début du prêt.
      */
-    @Column(nullable = false)
+    private LocalDate loanDate;
+
+    /**
+     * Date de retour prévue.
+     */
     private LocalDate dueDate;
 
     /**
-     * Date effective du remboursement.
+     * Date de retour effective.
+     * Reste null tant que le prêt n'est pas terminé.
      */
-    private LocalDate repaymentDate;
+    private LocalDate returnDate;
 
     /**
-     * Montant total remboursé.
+     * Montant remboursé.
      */
     private BigDecimal amountRepaid;
 
     /**
+     * Date de remboursement.
+     */
+    private LocalDate repaymentDate;
+
+    /**
      * Statut du prêt.
+     * Par défaut, un prêt est actif.
      */
     @Enumerated(EnumType.STRING)
     private LoanStatus status = LoanStatus.ACTIVE;
 
     /**
-     * Enumération des statuts possibles pour un prêt.
+     * Montant de caution éventuel.
+     * Peut être null si aucun dépôt n'est requis.
      */
-    public enum LoanStatus {
-        ACTIVE,   // Prêt actif
-        REPAID,   // Prêt remboursé
-        OVERDUE   // Prêt en retard
-    }
+    private BigDecimal depositAmount;
 
     /**
-     * Calcule le montant total dû, y compris les intérêts.
+     * Indique si la caution a été remboursée.
+     * Utilisé uniquement si un dépôt a été effectué.
+     */
+    private Boolean depositRefunded;
+
+    /**
+     * Notes supplémentaires concernant le prêt.
+     * Optionnel.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    /**
+     * Calcule le montant total dû pour ce prêt.
      *
      * @return le montant total dû
      */
     public BigDecimal getTotalAmountDue() {
-        if (status == LoanStatus.REPAID) {
-            return amountRepaid;
+        if (amount == null) {
+            return BigDecimal.ZERO;
         }
-
-        BigDecimal totalAmount = amount;
-        LocalDate calculationDate = LocalDate.now();
-
-        // Si la date d'échéance est dépassée, calculer les pénalités
-        if (calculationDate.isAfter(dueDate)) {
-            long overdueDays = java.time.temporal.ChronoUnit.DAYS.between(dueDate, calculationDate);
-
-            // Calculer les intérêts de pénalité (intérêts simples quotidiens)
-            BigDecimal dailyPenaltyRate = penaltyRate.divide(BigDecimal.valueOf(36500), 10, java.math.RoundingMode.HALF_UP);
-            BigDecimal penaltyAmount = amount.multiply(dailyPenaltyRate).multiply(BigDecimal.valueOf(overdueDays));
-
-            totalAmount = totalAmount.add(penaltyAmount);
+        
+        // Calculer les intérêts
+        BigDecimal interest = amount.multiply(interestRate != null ? interestRate : BigDecimal.ZERO);
+        
+        // Si le prêt est en retard, ajouter les pénalités
+        BigDecimal penalty = BigDecimal.ZERO;
+        if (isOverdue()) {
+            penalty = amount.multiply(penaltyRate != null ? penaltyRate : BigDecimal.ZERO);
         }
-
-        return totalAmount;
+        
+        return amount.add(interest).add(penalty);
     }
 
     /**
-     * Vérifie si le prêt est en retard.
+     * Indique si le prêt est en retard.
      *
-     * @return true si le prêt est en retard, false sinon
+     * @return true si la date de retour prévue est dépassée et que le prêt n'est pas encore terminé, false sinon
      */
     public boolean isOverdue() {
-        return LocalDate.now().isAfter(dueDate) && status != LoanStatus.REPAID;
+        return status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now());
     }
 
     /**
-     * Vérifie si le membre associé à ce prêt a des prêts en retard.
+     * Vérifie si le membre a des prêts en retard.
      *
      * @return true si le membre a des prêts en retard, false sinon
      */
     public boolean hasOverdueLoans() {
-        if (member != null && member.getLoans() != null) {
+        if (member != null) {
             return member.getLoans().stream()
                     .anyMatch(loan -> loan.isOverdue());
         }
@@ -143,5 +168,14 @@ public class Loan extends BaseEntity {
         } else {
             status = LoanStatus.ACTIVE;
         }
+    }
+
+    /**
+     * Enumération des différents statuts possibles pour un prêt.
+     */
+    public enum LoanStatus {
+        ACTIVE,   // Prêt en cours
+        OVERDUE,  // Prêt en retard
+        REPAID    // Prêt remboursé
     }
 }

@@ -36,10 +36,7 @@ public interface MemberRepository extends BaseRepository<Member, Long>, MemberRe
 
     boolean existsByUserIdAndAssociationId(Long userId, Long associationId);
 
-    @Query("SELECT COUNT(m) FROM Member m WHERE m.association.id = :associationId AND m.leaveDate IS NULL")
-    long countActiveMembersByAssociationId(@Param("associationId") Long associationId);
-
-    @Query("SELECT m FROM Member m JOIN FETCH m.user JOIN FETCH m.association WHERE m.id = :id")
+    @Query("SELECT m FROM Member m WHERE m.id = :id")
     Optional<Member> findByIdWithUserAndAssociation(@Param("id") Long id);
 
     @Query("SELECT m FROM Member m WHERE m.association.id = :associationId AND m.leaveDate IS NULL")
@@ -57,4 +54,7 @@ public interface MemberRepository extends BaseRepository<Member, Long>, MemberRe
 
     @Query("SELECT COUNT(m) FROM Member m WHERE m.leaveDate IS NULL")
     long countByIsActiveTrue();
+    
+    @EntityGraph(attributePaths = {"user", "association"})
+    Optional<Member> findWithUserAndAssociationById(Long id);
 }

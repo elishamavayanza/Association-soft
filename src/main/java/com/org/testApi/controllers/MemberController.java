@@ -8,6 +8,7 @@ import com.org.testApi.services.UserService;
 import com.org.testApi.services.AssociationService;
 import com.org.testApi.models.User;
 import com.org.testApi.models.Association;
+import com.org.testApi.dto.MemberDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 
 @RestController
@@ -50,12 +52,15 @@ public class MemberController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des membres récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Member.class))}),
+                            schema = @Schema(implementation = MemberDTO.class))}),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<List<Member>> getAllMembers() {
+    public ResponseEntity<List<MemberDTO>> getAllMembers() {
         List<Member> members = memberService.getAllMembers();
-        return ResponseEntity.ok(members);
+        List<MemberDTO> memberDTOs = members.stream()
+                .map(memberMapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(memberDTOs);
     }
 
     @GetMapping("/{id}")
@@ -63,14 +68,14 @@ public class MemberController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Membre trouvé",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Member.class))}),
+                            schema = @Schema(implementation = MemberDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<Member> getMemberById(
+    public ResponseEntity<MemberDTO> getMemberById(
             @Parameter(description = "ID du membre à récupérer") @PathVariable Long id) {
         return memberService.getMemberById(id)
-                .map(ResponseEntity::ok)
+                .map(member -> ResponseEntity.ok(memberMapper.toDto(member)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -79,12 +84,12 @@ public class MemberController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Membre créé avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Member.class))}),
+                            schema = @Schema(implementation = MemberDTO.class))}),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "404", description = "Utilisateur ou association non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<Member> createMember(
+    public ResponseEntity<MemberDTO> createMember(
             @Parameter(description = "Données du membre à créer")
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Exemple de données pour créer un membre",
@@ -118,7 +123,7 @@ public class MemberController {
         }
 
         Member savedMember = memberService.saveMember(member);
-        return ResponseEntity.ok(savedMember);
+        return ResponseEntity.ok(memberMapper.toDto(savedMember));
     }
 
     @PostMapping("/payload")
@@ -126,7 +131,7 @@ public class MemberController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Membre créé avec succès",
                 content = {@Content(mediaType = "application/json",
-                        schema = @Schema(implementation = Member.class))}),
+                        schema = @Schema(implementation = MemberDTO.class))}),
         @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
         @ApiResponse(responseCode = "404", description = "Utilisateur ou association non trouvé"),
         @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
@@ -188,7 +193,7 @@ public class MemberController {
             logger.info("Saving member with code: {}", member.getMemberCode());
             Member savedMember = memberService.saveMember(member);
             logger.info("Member created successfully with ID: {}", savedMember.getId());
-            return ResponseEntity.ok(savedMember);
+            return ResponseEntity.ok(memberMapper.toDto(savedMember));
         } catch (Exception e) {
             logger.error("Error creating member from payload: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -201,17 +206,17 @@ public class MemberController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Membre mis à jour avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Member.class))}),
+                            schema = @Schema(implementation = MemberDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<Member> updateMember(
+    public ResponseEntity<MemberDTO> updateMember(
             @Parameter(description = "ID du membre à mettre à jour") @PathVariable Long id,
             @Parameter(description = "Données de mise à jour du membre") @RequestBody Member member) {
         try {
             Member updatedMember = memberService.updateMember(id, member);
-            return ResponseEntity.ok(updatedMember);
+            return ResponseEntity.ok(memberMapper.toDto(updatedMember));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -222,12 +227,12 @@ public class MemberController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Membre mis à jour avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Member.class))}),
+                            schema = @Schema(implementation = MemberDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<Member> updateMemberWithPayload(
+    public ResponseEntity<MemberDTO> updateMemberWithPayload(
             @Parameter(description = "ID du membre à mettre à jour") @PathVariable Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Données du payload pour mettre à jour le membre",
@@ -287,7 +292,7 @@ public class MemberController {
                             }
                             memberMapper.updateEntityFromPayload(payload, member);
                             Member updatedMember = memberService.updateMember(id, member);
-                            return ResponseEntity.ok(updatedMember);
+                            return ResponseEntity.ok(memberMapper.toDto(updatedMember));
                         } catch (Exception e) {
                             logger.error("Error updating member with id: " + id, e);
                             throw new RuntimeException("Error updating member", e);
@@ -335,10 +340,10 @@ public class MemberController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Résultats de recherche récupérés avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Member.class))}),
+                            schema = @Schema(implementation = MemberDTO.class))}),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<List<Member>> searchMembers(
+    public ResponseEntity<List<MemberDTO>> searchMembers(
             @Parameter(description = "Nom du membre (optionnel)") @RequestParam(required = false) String name,
             @Parameter(description = "Email du membre (optionnel)") @RequestParam(required = false) String email,
             @Parameter(description = "Type de membre (optionnel)") @RequestParam(required = false) Member.MemberType memberType,
@@ -346,7 +351,10 @@ public class MemberController {
             @Parameter(description = "Statut d'activité (optionnel)") @RequestParam(required = false) Boolean isActive) {
         // Note: Pour une implémentation complète, vous devriez ajouter cette méthode au service
         List<Member> members = memberService.getAllMembers();
-        return ResponseEntity.ok(members);
+        List<MemberDTO> memberDTOs = members.stream()
+                .map(memberMapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(memberDTOs);
     }
 
     /**
