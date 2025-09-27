@@ -83,7 +83,7 @@ public class MembershipFeeController {
     })
     public ResponseEntity<MembershipFee> createMembershipFeeFromPayload(
             @Parameter(description = "Données du payload pour créer la cotisation") @RequestBody MembershipFeePayload payload) {
-        MembershipFee membershipFee = membershipFeeMapper.toEntityFromPayload(payload);
+        MembershipFee membershipFee = membershipFeeMapper.toEntityWithMemberFromPayload(payload);
         MembershipFee savedMembershipFee = membershipFeeService.saveMembershipFee(membershipFee);
         return ResponseEntity.ok(savedMembershipFee);
     }
@@ -124,7 +124,7 @@ public class MembershipFeeController {
             @Parameter(description = "Données du payload pour mettre à jour la cotisation") @RequestBody MembershipFeePayload payload) {
         return membershipFeeService.getMembershipFeeById(id)
                 .map(membershipFee -> {
-                    membershipFeeMapper.updateEntityFromPayload(payload, membershipFee);
+                    membershipFeeMapper.updateEntityWithMemberFromPayload(payload, membershipFee);
                     MembershipFee updatedMembershipFee = membershipFeeService.updateMembershipFee(id, membershipFee);
                     return ResponseEntity.ok(updatedMembershipFee);
                 })
