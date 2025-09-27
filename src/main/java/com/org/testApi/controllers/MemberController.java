@@ -79,6 +79,23 @@ public class MemberController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // New endpoint to find member by memberCode
+    @GetMapping("/code/{memberCode}")
+    @Operation(summary = "Récupérer un membre par code membre", description = "Retourne un membre spécifique en fonction de son code membre")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Membre trouvé",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = MemberDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<MemberDTO> getMemberByMemberCode(
+            @Parameter(description = "Code du membre à récupérer") @PathVariable String memberCode) {
+        return memberService.findByMemberCode(memberCode)
+                .map(member -> ResponseEntity.ok(memberMapper.toDto(member)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
     @Operation(summary = "Créer un nouveau membre", description = "Crée un nouveau membre avec les données fournies")
     @ApiResponses(value = {

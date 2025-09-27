@@ -42,6 +42,8 @@ public interface MemberRepository extends BaseRepository<Member, Long>, MemberRe
     @Query("SELECT m FROM Member m WHERE m.association.id = :associationId AND m.leaveDate IS NULL")
     List<Member> findActiveMembersByAssociationId(@Param("associationId") Long associationId);
 
+    // New method to find member by memberCode
+    Optional<Member> findByMemberCode(String memberCode);
 
     /**
      * Trouve un membre par ID avec ses prêts.

@@ -29,4 +29,11 @@ public interface MemberService extends ObservableService<Member> {
      * @return true si le membre est éligible, false sinon
      */
     boolean isMemberEligibleForLoan(Long memberId);
+    
+    /**
+     * Trouve un membre par son code membre.
+     * @param memberCode le code membre
+     * @return le membre correspondant ou null si non trouvé
+     */
+    Optional<Member> findByMemberCode(String memberCode);
 }

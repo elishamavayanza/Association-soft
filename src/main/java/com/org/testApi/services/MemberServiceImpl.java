@@ -96,6 +96,11 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    public Optional<Member> findByMemberCode(String memberCode) {
+        return memberRepository.findByMemberCode(memberCode);
+    }
+
+    @Override
     public void addObserver(Observer<Member> observer) {
         observers.add(observer);
     }
