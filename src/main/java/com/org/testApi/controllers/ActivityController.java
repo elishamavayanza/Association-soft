@@ -1,14 +1,15 @@
 package com.org.testApi.controllers;
 
 import com.org.testApi.models.Activity;
+import com.org.testApi.models.Association;
 import com.org.testApi.payload.ActivityPayload;
 import com.org.testApi.services.ActivityService;
-import com.org.testApi.mapper.ActivityMapper;
 import com.org.testApi.services.AssociationService;
-import com.org.testApi.models.Association;
+import com.org.testApi.mapper.ActivityMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -72,7 +73,33 @@ public class ActivityController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Activity> createActivity(
-            @Parameter(description = "Données de l'activité à créer") @RequestBody Activity activity) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données de l'activité à créer",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Activity.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Exemple d'activité complète",
+                                            description = "Exemple d'une activité avec une association",
+                                            value = """
+                                                    {
+                                                      "title": "Conférence sur l'environnement",
+                                                      "description": "Une conférence annuelle sur la protection de l'environnement",
+                                                      "type": "CONFERENCE",
+                                                      "startDateTime": "2025-11-20T09:00:00",
+                                                      "endDateTime": "2025-11-20T17:00:00",
+                                                      "location": "Centre de conférences de Marseille",
+                                                      "association": {
+                                                        "id": 1
+                                                      },
+                                                      "status": "PLANNED"
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ) @RequestBody Activity activity) {
         Activity savedActivity = activityService.saveActivity(activity);
         return ResponseEntity.ok(savedActivity);
     }
@@ -88,7 +115,31 @@ public class ActivityController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Activity> createActivityFromPayload(
-            @Parameter(description = "Données du payload pour créer l'activité") @RequestBody ActivityPayload payload) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données du payload pour créer l'activité",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ActivityPayload.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Exemple de payload d'activité",
+                                            description = "Exemple d'un payload d'activité avec associationId",
+                                            value = """
+                                                    {
+                                                      "title": "Nettoyage de la plage",
+                                                      "description": "Activité de nettoyage de la plage organisée par l'association pour protéger l'environnement côtier",
+                                                      "type": "SOCIAL_EVENT",
+                                                      "startDateTime": "2025-10-15T09:00:00",
+                                                      "endDateTime": "2025-10-15T12:00:00",
+                                                      "location": "Plage du Port de Plaisance",
+                                                      "associationId": 1,
+                                                      "status": "PLANNED"
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ) @RequestBody ActivityPayload payload) {
         // Check if association exists when associationId is provided in the payload
         if (payload.getAssociationId() != null) {
             Association association = associationService.getAssociationById(payload.getAssociationId())
@@ -117,7 +168,33 @@ public class ActivityController {
     })
     public ResponseEntity<Activity> updateActivity(
             @Parameter(description = "ID de l'activité à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données de mise à jour de l'activité") @RequestBody Activity activity) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données de mise à jour de l'activité",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Activity.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Exemple de mise à jour d'activité",
+                                            description = "Exemple de mise à jour d'une activité avec une association",
+                                            value = """
+                                                    {
+                                                      "title": "Conférence sur l'environnement - Mise à jour",
+                                                      "description": "Une conférence annuelle sur la protection de l'environnement (mise à jour)",
+                                                      "type": "CONFERENCE",
+                                                      "startDateTime": "2025-11-20T09:00:00",
+                                                      "endDateTime": "2025-11-20T18:00:00",
+                                                      "location": "Centre de conférences de Marseille",
+                                                      "association": {
+                                                        "id": 1
+                                                      },
+                                                      "status": "PLANNED"
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ) @RequestBody Activity activity) {
         try {
             Activity updatedActivity = activityService.updateActivity(id, activity);
             return ResponseEntity.ok(updatedActivity);
@@ -139,7 +216,31 @@ public class ActivityController {
     })
     public ResponseEntity<Activity> updateActivityWithPayload(
             @Parameter(description = "ID de l'activité à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données du payload pour mettre à jour l'activité") @RequestBody ActivityPayload payload) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données du payload pour mettre à jour l'activité",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ActivityPayload.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Exemple de mise à jour de payload d'activité",
+                                            description = "Exemple de mise à jour d'un payload d'activité avec associationId",
+                                            value = """
+                                                    {
+                                                      "title": "Nettoyage de la plage - Mise à jour",
+                                                      "description": "Activité de nettoyage de la plage organisée par l'association pour protéger l'environnement côtier (mise à jour)",
+                                                      "type": "SOCIAL_EVENT",
+                                                      "startDateTime": "2025-10-15T09:00:00",
+                                                      "endDateTime": "2025-10-15T13:00:00",
+                                                      "location": "Plage du Port de Plaisance",
+                                                      "associationId": 1,
+                                                      "status": "PLANNED"
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ) @RequestBody ActivityPayload payload) {
         return activityService.getActivityById(id)
                 .map(activity -> {
                     // Update association if associationId is provided in payload
