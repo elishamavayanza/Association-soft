@@ -1,6 +1,7 @@
 package com.org.testApi.models;
 
 import com.org.testApi.models.Member;
+import com.org.testApi.models.FinancialTransaction;
 import jakarta.persistence.*;
 import lombok.*;
 

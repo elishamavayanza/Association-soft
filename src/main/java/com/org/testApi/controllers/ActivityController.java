@@ -4,6 +4,8 @@ import com.org.testApi.models.Activity;
 import com.org.testApi.payload.ActivityPayload;
 import com.org.testApi.services.ActivityService;
 import com.org.testApi.mapper.ActivityMapper;
+import com.org.testApi.services.AssociationService;
+import com.org.testApi.models.Association;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,6 +29,9 @@ public class ActivityController {
 
     @Autowired
     private ActivityMapper activityMapper;
+    
+    @Autowired
+    private AssociationService associationService;
 
     @GetMapping
     @Operation(summary = "Récupérer toutes les activités", description = "Retourne une liste de toutes les activités")
@@ -79,13 +84,25 @@ public class ActivityController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Activity.class))}),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode = "404", description = "Association non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Activity> createActivityFromPayload(
             @Parameter(description = "Données du payload pour créer l'activité") @RequestBody ActivityPayload payload) {
-        Activity activity = activityMapper.toEntityFromPayload(payload);
-        Activity savedActivity = activityService.saveActivity(activity);
-        return ResponseEntity.ok(savedActivity);
+        // Check if association exists when associationId is provided in the payload
+        if (payload.getAssociationId() != null) {
+            Association association = associationService.getAssociationById(payload.getAssociationId())
+                    .orElseThrow(() -> new RuntimeException("Association not found with id: " + payload.getAssociationId()));
+            
+            Activity activity = activityMapper.toEntityFromPayload(payload);
+            activity.setAssociation(association);
+            Activity savedActivity = activityService.saveActivity(activity);
+            return ResponseEntity.ok(savedActivity);
+        } else {
+            Activity activity = activityMapper.toEntityFromPayload(payload);
+            Activity savedActivity = activityService.saveActivity(activity);
+            return ResponseEntity.ok(savedActivity);
+        }
     }
 
     @PutMapping("/{id}")
@@ -117,6 +134,7 @@ public class ActivityController {
                             schema = @Schema(implementation = Activity.class))}),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode = "404", description = "Association non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Activity> updateActivityWithPayload(
@@ -124,6 +142,12 @@ public class ActivityController {
             @Parameter(description = "Données du payload pour mettre à jour l'activité") @RequestBody ActivityPayload payload) {
         return activityService.getActivityById(id)
                 .map(activity -> {
+                    // Update association if associationId is provided in payload
+                    if (payload.getAssociationId() != null) {
+                        Association association = associationService.getAssociationById(payload.getAssociationId())
+                                .orElseThrow(() -> new RuntimeException("Association not found with id: " + payload.getAssociationId()));
+                        activity.setAssociation(association);
+                    }
                     activityMapper.updateEntityFromPayload(payload, activity);
                     Activity updatedActivity = activityService.updateActivity(id, activity);
                     return ResponseEntity.ok(updatedActivity);
