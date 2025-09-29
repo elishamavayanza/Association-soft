@@ -22,7 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/activities")
-@Tag(name = "Activity", description = "Gestion des activités")
+@Tag(name = "Activity", description ="Gestion des activités")
 public class ActivityController {
 
     @Autowired
@@ -35,7 +35,7 @@ public class ActivityController {
     private AssociationService associationService;
 
     @GetMapping
-    @Operation(summary = "Récupérer toutes les activités", description = "Retourne une liste de toutes les activités")
+    @Operation(summary = "Récupérer toutes les activités", description ="Retourne une liste de toutes les activités")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des activités récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
@@ -56,7 +56,7 @@ public class ActivityController {
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<Activity> getActivityById(
+    public ResponseEntity<Activity>getActivityById(
             @Parameter(description = "ID de l'activité à récupérer") @PathVariable Long id) {
         return activityService.getActivityById(id)
                 .map(ResponseEntity::ok)
@@ -64,7 +64,7 @@ public class ActivityController {
     }
 
     @PostMapping
-    @Operation(summary = "Créer une nouvelle activité", description = "Crée une nouvelle activité avec les données fournies")
+    @Operation(summary = "Créerune nouvelle activité", description = "Crée une nouvelle activité avec les données fournies")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Activité créée avec succès",
                     content = {@Content(mediaType = "application/json",
@@ -74,7 +74,7 @@ public class ActivityController {
     })
     public ResponseEntity<Activity> createActivity(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Données de l'activité à créer",
+                    description = "Données del'activité à créer",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = Activity.class),
@@ -82,7 +82,7 @@ public class ActivityController {
                                     @ExampleObject(
                                             name = "Exemple d'activité complète",
                                             description = "Exemple d'une activité avec une association",
-                                            value = """
+value = """
                                                     {
                                                       "title": "Conférence sur l'environnement",
                                                       "description": "Une conférence annuelle sur la protection de l'environnement",
@@ -105,14 +105,14 @@ public class ActivityController {
     }
 
     @PostMapping("/payload")
-    @Operation(summary = "Créer une activité à partir d'un payload", description = "Crée une activité en utilisant un objet payload")
+    @Operation(summary = "Créer une activité à partird'un payload", description = "Crée une activité en utilisant un objet payload")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Activité créée avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Activity.class))}),
+                            schema= @Schema(implementation = Activity.class))}),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "404", description = "Association non trouvée"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode = "500", description ="Erreur interne du serveur")
     })
     public ResponseEntity<Activity> createActivityFromPayload(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -122,12 +122,12 @@ public class ActivityController {
                             schema = @Schema(implementation = ActivityPayload.class),
                             examples = {
                                     @ExampleObject(
-                                            name = "Exemple de payload d'activité",
+                                           name = "Exemple de payload d'activité",
                                             description = "Exemple d'un payload d'activité avec associationId",
                                             value = """
                                                     {
                                                       "title": "Nettoyage de la plage",
-                                                      "description": "Activité de nettoyage de la plage organisée par l'association pour protéger l'environnement côtier",
+                                                      "description": "Activité de nettoyage de la plage organisée par l'associationpour protéger l'environnement côtier",
                                                       "type": "SOCIAL_EVENT",
                                                       "startDateTime": "2025-10-15T09:00:00",
                                                       "endDateTime": "2025-10-15T12:00:00",
@@ -154,28 +154,29 @@ public class ActivityController {
             Activity savedActivity = activityService.saveActivity(activity);
             return ResponseEntity.ok(savedActivity);
         }
-    }
+   }
 
     @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour une activité", description = "Met à jour une activité existante avec les données fournies")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Activité mise à jour avec succès",
+            @ApiResponse(responseCode = "200", description = "Activité mise àjour avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Activity.class))}),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "404", description = "Association non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Activity> updateActivity(
             @Parameter(description = "ID de l'activité à mettre à jour") @PathVariable Long id,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+@io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Données de mise à jour de l'activité",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = Activity.class),
                             examples = {
                                     @ExampleObject(
-                                            name = "Exemple de mise à jour d'activité",
+                                            name ="Exemple demiseà jour d'activité",
                                             description = "Exemple de mise à jour d'une activité avec une association",
                                             value = """
                                                     {
@@ -184,7 +185,7 @@ public class ActivityController {
                                                       "type": "CONFERENCE",
                                                       "startDateTime": "2025-11-20T09:00:00",
                                                       "endDateTime": "2025-11-20T18:00:00",
-                                                      "location": "Centre de conférences de Marseille",
+                                                     "location": "Centre de conférences de Marseille",
                                                       "association": {
                                                         "id": 1
                                                       },
@@ -196,6 +197,12 @@ public class ActivityController {
                     )
             ) @RequestBody Activity activity) {
         try {
+            //Check if association exists when association ID is provided in the activity entity
+            if (activity.getAssociation() != null && activity.getAssociation().getId() != null) {
+                Association association = associationService.getAssociationById(activity.getAssociation().getId())
+                        .orElseThrow(() -> new RuntimeException("Association not found with id: "+ activity.getAssociation().getId()));
+                activity.setAssociation(association);
+            }
             Activity updatedActivity = activityService.updateActivity(id, activity);
             return ResponseEntity.ok(updatedActivity);
         } catch (RuntimeException e) {
@@ -203,14 +210,14 @@ public class ActivityController {
         }
     }
 
-    @PutMapping("/{id}/payload")
+@PutMapping("/{id}/payload")
     @Operation(summary = "Mettre à jour une activité avec payload", description = "Met à jour une activité existante en utilisant un objet payload")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Activité mise à jour avec succès à partir du payload",
+            @ApiResponse(responseCode = "200", description = "Activité miseà jour avec succès àpartir du payload",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Activity.class))}),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
-            @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode = "400", description = "Données de payloadinvalides"),
             @ApiResponse(responseCode = "404", description = "Association non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
@@ -223,16 +230,16 @@ public class ActivityController {
                             schema = @Schema(implementation = ActivityPayload.class),
                             examples = {
                                     @ExampleObject(
-                                            name = "Exemple de mise à jour de payload d'activité",
+                                            name = "Exemple de miseà jour depayload d'activité",
                                             description = "Exemple de mise à jour d'un payload d'activité avec associationId",
                                             value = """
                                                     {
                                                       "title": "Nettoyage de la plage - Mise à jour",
-                                                      "description": "Activité de nettoyage de la plage organisée par l'association pour protéger l'environnement côtier (mise à jour)",
+                                                      "description": "Activité de nettoyage de la plage organisée parl'association pour protéger l'environnement côtier (mise à jour)",
                                                       "type": "SOCIAL_EVENT",
                                                       "startDateTime": "2025-10-15T09:00:00",
                                                       "endDateTime": "2025-10-15T13:00:00",
-                                                      "location": "Plage du Port de Plaisance",
+"location": "Plage du Port de Plaisance",
                                                       "associationId": 1,
                                                       "status": "PLANNED"
                                                     }
@@ -243,7 +250,7 @@ public class ActivityController {
             ) @RequestBody ActivityPayload payload) {
         return activityService.getActivityById(id)
                 .map(activity -> {
-                    // Update association if associationId is provided in payload
+                   // Update association if associationId is provided in payload
                     if (payload.getAssociationId() != null) {
                         Association association = associationService.getAssociationById(payload.getAssociationId())
                                 .orElseThrow(() -> new RuntimeException("Association not found with id: " + payload.getAssociationId()));
@@ -261,7 +268,7 @@ public class ActivityController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Activité supprimée avec succès"),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+           @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Void> deleteActivity(
             @Parameter(description = "ID de l'activité à supprimer") @PathVariable Long id) {
@@ -270,15 +277,15 @@ public class ActivityController {
     }
 
     @DeleteMapping("/{id}/soft")
-    @Operation(summary = "Supprimer logiquement une activité", description = "Marque une activité comme supprimée sans la retirer de la base de données")
+    @Operation(summary = "Supprimer logiquement une activité",description = "Marque une activité comme supprimée sans la retirer de la base de données")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Activité supprimée logiquement avec succès"),
-            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "404", description= "Activité non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Void> softDeleteActivity(
             @Parameter(description = "ID de l'activité à supprimer logiquement") @PathVariable Long id) {
-        activityService.softDeleteActivity(id);
+       activityService.softDeleteActivity(id);
         return ResponseEntity.noContent().build();
     }
 }
