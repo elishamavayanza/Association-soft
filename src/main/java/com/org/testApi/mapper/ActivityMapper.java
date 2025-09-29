@@ -41,9 +41,11 @@ public interface ActivityMapper extends BaseMapper<Activity, ActivityDTO> {
     @Mapping(target = "creatorId", source = "creator.id")
     ActivityPayload toPayload(Activity entity);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "association", ignore = true)
     @Mapping(target = "project", ignore = true)
     @Mapping(target = "participants", ignore = true)
     @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "transactions", ignore = true)
     void updateEntityFromPayload(ActivityPayload payload, @MappingTarget Activity entity);
 }

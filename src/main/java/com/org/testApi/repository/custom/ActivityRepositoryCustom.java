@@ -9,4 +9,6 @@ public interface ActivityRepositoryCustom {
     List<Activity> searchActivitiesComplexQuery(String title, String location, Activity.ActivityStatus status);
 
     void updateActivityStats(Long activityId);
+    
+    void softDeleteActivity(Activity activity);
 }

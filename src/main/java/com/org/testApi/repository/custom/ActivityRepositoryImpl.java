@@ -55,4 +55,11 @@ public class ActivityRepositoryImpl implements ActivityRepositoryCustom {
     public void updateActivityStats(Long activityId) {
         // Implémentation de mise à jour custom
     }
+    
+    @Override
+    public void softDeleteActivity(Activity activity) {
+        activity.setDeleted(true);
+        entityManager.merge(activity);
+        entityManager.flush();
+    }
 }

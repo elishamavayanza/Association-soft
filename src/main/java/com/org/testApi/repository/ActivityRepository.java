@@ -2,6 +2,7 @@ package com.org.testApi.repository;
 
 import com.org.testApi.models.Activity;
 import com.org.testApi.repository.base.BaseRepository;
+import com.org.testApi.repository.custom.ActivityRepositoryCustom;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ActivityRepository extends BaseRepository<Activity, Long> {
+public interface ActivityRepository extends BaseRepository<Activity, Long>, ActivityRepositoryCustom {
 
     List<Activity> findByTitleContainingIgnoreCase(String title);
 

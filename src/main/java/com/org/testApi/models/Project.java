@@ -1,5 +1,6 @@
 package com.org.testApi.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -8,9 +9,9 @@ import java.util.List;
 import jakarta.validation.constraints.Size;
 
 /**
- * Représente un projet géré par une association.
+* Représente un projet géré par une association.
  * <p>
- * Un projet contient un nom, une description, des dates de début et de fin,
+ * Un projet contientun nom, une description, desdates de début et de fin,
  * un statut, un gestionnaire, ainsi que des activités, membres associés et transactions financières.
  * </p>
  */
@@ -28,21 +29,21 @@ public class Project extends BaseEntity {
      * Nom du projet.
      * Champ obligatoire, limité à 100 caractères.
      */
-    @Column(nullable = false, length = 100)
+    @Column(nullable= false, length = 100)
     @Size(max = 100)
-    private String name;
+   private String name;
 
     /**
-     * Description détaillée du projet.
+    * Description détaillée du projet.
      * Champ optionnel, limité à 2000 caractères.
      */
     @Column(columnDefinition = "TEXT")
-    @Size(max = 2000)
+@Size(max = 2000)
     private String description;
 
     /**
-     * Date de début prévue du projet.
-     */
+     * Date dedébut prévue du projet.
+*/
     private LocalDate startDate;
 
     /**
@@ -52,7 +53,7 @@ public class Project extends BaseEntity {
 
     /**
      * Association responsable du projet.
-     * Ce lien est obligatoire.
+     * Celienest obligatoire.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "association_id", nullable = false)
@@ -62,21 +63,21 @@ public class Project extends BaseEntity {
     /**
      * Utilisateur désigné comme gestionnaire (manager) du projet.
      * Ce lien est optionnel.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
+*/
+@ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id")
     @ToString.Exclude
     private User manager;
 
-    /**
+/**
      * Liste des activités associées au projet.
      */
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
     @Builder.Default
-    @ToString.Exclude
+    @ToString.Exclude@JsonIgnore
     private List<Activity> activities = new ArrayList<>();
 
-    /**
+/**
      * Liste des membres participant au projet.
      */
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
@@ -84,28 +85,27 @@ public class Project extends BaseEntity {
     @ToString.Exclude
     private List<ProjectMember> members = new ArrayList<>();
 
-    /**
-     * Liste des transactions financières liées au projet.
+/**
+    * Liste des transactions financières liées au projet.
      */
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
-    @Builder.Default
-    @ToString.Exclude
+   @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    @Builder.Default@ToString.Exclude
     private List<FinancialTransaction> transactions = new ArrayList<>();
 
     /**
      * Statut actuel du projet.
-     * Valeur par défaut : PLANNING.
+     *Valeur pardéfaut : PLANNING.
      */
     @Enumerated(EnumType.STRING)
     private ProjectStatus status = ProjectStatus.PLANNING;
 
-    /**
+/**
      * Enumération des différents statuts possibles pour un projet.
      */
     public enum ProjectStatus {
         PLANNING,     // En planification
-        IN_PROGRESS,  // En cours
-        ON_HOLD,      // En pause
+       IN_PROGRESS,  // En cours
+        ON_HOLD,      //En pause
         COMPLETED,    // Terminé
         CANCELLED     // Annulé
     }

@@ -57,8 +57,8 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     public void softDeleteActivity(Long id) {
         Activity activity = activityRepository.findById(id).orElse(null);
-        activityRepository.softDelete(id);
         if (activity != null) {
+            activityRepository.softDeleteActivity(activity);
             notifyObservers("SOFT_DELETE", activity);
         }
     }

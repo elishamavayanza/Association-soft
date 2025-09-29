@@ -8,12 +8,12 @@ import java.util.List;
 import jakarta.validation.constraints.Size;
 
 /**
- * Représente une association dans le système.
+* Représente une association dans le système.
  * <p>
- * Une association peut avoir des membres, des activités, des transactions financières
+ * Une association peut avoir des membres, des activités, destransactions financières
  * et des documents associés. Elle est identifiée par son nom, son statut légal,
  * sa localisation et son numéro SIRET.
- * </p>
+* </p>
  */
 @Entity
 @Table(name = "associations")
@@ -21,23 +21,23 @@ import jakarta.validation.constraints.Size;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper= true)
 @ToString(callSuper = true)
 public class Association extends BaseEntity {
 
     /**
      * Nom de l'association.
-     * Ce champ est obligatoire et limité à 100 caractères.
+     * Ce champ est obligatoire et limité à100 caractères.
      */
     @Column(nullable = false, length = 100)
-    @Size(max = 100)
+    @Size(max =100)
     private String name;
 
     /**
      * Description optionnelle de l'association.
      * Maximum 500 caractères.
      */
-    @Size(max = 500)
+    @Size(max= 500)
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -56,9 +56,9 @@ public class Association extends BaseEntity {
     private String legalStatus;
 
     /**
-     * Numéro SIRET ou identifiant administratif de l'association.
+     * NuméroSIRET ou identifiant administratif de l'association.
      * Optionnel, limité à 50 caractères.
-     */
+*/
     @Column(length = 50)
     private String siret;
 
@@ -75,7 +75,7 @@ public class Association extends BaseEntity {
      * Liste des activités organisées par cette association.
      */
     @OneToMany(mappedBy = "association", cascade = CascadeType.ALL)
-    @Builder.Default
+@Builder.Default
     @ToString.Exclude
     @JsonIgnore
     private List<Activity> activities = new ArrayList<>();
@@ -91,7 +91,7 @@ public class Association extends BaseEntity {
     private List<FinancialTransaction> transactions = new ArrayList<>();
 
     /**
-     * Liste des documents liés à l'association.
+     * Listedes documents liés à l'association.
      */
     @OneToMany(mappedBy = "association", cascade = CascadeType.ALL)
     @Builder.Default
