@@ -58,8 +58,12 @@ public class ActivityServiceImpl implements ActivityService {
     public void softDeleteActivity(Long id) {
         Activity activity = activityRepository.findById(id).orElse(null);
         if (activity != null) {
-            activityRepository.softDeleteActivity(activity);
-            notifyObservers("SOFT_DELETE", activity);
+            try {
+                activityRepository.softDeleteActivity(activity);
+                notifyObservers("SOFT_DELETE", activity);
+            } catch (Exception e) {
+                throw new RuntimeException("Error soft deleting activity with id: " + id, e);
+            }
         }
     }
 

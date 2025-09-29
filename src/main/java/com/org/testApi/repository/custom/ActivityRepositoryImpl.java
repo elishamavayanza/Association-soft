@@ -3,6 +3,7 @@ package com.org.testApi.repository.custom;
 import com.org.testApi.models.Activity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -57,9 +58,14 @@ public class ActivityRepositoryImpl implements ActivityRepositoryCustom {
     }
     
     @Override
+    @Transactional
     public void softDeleteActivity(Activity activity) {
-        activity.setDeleted(true);
-        entityManager.merge(activity);
-        entityManager.flush();
+        try {
+            activity.setDeleted(true);
+            entityManager.merge(activity);
+            entityManager.flush();
+        } catch (Exception e) {
+            throw new RuntimeException("Error soft deleting activity with id: " + activity.getId(), e);
+        }
     }
 }

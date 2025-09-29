@@ -94,8 +94,14 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
             entity.getClass().getMethod("setActive", boolean.class).invoke(entity, false);
             save(entity);
         } catch (Exception e) {
-            // Fallback: suppression physique
-            entityManager.remove(entity);
+            try {
+                // Essaye d'appeler setDeleted(true) si la méthode existe
+                entity.getClass().getMethod("setDeleted", boolean.class).invoke(entity, true);
+                save(entity);
+            } catch (Exception ex) {
+                // Fallback: suppression physique
+                entityManager.remove(entity);
+            }
         }
         entityManager.flush();
     }
