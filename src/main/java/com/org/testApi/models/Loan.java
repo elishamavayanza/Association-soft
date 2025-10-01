@@ -38,7 +38,7 @@ public class Loan extends BaseEntity {
      * Ce lien est optionnel.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "document_id", nullable = true, columnDefinition = "INTEGER")
+    @JoinColumn(name = "document_id", nullable = true)
     @ToString.Exclude
     private Document document;
 
