@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.org.testApi.models.Loan;
+
 /**
  * Représente un membre d'une association.
  * <p>
@@ -165,7 +167,8 @@ public class Member extends BaseEntity {
         // Vérifier si le membre a des prêts en retard
         if (loans != null) {
             boolean hasOverdueLoans = loans.stream()
-                    .anyMatch(loan -> loan.isOverdue());
+                    .filter(loan -> loan != null)
+                    .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
             if (hasOverdueLoans) {
                 return false;
             }

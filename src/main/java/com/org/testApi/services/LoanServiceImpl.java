@@ -1,13 +1,16 @@
 package com.org.testApi.services;
 
+import com.org.testApi.models.Document;
 import com.org.testApi.models.Loan;
 import com.org.testApi.models.Member;
-import com.org.testApi.models.MembershipFee;
+import com.org.testApi.models.Loan.LoanStatus;
+import com.org.testApi.repository.DocumentRepository;
 import com.org.testApi.repository.LoanRepository;
 import com.org.testApi.repository.MemberRepository;
-import jakarta.transaction.Transactional;
+import com.org.testApi.models.MembershipFee;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,33 +27,53 @@ public class LoanServiceImpl implements LoanService {
 
     @Autowired
     private MemberRepository memberRepository;
+    
+    @Autowired
+    private DocumentRepository documentRepository;
 
     @Override
     public Loan createLoan(Long memberId, BigDecimal amount, BigDecimal interestRate, BigDecimal penaltyRate, LocalDate dueDate) {
         // Vérifier que le membre existe
-        Member member = memberRepository.findById(memberId)
+        Member member = memberRepository.findWithLoansById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
 
         // Vérifier l'éligibilité du membre
         if (!member.isEligibleForLoan()) {
-            throw new RuntimeException("Le membre n'est pas éligible pour emprunter. " +
-                    "Vérifiez qu'il est actif, a payé ses cotisations et n'a pas de prêts en retard.");
+            // Fournir des détails sur pourquoi le membre n'est pas éligible
+            StringBuilder ineligibilityReason = new StringBuilder("Le membre n'est pas éligible pour emprunter. ");
+            
+            if (!member.isActive()) {
+                ineligibilityReason.append("Le membre n'est pas actif. ");
+            }
+            
+            if (member.getFees() == null || member.getFees().isEmpty()) {
+                ineligibilityReason.append("Le membre n'a payé aucune cotisation. ");
+            }
+            
+            boolean hasOverdueLoans = member.getLoans().stream()
+                    .filter(loan -> loan != null)
+                    .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
+            if (hasOverdueLoans) {
+                ineligibilityReason.append("Le membre a des prêts en retard. ");
+            }
+            
+            throw new RuntimeException(ineligibilityReason.toString());
         }
 
         // Vérifier que le montant ne dépasse pas le maximum autorisé
         BigDecimal maxLoanAmount = calculateMaxLoanAmount(memberId);
         if (amount.compareTo(maxLoanAmount) > 0) {
-            throw new RuntimeException("Le montant demandé dépasse le maximum autorisé de " + maxLoanAmount);
+            throw new RuntimeException("Le montant demandé (" + amount + ") dépasse le maximum autorisé de " + maxLoanAmount);
         }
 
         // Créer le prêt
-        Loan loan = Loan.builder()
-                .member(member)
-                .amount(amount)
-                .interestRate(interestRate)
-                .penaltyRate(penaltyRate)
-                .dueDate(dueDate)
-                .build();
+        Loan loan = new Loan();
+        loan.setMember(member);
+        loan.setAmount(amount);
+        loan.setInterestRate(interestRate);
+        loan.setPenaltyRate(penaltyRate);
+        loan.setLoanDate(LocalDate.now());
+        loan.setDueDate(dueDate);
 
         return loanRepository.save(loan);
     }
@@ -156,6 +179,7 @@ public class LoanServiceImpl implements LoanService {
         // Calculer le montant maximum basé sur les cotisations payées
         // Par exemple, le montant maximum est 3 fois la somme des cotisations payées
         BigDecimal totalFees = member.getFees().stream()
+                .filter(fee -> fee != null && fee.getAmount() != null)
                 .map(MembershipFee::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

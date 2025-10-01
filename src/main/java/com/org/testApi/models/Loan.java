@@ -4,14 +4,14 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
- * Représente un prêt effectué par un membre de l'association.
+ * Représente un prêt effectué par un membre.
  * <p>
- * Un prêt peut concerner un livre, un document ou un autre objet.
- * Il possède une date de début, une date de retour prévue,
- * et un statut indiquant s'il est actif, en retard ou remboursé.
+ * Un prêt est associé à un {@link Member} et peut éventuellement être lié
+ * à un {@link Document}. Il contient des informations sur le montant,
+ * les taux d'intérêt et de pénalité, les dates importantes, ainsi que
+ * le statut du prêt.
  * </p>
  */
 @Entity
@@ -35,10 +35,10 @@ public class Loan extends BaseEntity {
 
     /**
      * Document ou objet prêté.
-     * Ce lien est obligatoire.
+     * Ce lien est optionnel.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "document_id", nullable = false)
+    @JoinColumn(name = "document_id", nullable = true, columnDefinition = "INTEGER")
     @ToString.Exclude
     private Document document;
 
@@ -124,7 +124,8 @@ public class Loan extends BaseEntity {
         
         // Si le prêt est en retard, ajouter les pénalités
         BigDecimal penalty = BigDecimal.ZERO;
-        if (isOverdue()) {
+        if (status == LoanStatus.OVERDUE || 
+            (status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now()))) {
             penalty = amount.multiply(penaltyRate != null ? penaltyRate : BigDecimal.ZERO);
         }
         
@@ -137,7 +138,8 @@ public class Loan extends BaseEntity {
      * @return true si la date de retour prévue est dépassée et que le prêt n'est pas encore terminé, false sinon
      */
     public boolean isOverdue() {
-        return status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now());
+        return status == LoanStatus.OVERDUE || 
+               (status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now()));
     }
 
     /**
@@ -148,7 +150,10 @@ public class Loan extends BaseEntity {
     public boolean hasOverdueLoans() {
         if (member != null) {
             return member.getLoans().stream()
-                    .anyMatch(loan -> loan.isOverdue());
+                    .anyMatch(loan -> loan.getStatus() == LoanStatus.OVERDUE || 
+                            (loan.getStatus() == LoanStatus.ACTIVE && 
+                             loan.getDueDate() != null && 
+                             loan.getDueDate().isBefore(LocalDate.now())));
         }
         return false;
     }
@@ -163,7 +168,7 @@ public class Loan extends BaseEntity {
             return; // Ne rien faire si déjà remboursé
         }
 
-        if (isOverdue()) {
+        if (dueDate != null && dueDate.isBefore(LocalDate.now())) {
             status = LoanStatus.OVERDUE;
         } else {
             status = LoanStatus.ACTIVE;
@@ -174,7 +179,7 @@ public class Loan extends BaseEntity {
      * Enumération des différents statuts possibles pour un prêt.
      */
     public enum LoanStatus {
-        ACTIVE,   // Prêt en cours
+        ACTIVE,  // Prêt en cours
         OVERDUE,  // Prêt en retard
         REPAID    // Prêt remboursé
     }
