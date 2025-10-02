@@ -8,11 +8,12 @@ import com.org.testApi.payload.LoanPayload;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 /**
  * Mapper pour l'entité Loan et ses DTOs associés.
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface LoanMapper extends BaseMapper<Loan, LoanDTO> {
 
     @Mapping(target = "member", ignore = true)
@@ -26,11 +27,14 @@ public interface LoanMapper extends BaseMapper<Loan, LoanDTO> {
 
     // Payload mappings
     @Mapping(target = "member", ignore = true)
+    @Mapping(target = "document", ignore = true)
     Loan toEntityFromPayload(LoanPayload payload);
 
     @Mapping(target = "memberId", source = "member.id")
+    @Mapping(target = "documentId", source = "document.id")
     LoanPayload toPayload(Loan entity);
 
     @Mapping(target = "member", ignore = true)
+    @Mapping(target = "document", ignore = true)
     void updateEntityFromPayload(LoanPayload payload, @MappingTarget Loan entity);
 }

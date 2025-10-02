@@ -14,6 +14,7 @@ import java.time.LocalDate;
 public class LoanResponseDTO extends BaseEntityDTO {
 
     private Long memberId;
+    private Long documentId;
     private BigDecimal amount;
     private BigDecimal interestRate;
     private BigDecimal penaltyRate;

@@ -18,8 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-@Service
-@Transactional
+@Service@Transactional
 public class LoanServiceImpl implements LoanService {
 
     @Autowired
@@ -37,7 +36,7 @@ public class LoanServiceImpl implements LoanService {
         Member member = memberRepository.findWithLoansById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
 
-        // Vérifier l'éligibilité du membre
+        // Vérifier l'éligibilitédu membre
         if (!member.isEligibleForLoan()) {
             // Fournir des détails sur pourquoi le membre n'est pas éligible
             StringBuilder ineligibilityReason = new StringBuilder("Le membre n'est pas éligible pour emprunter. ");
@@ -49,8 +48,7 @@ public class LoanServiceImpl implements LoanService {
             if (member.getFees() == null || member.getFees().isEmpty()) {
                 ineligibilityReason.append("Le membre n'a payé aucune cotisation. ");
             }
-            
-            boolean hasOverdueLoans = member.getLoans().stream()
+boolean hasOverdueLoans = member.getLoans().stream()
                     .filter(loan -> loan != null)
                     .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
             if (hasOverdueLoans) {
@@ -62,7 +60,7 @@ public class LoanServiceImpl implements LoanService {
 
         // Vérifier que le montant ne dépasse pas le maximum autorisé
         BigDecimal maxLoanAmount = calculateMaxLoanAmount(memberId);
-        if (amount.compareTo(maxLoanAmount) > 0) {
+        if (amount.compareTo(maxLoanAmount)> 0) {
             throw new RuntimeException("Le montant demandé (" + amount + ") dépasse le maximum autorisé de " + maxLoanAmount);
         }
 
@@ -91,7 +89,7 @@ public class LoanServiceImpl implements LoanService {
     @Override
     public Loan repayLoan(Long loanId, BigDecimal amount) {
         Loan loan = loanRepository.findById(loanId)
-                .orElseThrow(() -> new RuntimeException("Prêt non trouvé avec l'ID: " + loanId));
+               .orElseThrow(() -> new RuntimeException("Prêt non trouvé avec l'ID: " + loanId));
 
         // Vérifier que le prêt n'est pas déjà remboursé
         if (loan.getStatus() == Loan.LoanStatus.REPAID) {
@@ -148,7 +146,7 @@ public class LoanServiceImpl implements LoanService {
         return loanRepository.searchLoansComplexQuery(memberId, minAmount, maxAmount, status, startDate, endDate);
     }
 
-    @Override
+   @Override
     public BigDecimal calculateTotalLoansForMember(Long memberId) {
         return loanRepository.calculateTotalLoansForMember(memberId);
     }
@@ -158,7 +156,7 @@ public class LoanServiceImpl implements LoanService {
         return loanRepository.findOverdueLoansWithDaysOverdue();
     }
 
-    @Override
+@Override
     public boolean isMemberEligibleForLoan(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
@@ -166,8 +164,7 @@ public class LoanServiceImpl implements LoanService {
         return member.isEligibleForLoan();
     }
 
-    @Override
-    public BigDecimal calculateMaxLoanAmount(Long memberId) {
+    @Override public BigDecimal calculateMaxLoanAmount(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
 
@@ -192,12 +189,28 @@ public class LoanServiceImpl implements LoanService {
         Loan existingLoan = loanRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Prêt non trouvé avec l'ID: " + id));
 
-        // Mettre à jour les propriétés modifiables
+        // Mettre à jour toutesles propriétés du prêt
         existingLoan.setAmount(loan.getAmount());
         existingLoan.setInterestRate(loan.getInterestRate());
         existingLoan.setPenaltyRate(loan.getPenaltyRate());
         existingLoan.setDueDate(loan.getDueDate());
+        existingLoan.setRepaymentDate(loan.getRepaymentDate());
+        existingLoan.setAmountRepaid(loan.getAmountRepaid());
         existingLoan.setStatus(loan.getStatus());
+        existingLoan.setLoanDate(loan.getLoanDate());
+        existingLoan.setReturnDate(loan.getReturnDate());
+        existingLoan.setDepositAmount(loan.getDepositAmount());
+        existingLoan.setDepositRefunded(loan.getDepositRefunded());
+        existingLoan.setNotes(loan.getNotes());
+        
+        // Mettre à jour les associations si elles existent
+        if (loan.getMember() != null) {
+            existingLoan.setMember(loan.getMember());
+        }
+        
+        if (loan.getDocument() != null) {
+            existingLoan.setDocument(loan.getDocument());
+        }
 
         return loanRepository.save(existingLoan);
     }

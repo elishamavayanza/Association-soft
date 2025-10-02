@@ -1,5 +1,6 @@
 package com.org.testApi.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -9,7 +10,7 @@ import java.time.LocalDate;
  * Représente un prêt effectué par un membre.
  * <p>
  * Un prêt est associé à un {@link Member} et peut éventuellement être lié
- * à un {@link Document}. Il contient des informations sur le montant,
+ * à un{@link Document}. Il contient desinformations sur le montant,
  * les taux d'intérêt et de pénalité, les dates importantes, ainsi que
  * le statut du prêt.
  * </p>
@@ -22,9 +23,10 @@ import java.time.LocalDate;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Loan extends BaseEntity {
 
-    /**
+/**
      * Membre ayant effectué le prêt.
      * Ce lien est obligatoire.
      */
@@ -35,7 +37,7 @@ public class Loan extends BaseEntity {
 
     /**
      * Document ou objet prêté.
-     * Ce lien est optionnel.
+    * Ce lien est optionnel.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id", nullable = true)
@@ -63,7 +65,7 @@ public class Loan extends BaseEntity {
     private LocalDate loanDate;
 
     /**
-     * Date de retour prévue.
+     * Date de retourprévue.
      */
     private LocalDate dueDate;
 
@@ -79,7 +81,7 @@ public class Loan extends BaseEntity {
     private BigDecimal amountRepaid;
 
     /**
-     * Date de remboursement.
+* Date de remboursement.
      */
     private LocalDate repaymentDate;
 
@@ -91,7 +93,7 @@ public class Loan extends BaseEntity {
     private LoanStatus status = LoanStatus.ACTIVE;
 
     /**
-     * Montant de caution éventuel.
+     * Montantde caution éventuel.
      * Peut être null si aucun dépôt n'est requis.
      */
     private BigDecimal depositAmount;
@@ -110,36 +112,35 @@ public class Loan extends BaseEntity {
     private String notes;
 
     /**
-     * Calcule le montant total dû pour ce prêt.
+     * Calcule lemontant total dû pour ce prêt.
      *
-     * @return le montant total dû
-     */
+     * @return le montant total dû*/
     public BigDecimal getTotalAmountDue() {
         if (amount == null) {
             return BigDecimal.ZERO;
         }
-        
+
         // Calculer les intérêts
         BigDecimal interest = amount.multiply(interestRate != null ? interestRate : BigDecimal.ZERO);
-        
-        // Si le prêt est en retard, ajouter les pénalités
+
+        // Si le prêt est en retard, ajouterles pénalités
         BigDecimal penalty = BigDecimal.ZERO;
-        if (status == LoanStatus.OVERDUE || 
-            (status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now()))) {
+        if (status == LoanStatus.OVERDUE ||
+                (status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now()))) {
             penalty = amount.multiply(penaltyRate != null ? penaltyRate : BigDecimal.ZERO);
-        }
-        
+}
+
         return amount.add(interest).add(penalty);
     }
 
     /**
      * Indique si le prêt est en retard.
      *
-     * @return true si la date de retour prévue est dépassée et que le prêt n'est pas encore terminé, false sinon
+     * @return true si la date deretour prévue est dépassée et que le prêt n'est pas encore terminé, false sinon
      */
-    public boolean isOverdue() {
-        return status == LoanStatus.OVERDUE || 
-               (status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now()));
+   public boolean isOverdue() {
+        return status == LoanStatus.OVERDUE ||
+                (status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now()));
     }
 
     /**
@@ -150,10 +151,10 @@ public class Loan extends BaseEntity {
     public boolean hasOverdueLoans() {
         if (member != null) {
             return member.getLoans().stream()
-                    .anyMatch(loan -> loan.getStatus() == LoanStatus.OVERDUE || 
-                            (loan.getStatus() == LoanStatus.ACTIVE && 
-                             loan.getDueDate() != null && 
-                             loan.getDueDate().isBefore(LocalDate.now())));
+                    .anyMatch(loan -> loan.getStatus() == LoanStatus.OVERDUE ||
+                           (loan.getStatus() == LoanStatus.ACTIVE &&
+                                    loan.getDueDate() != null &&
+                                    loan.getDueDate().isBefore(LocalDate.now())));
         }
         return false;
     }
@@ -162,12 +163,26 @@ public class Loan extends BaseEntity {
      * Met à jour le statut du prêt.
      */
     @PrePersist
-    @PreUpdate
-    protected void updateStatus() {
+    /*@PreUpdate*/
+   protected void updateStatus() {
+        // Ne pas modifier le statut si le prêt est déjà marqué comme remboursé
         if (status == LoanStatus.REPAID) {
-            return; // Ne rien faire si déjà remboursé
+            // Vérifier si le montant remboursé correspond au montant total dû
+            BigDecimal totalAmountDue= getTotalAmountDue();
+            if (amountRepaid != null && amountRepaid.compareTo(totalAmountDue) >= 0) {
+                return; // Le prêt est correctement marqué comme remboursé
+            }
+            // Si le montant remboursé est inférieur au montant dû,réinitialiser le statut
         }
 
+        // Si le montant remboursé est supérieur ou égal au montant total dû, marquer comme remboursé
+        BigDecimal totalAmountDue = getTotalAmountDue();
+        if (amountRepaid != null && totalAmountDue != null && amountRepaid.compareTo(totalAmountDue) >= 0) {
+            status = LoanStatus.REPAID;
+            return;
+        }
+
+        // Sinon, vérifier si le prêt est en retard
         if (dueDate != null && dueDate.isBefore(LocalDate.now())) {
             status = LoanStatus.OVERDUE;
         } else {
@@ -181,6 +196,6 @@ public class Loan extends BaseEntity {
     public enum LoanStatus {
         ACTIVE,  // Prêt en cours
         OVERDUE,  // Prêt en retard
-        REPAID    // Prêt remboursé
+        REPAID    // Prêt remboursé}
     }
 }
