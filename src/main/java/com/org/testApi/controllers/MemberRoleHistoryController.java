@@ -3,7 +3,9 @@ package com.org.testApi.controllers;
 import com.org.testApi.models.MemberRoleHistory;
 import com.org.testApi.payload.MemberRoleHistoryPayload;
 import com.org.testApi.services.MemberRoleHistoryService;
+import com.org.testApi.services.MemberService;
 import com.org.testApi.mapper.MemberRoleHistoryMapper;
+import com.org.testApi.models.Member;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/member-role-histories")
@@ -24,6 +27,9 @@ public class MemberRoleHistoryController {
 
     @Autowired
     private MemberRoleHistoryService memberRoleHistoryService;
+    
+    @Autowired
+    private MemberService memberService;
 
     @Autowired
     private MemberRoleHistoryMapper memberRoleHistoryMapper;
@@ -79,11 +85,19 @@ public class MemberRoleHistoryController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MemberRoleHistory.class))}),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<MemberRoleHistory> createMemberRoleHistoryFromPayload(
             @Parameter(description = "Données du payload pour créer l'historique de rôle de membre") @RequestBody MemberRoleHistoryPayload payload) {
+        // Check if member exists
+        Optional<Member> member = memberService.getMemberById(payload.getMemberId());
+        if (member.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
         MemberRoleHistory memberRoleHistory = memberRoleHistoryMapper.toEntityFromPayload(payload);
+        memberRoleHistory.setMember(member.get());
         MemberRoleHistory savedMemberRoleHistory = memberRoleHistoryService.saveMemberRoleHistory(memberRoleHistory);
         return ResponseEntity.ok(savedMemberRoleHistory);
     }
@@ -124,6 +138,13 @@ public class MemberRoleHistoryController {
             @Parameter(description = "Données du payload pour mettre à jour l'historique de rôle de membre") @RequestBody MemberRoleHistoryPayload payload) {
         return memberRoleHistoryService.getMemberRoleHistoryById(id)
                 .map(memberRoleHistory -> {
+                    // Check if member exists when memberId is provided in payload
+                    if (payload.getMemberId() != null) {
+                        Optional<Member> member = memberService.getMemberById(payload.getMemberId());
+                        if (member.isPresent()) {
+                            memberRoleHistory.setMember(member.get());
+                        }
+                    }
                     memberRoleHistoryMapper.updateEntityFromPayload(payload, memberRoleHistory);
                     MemberRoleHistory updatedMemberRoleHistory = memberRoleHistoryService.updateMemberRoleHistory(id, memberRoleHistory);
                     return ResponseEntity.ok(updatedMemberRoleHistory);

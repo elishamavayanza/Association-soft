@@ -23,13 +23,13 @@ public interface MemberRoleHistoryMapper extends BaseMapper<MemberRoleHistory, M
 
     // Payload mappings
     @Mapping(target = "member", ignore = true)
-    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "role", source = "role")
     MemberRoleHistory toEntityFromPayload(MemberRoleHistoryPayload payload);
 
     @Mapping(target = "memberId", source = "member.id")
     MemberRoleHistoryPayload toPayload(MemberRoleHistory entity);
 
     @Mapping(target = "member", ignore = true)
-    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "role", source = "role")
     void updateEntityFromPayload(MemberRoleHistoryPayload payload, @MappingTarget MemberRoleHistory entity);
 }
