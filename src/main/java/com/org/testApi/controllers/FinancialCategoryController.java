@@ -69,9 +69,12 @@ public class FinancialCategoryController {
                 name = "Exemple de catégorie financière",
                 summary = "Exemple de création de catégorie financière",
                 value = "{\n" +
-                       "  \"name\": \"Événements spéciaux\",\n" +
+                        "  \"name\": \"spéciaux\",\n" +
                         "  \"description\": \"Revenus provenant d'événements spéciaux\",\n" +
-                        "  \"type\": \"INCOME\"\n" +
+                        "  \"type\": \"INCOME\",\n" +
+                        "  \"association\": {\n" +
+                        "    \"id\": 1\n" +
+                        "  }\n" +
                         "}"
             )
         )
