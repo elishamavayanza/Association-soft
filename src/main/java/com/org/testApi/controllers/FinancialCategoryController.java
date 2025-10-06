@@ -31,10 +31,10 @@ public class FinancialCategoryController {
     @GetMapping
     @Operation(summary = "Récupérer toutes les catégories financières", description = "Retourne une liste de toutes les catégories financières")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Liste des catégories financières récupérée avec succès",
+@ApiResponse(responseCode = "200", description = "Liste des catégories financières récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = FinancialCategory.class))}),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+                                    @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<List<FinancialCategory>> getAllFinancialCategories() {
         List<FinancialCategory> financialCategories = financialCategoryService.getAllFinancialCategories();
@@ -42,9 +42,9 @@ public class FinancialCategoryController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Récupérer une catégorie financière par ID", description = "Retourne une catégorie financière spécifique en fonction de son ID")
+        @Operation(summary = "Récupérer une catégorie financière par ID", description = "Retourne une catégorie financière spécifique en fonction de son ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Catégorie financière trouvée",
+                                    @ApiResponse(responseCode = "200", description = "Catégorie financière trouvée",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = FinancialCategory.class))}),
             @ApiResponse(responseCode = "404", description = "Catégorie financière non trouvée"),
@@ -57,14 +57,14 @@ public class FinancialCategoryController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
+           @PostMapping
     @Operation(summary = "Créer une nouvelle catégorie financière", description = "Crée une nouvelle catégorie financière avec les données fournies")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Catégorie financière créée avec succès",
+                        @ApiResponse(responseCode = "200", description = "Catégorie financière créée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = FinancialCategory.class))}),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+                        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<FinancialCategory> createFinancialCategory(
             @Parameter(description = "Données de la catégorie financière à créer") @RequestBody FinancialCategory financialCategory) {
@@ -73,34 +73,48 @@ public class FinancialCategoryController {
     }
 
     @PostMapping("/payload")
-    @Operation(summary = "Créer une catégorie financière à partir d'un payload", description = "Crée une catégorie financière en utilisant un objet payload")
+            @Operation(summary = "Créer une catégorie financière à partir d'un payload", description = "Crée une catégorie financière en utilisant un objet payload")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Catégorie financière créée avec succès à partir du payload",
+                                                @ApiResponse(responseCode = "200", description = "Catégorie financière créée avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = FinancialCategory.class))}),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode = "404", description = "Association non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<FinancialCategory> createFinancialCategoryFromPayload(
+                public ResponseEntity<?> createFinancialCategoryFromPayload(
             @Parameter(description = "Données du payload pour créer la catégorie financière") @RequestBody FinancialCategoryPayload payload) {
-        FinancialCategory financialCategory = financialCategoryMapper.toEntityFromPayload(payload);
-        FinancialCategory savedFinancialCategory = financialCategoryService.saveFinancialCategory(financialCategory);
-        return ResponseEntity.ok(savedFinancialCategory);
+        try {
+            FinancialCategory financialCategory = financialCategoryMapper.toEntityFromPayload(payload);
+            
+            // Check if association exists
+                        if (financialCategory.getAssociation() == null && payload.getAssociationId() != null) {
+                return ResponseEntity.status(404).body("Association not found with ID: " + payload.getAssociationId());
+            }
+            
+            FinancialCategory savedFinancialCategory = financialCategoryService.saveFinancialCategory(financialCategory);
+            return ResponseEntity.ok(savedFinancialCategory);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Internal server error: " + e.getMessage());
+        }
     }
 
-    @PutMapping("/{id}")
+            @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour une catégorie financière", description = "Met à jour une catégorie financière existante avec les données fournies")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Catégorie financière mise à jour avec succès",
+                                                @ApiResponse(responseCode = "200", description = "Catégorie financière mise à jour avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = FinancialCategory.class))}),
-            @ApiResponse(responseCode = "404", description = "Catégorie financière non trouvée"),
+                                    @ApiResponse(responseCode = "404", description = "Catégorie financière non trouvée"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<FinancialCategory> updateFinancialCategory(
             @Parameter(description = "ID de la catégorie financière à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données de mise à jour de la catégorie financière") @RequestBody FinancialCategory financialCategory) {
+                                                           @Parameter(description = "Données de mise à jour de la catégorie financière") @RequestBody FinancialCategory financialCategory) {
         try {
             FinancialCategory updatedFinancialCategory = financialCategoryService.updateFinancialCategory(id, financialCategory);
             return ResponseEntity.ok(updatedFinancialCategory);
@@ -114,21 +128,34 @@ public class FinancialCategoryController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Catégorie financière mise à jour avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = FinancialCategory.class))}),
+                           schema = @Schema(implementation = FinancialCategory.class))}),
             @ApiResponse(responseCode = "404", description = "Catégorie financière non trouvée"),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<FinancialCategory> updateFinancialCategoryWithPayload(
+    public ResponseEntity<?> updateFinancialCategoryWithPayload(
             @Parameter(description = "ID de la catégorie financière à mettre à jour") @PathVariable Long id,
             @Parameter(description = "Données du payload pour mettre à jour la catégorie financière") @RequestBody FinancialCategoryPayload payload) {
-        return financialCategoryService.getFinancialCategoryById(id)
-                .map(financialCategory -> {
-                    financialCategoryMapper.updateEntityFromPayload(payload, financialCategory);
-                    FinancialCategory updatedFinancialCategory = financialCategoryService.updateFinancialCategory(id, financialCategory);
-                    return ResponseEntity.ok(updatedFinancialCategory);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            return financialCategoryService.getFinancialCategoryById(id)
+                    .map(financialCategory -> {
+                        financialCategoryMapper.updateEntityFromPayload(payload, financialCategory);
+                        
+                        // Check if association exists
+                        if (financialCategory.getAssociation() == null && payload.getAssociationId() != null) {
+                            return ResponseEntity.status(404).body("Association not found with ID: " + payload.getAssociationId());
+                        }
+                        
+                        FinancialCategory updatedFinancialCategory = financialCategoryService.updateFinancialCategory(id, financialCategory);
+                        return ResponseEntity.ok(updatedFinancialCategory);
+                    })
+                    .orElse(ResponseEntity.notFound().build());
+                } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Internal server error: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -138,7 +165,7 @@ public class FinancialCategoryController {
             @ApiResponse(responseCode = "404", description = "Catégorie financière non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<Void> deleteFinancialCategory(
+                   public ResponseEntity<Void> deleteFinancialCategory(
             @Parameter(description = "ID de la catégorie financière à supprimer") @PathVariable Long id) {
         financialCategoryService.deleteFinancialCategory(id);
         return ResponseEntity.noContent().build();
@@ -147,7 +174,7 @@ public class FinancialCategoryController {
     @DeleteMapping("/{id}/soft")
     @Operation(summary = "Supprimer logiquement une catégorie financière", description = "Marque une catégorie financière comme supprimée sans la retirer de la base de données")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Catégorie financière supprimée logiquement avec succès"),
+                                    @ApiResponse(responseCode = "204", description = "Catégorie financière supprimée logiquement avec succès"),
             @ApiResponse(responseCode = "404", description = "Catégorie financière non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })

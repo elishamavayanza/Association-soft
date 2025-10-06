@@ -45,7 +45,7 @@ return ResponseEntity.ok(projects);
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un projet par ID", description = "Retourne un projet spécifique en fonction de son ID")
     @ApiResponses(value = {
-           @ApiResponse(responseCode = "200", description ="Projet trouvé",
+         @ApiResponse(responseCode = "200", description ="Projet trouvé",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "404", description = "Projet non trouvé"),
@@ -65,7 +65,7 @@ return ResponseEntity.ok(projects);
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode = "500", description = "Erreur interneduserveur")
     })
     public ResponseEntity<Project> createProject(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -73,7 +73,7 @@ return ResponseEntity.ok(projects);
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"name\": \"Projet de développement\",\n  \"description\": \"Développement d'une nouvelle application\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-04-30\",\n  \"association\": {\n    \"id\": 1\n  },\n  \"status\": \"PLANNING\"\n}"
+                                    value = "{\n  \"name\": \"Projet de développement\",\n  \"description\": \"Développement d'une nouvelle application\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-04-30\",\n  \"association\": {\n   \"id\": 1\n  },\n \"status\": \"PLANNING\"\n}"
                            )
 )
             )
@@ -85,46 +85,46 @@ return ResponseEntity.ok(projects);
 @PostMapping("/payload")
     @Operation(summary = "Créer un projet à partir d'un payload", description = "Crée un projet en utilisant un objet payload")
     @ApiResponses(value ={
-            @ApiResponse(responseCode = "200", description = "Projet créé avec succès à partirdu payload",
+            @ApiResponse(responseCode = "200", description = "Projet créé avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "400", description = "Données de payloadinvalides"),
-            @ApiResponse(responseCode= "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Project> createProjectFromPayload(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Exemple de payload pour créer un projet",
-                   content = @Content(
-                            mediaType ="application/json",
+                    content = @Content(
+                            mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"name\": \"Projet de rénovation\",\n  \"description\":\"Rénovation de la salle communautaire\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\":\"2026-03-31\",\n  \"associationId\": 1,\n  \"managerId\": 2,\n \"status\": \"PLANNING\"\n}"
+                                    value = "{\n  \"name\": \"Projet de développementcommunautaire\",\n  \"description\": \"Développement d'une application pour gérer les projets communautaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-04-30\",\n  \"associationId\": 1,\n  \"managerId\": 2,\n  \"activityIds\": [1, 2, 3],\n  \"memberIds\": [10, 15, 20],\n  \"transactionIds\": [100, 101],\n  \"status\": \"PLANNING\"\n}"
                            )
-)
+                    )
             )
-            @Parameter(description = "Données du payload pourcréer le projet") @RequestBody ProjectPayload payload){
-        Project project =projectMapper.toEntityFromPayload(payload);
+            @Parameter(description = "Données du payload pour créer le projet") @RequestBody ProjectPayload payload) {
+        Project project = projectMapper.toEntityFromPayload(payload);
         Project savedProject = projectService.saveProject(project);
-       return ResponseEntity.ok(savedProject);
+        return ResponseEntity.ok(savedProject);
     }
 
 @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour un projet", description ="Met à jour un projet existant avec les donnéesfournies")
    @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Projet mis àjour avec succès",
-content = {@Content(mediaType = "application/json",
+content= {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "404", description = "Projet non trouvé"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+           @ApiResponse(responseCode= "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Project> updateProject(
             @Parameter(description = "ID du projet à mettre à jour") @PathVariable Long id,
 @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Exemple de projet à mettre à jour",
+                    description = "Exemple de projet àmettre à jour",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"name\": \"Projet de développement mis à jour\",\n\"description\": \"Développement d'une nouvelle application avec des fonctionnalités supplémentaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-06-30\",\n  \"status\": \"IN_PROGRESS\"\n}"
+                                    value = "{\n  \"name\": \"Projet de développement misà jour\",\n\"description\": \"Développement d'une nouvelle application avec des fonctionnalités supplémentaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-06-30\",\n  \"status\": \"IN_PROGRESS\"\n}"
 )
 )
             )
@@ -144,18 +144,18 @@ content = {@Content(mediaType = "application/json",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "404", description = "Projet non trouvé"),
-            @ApiResponse(responseCode = "400", description = "Données de payloadinvalides"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode ="400", description = "Données de payloadinvalides"),
+            @ApiResponse(responseCode ="500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Project> updateProjectWithPayload(
             @Parameter(description = "ID du projet à mettre à jour") @PathVariable Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Exemple de payloadpour mettreà jour un projet",
+                    description = "Exemple depayloadpourmettreà jour un projet",
                     content = @Content(
                             mediaType = "application/json",
                             examples =@ExampleObject(
-                                    value = "{\n  \"name\": \"Projet de rénovation misà jour\",\n  \"description\": \"Rénovation complète de la salle communautaire avec extension\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-06-30\",\n  \"associationId\": 1,\n  \"managerId\": 2,\n  \"status\": \"IN_PROGRESS\"\n}"
-                           )
+                                    value = "{\n  \"name\": \"Projet de rénovation misà jour\",\n  \"description\": \"Rénovation complète de la salle communautaire avecextension\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-06-30\",\n  \"associationId\": 1,\n  \"managerId\": 2,\n  \"status\": \"IN_PROGRESS\"\n}"
+)
 )
             )
             @Parameter(description = "Données du payload pour mettre à jour le projet") @RequestBody ProjectPayload payload) {
@@ -171,7 +171,7 @@ content = {@Content(mediaType = "application/json",
    @DeleteMapping("/{id}")
     @Operation(summary = "Supprimer un projet", description = "Supprime définitivement un projet")
     @ApiResponses(value = {
-            @ApiResponse(responseCode ="204", description = "Projet supprimé avec succès"),
+            @ApiResponse(responseCode="204", description = "Projet supprimé avec succès"),
             @ApiResponse(responseCode = "404", description = "Projet non trouvé"),
             @ApiResponse(responseCode = "500", description ="Erreur interne du serveur")
     })
@@ -182,11 +182,11 @@ content = {@Content(mediaType = "application/json",
     }
 
     @DeleteMapping("/{id}/soft")
-    @Operation(summary= "Supprimer logiquement un projet", description = "Marque un projetcomme supprimé sans le retirer de la base de données")
+    @Operation(summary= "Supprimer logiquement un projet", description = "Marque un projetcommesupprimé sans le retirer de la base de données")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Projet supprimé logiquement avec succès"),
             @ApiResponse(responseCode = "404", description = "Projetnon trouvé"),
-           @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+          @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Void> softDeleteProject(
             @Parameter(description = "ID du projet à supprimer logiquement") @PathVariable Long id) {

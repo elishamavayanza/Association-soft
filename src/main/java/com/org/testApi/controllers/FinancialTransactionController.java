@@ -7,6 +7,7 @@ import com.org.testApi.mapper.FinancialTransactionMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -62,12 +63,17 @@ public class FinancialTransactionController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Transaction financière créée avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = FinancialTransaction.class))}),
+                            schema = @Schema(implementation = FinancialTransaction.class),
+                            examples = @ExampleObject(value = "{\"id\": 1,\"amount\": 150.75,\"transactionDate\": \"2025-10-02\",\"description\": \"Paiement cotisation annuelle\",\"type\": \"INCOME\",\"association\": {\"id\": 1},\"active\": true,\"createdDate\": \"2025-10-02T10:30:00\",\"lastModifiedDate\": \"2025-10-02T10:30:00\"}"))}),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<FinancialTransaction> createFinancialTransaction(
-            @Parameter(description = "Données de la transaction financière à créer") @RequestBody FinancialTransaction transaction) {
+            @Parameter(description = "Données de la transaction financière à créer", 
+                       content = @Content(mediaType = "application/json",
+                                          schema = @Schema(implementation = FinancialTransaction.class),
+                                          examples = @ExampleObject(value = "{\"amount\": 150.75,\"transactionDate\": \"2025-10-02\",\"description\": \"Paiement cotisation annuelle\",\"type\": \"INCOME\",\"association\": {\"id\": 1}}"))) 
+            @RequestBody FinancialTransaction transaction) {
         FinancialTransaction savedTransaction = financialTransactionService.saveFinancialTransaction(transaction);
         return ResponseEntity.ok(savedTransaction);
     }
@@ -77,12 +83,17 @@ public class FinancialTransactionController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Transaction financière créée avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = FinancialTransaction.class))}),
+                            schema = @Schema(implementation = FinancialTransaction.class),
+                            examples = @ExampleObject(value = "{\"id\": 1,\"amount\": 150.75,\"transactionDate\": \"2025-10-02\",\"description\": \"Paiement cotisation annuelle\",\"type\": \"INCOME\",\"associationId\": 1,\"active\": true,\"createdDate\": \"2025-10-02T10:30:00\",\"lastModifiedDate\": \"2025-10-02T10:30:00\"}"))}),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<FinancialTransaction> createFinancialTransactionFromPayload(
-            @Parameter(description = "Données du payload pour créer la transaction financière") @RequestBody FinancialTransactionPayload payload) {
+            @Parameter(description = "Données du payload pour créer la transaction financière",
+                       content = @Content(mediaType = "application/json",
+                                          schema = @Schema(implementation = FinancialTransactionPayload.class),
+                                          examples = @ExampleObject(value = "{\"amount\": 150.75,\"transactionDate\": \"2025-10-02\",\"description\": \"Paiement cotisation annuelle\",\"type\": \"INCOME\",\"associationId\": 1}")))
+            @RequestBody FinancialTransactionPayload payload) {
         FinancialTransaction transaction = financialTransactionMapper.toEntityFromPayload(payload);
         FinancialTransaction savedTransaction = financialTransactionService.saveFinancialTransaction(transaction);
         return ResponseEntity.ok(savedTransaction);
@@ -93,14 +104,19 @@ public class FinancialTransactionController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Transaction financière mise à jour avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = FinancialTransaction.class))}),
+                            schema = @Schema(implementation = FinancialTransaction.class),
+                            examples = @ExampleObject(value = "{\"id\": 1,\"amount\": 200.00,\"transactionDate\": \"2025-10-02\",\"description\": \"Paiement cotisation mise à jour\",\"type\": \"INCOME\",\"association\": {\"id\": 1},\"active\": true,\"createdDate\": \"2025-10-02T10:30:00\",\"lastModifiedDate\": \"2025-10-02T11:45:00\"}"))}),
             @ApiResponse(responseCode = "404", description = "Transaction financière non trouvée"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<FinancialTransaction> updateFinancialTransaction(
             @Parameter(description = "ID de la transaction financière à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données de mise à jour de la transaction financière") @RequestBody FinancialTransaction transaction) {
+            @Parameter(description = "Données de mise à jour de la transaction financière",
+                       content = @Content(mediaType = "application/json",
+                                          schema = @Schema(implementation = FinancialTransaction.class),
+                                          examples = @ExampleObject(value = "{\"amount\": 200.00,\"transactionDate\": \"2025-10-02\",\"description\": \"Paiement cotisation mise à jour\",\"type\": \"INCOME\",\"association\": {\"id\": 1}}")))
+            @RequestBody FinancialTransaction transaction) {
         try {
             FinancialTransaction updatedTransaction = financialTransactionService.updateFinancialTransaction(id, transaction);
             return ResponseEntity.ok(updatedTransaction);
@@ -114,14 +130,19 @@ public class FinancialTransactionController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Transaction financière mise à jour avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = FinancialTransaction.class))}),
+                            schema = @Schema(implementation = FinancialTransaction.class),
+                            examples = @ExampleObject(value = "{\"id\": 1,\"amount\": 200.00,\"transactionDate\": \"2025-10-02\",\"description\": \"Paiement cotisation mise à jour\",\"type\": \"INCOME\",\"associationId\": 1,\"active\": true,\"createdDate\": \"2025-10-02T10:30:00\",\"lastModifiedDate\": \"2025-10-02T11:45:00\"}"))}),
             @ApiResponse(responseCode = "404", description = "Transaction financière non trouvée"),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<FinancialTransaction> updateFinancialTransactionWithPayload(
             @Parameter(description = "ID de la transaction financière à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données du payload pour mettre à jour la transaction financière") @RequestBody FinancialTransactionPayload payload) {
+            @Parameter(description = "Données du payload pour mettre à jour la transaction financière",
+                       content = @Content(mediaType = "application/json",
+                                          schema = @Schema(implementation = FinancialTransactionPayload.class),
+                                          examples = @ExampleObject(value = "{\"amount\": 200.00,\"transactionDate\": \"2025-10-02\",\"description\": \"Paiement cotisation mise à jour\",\"type\": \"INCOME\",\"associationId\": 1}")))
+            @RequestBody FinancialTransactionPayload payload) {
         return financialTransactionService.getFinancialTransactionById(id)
                 .map(transaction -> {
                     financialTransactionMapper.updateEntityFromPayload(payload, transaction);
