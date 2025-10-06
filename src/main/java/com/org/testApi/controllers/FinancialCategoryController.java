@@ -150,9 +150,12 @@ return ResponseEntity.status(500).body("Internal server error: " + e.getMessage(
                 name = "Exemple demiseà jour de catégorie financière",
                 summary = "Exemple de mise à jour de catégorie financière",
                 value = "{\n" +
-                        "  \"name\": \"Événements spéciaux - Mis à jour\",\n" +
-                        "  \"description\": \"Revenus provenant d'événements spéciaux etde parrainages\",\n" +
-                        "  \"type\": \"INCOME\"\n" +
+                        "  \"name\": \"spéciaux\",\n" +
+                        "  \"description\": \"Revenus provenant d'événements spéciaux\",\n" +
+                        "  \"type\": \"INCOME\",\n" +
+                        "  \"association\": {\n" +
+                        "    \"id\": 1\n" +
+                        "  }\n" +
                         "}"
             )
         )
