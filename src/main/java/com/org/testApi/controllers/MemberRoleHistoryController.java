@@ -9,6 +9,7 @@ import com.org.testApi.models.Member;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -73,7 +74,19 @@ public class MemberRoleHistoryController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<MemberRoleHistory> createMemberRoleHistory(
-            @Parameter(description = "Données de l'historique de rôle de membre à créer") @RequestBody MemberRoleHistory memberRoleHistory) {
+            @Parameter(description = "Données de l'historique de rôle de membre à créer") 
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Données de l'historique de rôle de membre à créer",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = MemberRoleHistory.class),
+                    examples = @ExampleObject(
+                        name = "Exemple d'historique de rôle",
+                        summary = "Exemple simple",
+                        value = "{\n  \"member\": {\n    \"id\": 5\n  },\n  \"role\": \"Trésorier\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-10-01\",\n  \"admin\": false\n}"
+                    )
+                )
+            ) @RequestBody MemberRoleHistory memberRoleHistory) {
         MemberRoleHistory savedMemberRoleHistory = memberRoleHistoryService.saveMemberRoleHistory(memberRoleHistory);
         return ResponseEntity.ok(savedMemberRoleHistory);
     }
@@ -89,7 +102,19 @@ public class MemberRoleHistoryController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<MemberRoleHistory> createMemberRoleHistoryFromPayload(
-            @Parameter(description = "Données du payload pour créer l'historique de rôle de membre") @RequestBody MemberRoleHistoryPayload payload) {
+            @Parameter(description = "Données du payload pour créer l'historique de rôle de membre") 
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Données du payload pour créer l'historique de rôle de membre",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = MemberRoleHistoryPayload.class),
+                    examples = @ExampleObject(
+                        name = "Exemple de payload",
+                        summary = "Exemple de payload",
+                        value = "{\n  \"memberId\": 5,\n  \"role\": \"Trésorier\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-10-01\",\n  \"admin\": false\n}"
+                    )
+                )
+            ) @RequestBody MemberRoleHistoryPayload payload) {
         // Check if member exists
         Optional<Member> member = memberService.getMemberById(payload.getMemberId());
         if (member.isEmpty()) {
@@ -114,7 +139,19 @@ public class MemberRoleHistoryController {
     })
     public ResponseEntity<MemberRoleHistory> updateMemberRoleHistory(
             @Parameter(description = "ID de l'historique de rôle de membre à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données de mise à jour de l'historique de rôle de membre") @RequestBody MemberRoleHistory memberRoleHistory) {
+            @Parameter(description = "Données de mise à jour de l'historique de rôle de membre") 
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Données de mise à jour de l'historique de rôle de membre",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = MemberRoleHistory.class),
+                    examples = @ExampleObject(
+                        name = "Exemple de mise à jour",
+                        summary = "Exemple de mise à jour",
+                        value = "{\n  \"member\": {\n    \"id\": 5\n  },\n  \"role\": \"Trésorier\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-10-01\",\n  \"admin\": true\n}"
+                    )
+                )
+            ) @RequestBody MemberRoleHistory memberRoleHistory) {
         try {
             MemberRoleHistory updatedMemberRoleHistory = memberRoleHistoryService.updateMemberRoleHistory(id, memberRoleHistory);
             return ResponseEntity.ok(updatedMemberRoleHistory);
@@ -135,7 +172,19 @@ public class MemberRoleHistoryController {
     })
     public ResponseEntity<MemberRoleHistory> updateMemberRoleHistoryWithPayload(
             @Parameter(description = "ID de l'historique de rôle de membre à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données du payload pour mettre à jour l'historique de rôle de membre") @RequestBody MemberRoleHistoryPayload payload) {
+            @Parameter(description = "Données du payload pour mettre à jour l'historique de rôle de membre") 
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Données du payload pour mettre à jour l'historique de rôle de membre",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = MemberRoleHistoryPayload.class),
+                    examples = @ExampleObject(
+                        name = "Exemple de mise à jour avec payload",
+                        summary = "Exemple de mise à jour avec payload",
+                        value = "{\n  \"memberId\": 5,\n  \"role\": \"Trésorier\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-10-01\",\n  \"admin\": true\n}"
+                    )
+                )
+            ) @RequestBody MemberRoleHistoryPayload payload) {
         return memberRoleHistoryService.getMemberRoleHistoryById(id)
                 .map(memberRoleHistory -> {
                     // Check if member exists when memberId is provided in payload
