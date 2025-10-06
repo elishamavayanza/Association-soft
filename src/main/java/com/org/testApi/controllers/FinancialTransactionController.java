@@ -4,6 +4,10 @@ import com.org.testApi.models.FinancialTransaction;
 import com.org.testApi.payload.FinancialTransactionPayload;
 import com.org.testApi.services.FinancialTransactionService;
 import com.org.testApi.mapper.FinancialTransactionMapper;
+import com.org.testApi.services.AssociationService;
+import com.org.testApi.services.ActivityService;
+import com.org.testApi.services.ProjectService;
+import com.org.testApi.services.FinancialCategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,6 +32,18 @@ public class FinancialTransactionController {
 
     @Autowired
     private FinancialTransactionMapper financialTransactionMapper;
+
+    @Autowired
+    private AssociationService associationService;
+
+    @Autowired
+    private ActivityService activityService;
+
+    @Autowired
+    private ProjectService projectService;
+
+    @Autowired
+    private FinancialCategoryService financialCategoryService;
 
     @GetMapping
     @Operation(summary = "Récupérer toutes les transactions financières", description = "Retourne une liste de toutes les transactions financières")
@@ -95,6 +111,19 @@ public class FinancialTransactionController {
                                           examples = @ExampleObject(value = "{\"amount\": 150.75,\"transactionDate\": \"2025-10-02\",\"description\": \"Paiement cotisation annuelle\",\"type\": \"INCOME\",\"associationId\": 1}")))
             @RequestBody FinancialTransactionPayload payload) {
         FinancialTransaction transaction = financialTransactionMapper.toEntityFromPayload(payload);
+        
+        // Set the related entities based on the IDs in the payload
+        associationService.getAssociationById(payload.getAssociationId()).ifPresent(transaction::setAssociation);
+        if (payload.getActivityId() != null) {
+            activityService.getActivityById(payload.getActivityId()).ifPresent(transaction::setActivity);
+        }
+        if (payload.getProjectId() != null) {
+            projectService.getProjectById(payload.getProjectId()).ifPresent(transaction::setProject);
+        }
+        if (payload.getCategoryId() != null) {
+            financialCategoryService.getFinancialCategoryById(payload.getCategoryId()).ifPresent(transaction::setCategory);
+        }
+        
         FinancialTransaction savedTransaction = financialTransactionService.saveFinancialTransaction(transaction);
         return ResponseEntity.ok(savedTransaction);
     }
@@ -146,6 +175,19 @@ public class FinancialTransactionController {
         return financialTransactionService.getFinancialTransactionById(id)
                 .map(transaction -> {
                     financialTransactionMapper.updateEntityFromPayload(payload, transaction);
+                    
+                    // Set the related entities based on the IDs in the payload
+                    associationService.getAssociationById(payload.getAssociationId()).ifPresent(transaction::setAssociation);
+                    if (payload.getActivityId() != null) {
+                        activityService.getActivityById(payload.getActivityId()).ifPresent(transaction::setActivity);
+                    }
+                    if (payload.getProjectId() != null) {
+                        projectService.getProjectById(payload.getProjectId()).ifPresent(transaction::setProject);
+                    }
+                    if (payload.getCategoryId() != null) {
+                        financialCategoryService.getFinancialCategoryById(payload.getCategoryId()).ifPresent(transaction::setCategory);
+                    }
+                    
                     FinancialTransaction updatedTransaction = financialTransactionService.updateFinancialTransaction(id, transaction);
                     return ResponseEntity.ok(updatedTransaction);
                 })
