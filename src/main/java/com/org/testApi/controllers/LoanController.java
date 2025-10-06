@@ -449,14 +449,15 @@ schema = @Schema(implementation = Boolean.class))}),
                         updatedLoan = loanRepository.saveAndFlush(updatedLoan);
                     }
 
-                    // Créer un DTO de réponsepour éviter les problèmes de sérialisation des entités lazy
-                    LoanResponseDTO responseDTO = new LoanResponseDTO();
-                    responseDTO.setId(updatedLoan.getId());
-                    responseDTO.setCreatedDate(updatedLoan.getCreatedDate());
-                    responseDTO.setLastModifiedDate(updatedLoan.getLastModifiedDate());
-                    responseDTO.setCreatedBy(updatedLoan.getCreatedBy());
-                    responseDTO.setLastModifiedBy(updatedLoan.getLastModifiedBy());
-                    responseDTO.setActive(updatedLoan.isActive());
+                    // Créer un DTO de réponse pour éviter les problèmes de sérialisation des entités lazy
+                    LoanResponseDTO responseDTO = LoanResponseDTO.builder()
+                            .id(updatedLoan.getId())
+                            .createdDate(updatedLoan.getCreatedDate())
+                            .lastModifiedDate(updatedLoan.getLastModifiedDate())
+                            .createdBy(updatedLoan.getCreatedBy())
+                            .lastModifiedBy(updatedLoan.getLastModifiedBy())
+                            .active(updatedLoan.isActive())
+                            .build();
 
                     if (updatedLoan.getMember() != null) {
                         responseDTO.setMemberId(updatedLoan.getMember().getId());

@@ -1,8 +1,11 @@
 package com.org.testApi.dto.request;
 
 import com.org.testApi.dto.BaseEntityDTO;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -11,6 +14,9 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FinancialTransactionRequestDTO extends BaseEntityDTO {
 
     private BigDecimal amount;

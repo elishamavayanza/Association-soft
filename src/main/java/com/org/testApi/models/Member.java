@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.org.testApi.models.Loan;
+import com.org.testApi.models.Contribution;
+import com.org.testApi.models.Penalty;
+import com.org.testApi.models.RotatingGroup;
 
 /**
  * Représente un membre d'une association.
@@ -100,6 +103,33 @@ public class Member extends BaseEntity {
     @ToString.Exclude
     @JsonIgnore
     private List<Loan> loans = new ArrayList<>();
+
+    /**
+     * Liste des contributions du membre dans les groupes de rotation.
+     */
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Contribution> contributions = new ArrayList<>();
+
+    /**
+     * Liste des pénalités appliquées au membre.
+     */
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Penalty> penalties = new ArrayList<>();
+
+    /**
+     * Groupes de rotation financière auxquels le membre appartient.
+     */
+    @ManyToMany(mappedBy = "members", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<RotatingGroup> rotatingGroups = new ArrayList<>();
 
     /**
      * Indique si ce membre a des droits d'administrateur.

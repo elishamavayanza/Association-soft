@@ -2,6 +2,7 @@ package com.org.testApi.dto;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
  */
 @Getter
 @Setter
+@SuperBuilder
 public class MemberDTO extends BaseEntityDTO {
 
     private Long userId;

@@ -3,6 +3,7 @@ package com.org.testApi.dto.response;
 import com.org.testApi.dto.BaseEntityDTO;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
@@ -11,6 +12,7 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
+@SuperBuilder
 public class MemberResponseDTO extends BaseEntityDTO {
 
     private Long userId;
