@@ -45,7 +45,7 @@ public class DocumentController {
     @Operation(summary = "Récupérer un document par ID", description = "Retourne un document spécifique en fonction de son ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Documenttrouvé",
-                    content = {@Content(mediaType = "application/json",
+content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Document.class))}),
             @ApiResponse(responseCode = "404", description = "Document non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
@@ -58,7 +58,7 @@ public class DocumentController {
     }
 
     @PostMapping
-    @Operation(summary = "Créerun nouveau document", description = "Crée un nouveau document avec les données fournies")
+    @Operation(summary = "Créer unnouveau document", description = "Crée un nouveau document avec les données fournies")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Document créé avec succès",
                     content = {@Content(mediaType = "application/json",
@@ -66,20 +66,40 @@ public class DocumentController {
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "Exemple de documentà créer",
+        content = @Content(
+            mediaType = "application/json",
+            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                value = "{\n" +
+                  "  \"name\": \"Document d'exemple\",\n" +
+                    "  \"fileType\": \"application/pdf\",\n" +
+                    "  \"filePath\": \"/documents/example.pdf\",\n" +
+                    "  \"fileSize\": 1024000,\n" +
+                    " \"association\":{\n" +
+                    "    \"id\": 1\n" +
+                    "  },\n" +
+                    "  \"uploadedBy\": {\n" +
+                    "    \"id\": 2\n" +
+                    "  }\n" +
+                    "}"
+            )
+        )
+    )
     public ResponseEntity<Document> createDocument(
             @Parameter(description = "Données du document à créer") @RequestBody Document document) {
        Document savedDocument = documentService.saveDocument(document);
         return ResponseEntity.ok(savedDocument);
     }
 
-    @PostMapping("/payload")
+@PostMapping("/payload")
     @Operation(summary = "Créer un document à partir d'un payload", description = "Crée un document en utilisant un objet payload")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Document créé avec succès à partir du payload",
+            @ApiResponse(responseCode = "200", description = "Document créé avec succès à partir dupayload",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Document.class))}),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode = "500", description = "Erreur internedu serveur")
     })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
         description = "Exemple de payload pour créer un document",
@@ -106,7 +126,7 @@ public class DocumentController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour un document", description = "Met à jour un document existant avec les données fournies")
-   @ApiResponses(value = {
+  @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Document mis à jour avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Document.class))}),
@@ -114,13 +134,33 @@ public class DocumentController {
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "Exemple de documentà mettreà jour",
+        content = @Content(
+            mediaType = "application/json",
+            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                value = "{\n" +
+                   "  \"name\": \"Document mis à jour\",\n" +
+                    "  \"fileType\": \"application/pdf\",\n" +
+                    "  \"filePath\": \"/documents/updated_example.pdf\",\n" +
+                    "  \"fileSize\": 2048000,\n" +
+                    "  \"association\": {\n" +
+                    "    \"id\": 1\n" +
+                    " },\n" +
+                    "  \"uploadedBy\": {\n" +
+                    "    \"id\": 2\n" +
+                    "  }\n" +
+                    "}"
+            )
+        )
+    )
     public ResponseEntity<Document> updateDocument(
             @Parameter(description = "ID du document à mettre à jour") @PathVariable Long id,
 @Parameter(description = "Données de mise à jour du document") @RequestBody Document document) {
         try {
             Document updatedDocument = documentService.updateDocument(id, document);
             return ResponseEntity.ok(updatedDocument);
-        } catch (RuntimeException e) {
+} catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
@@ -128,20 +168,37 @@ public class DocumentController {
 @PutMapping("/{id}/payload")
     @Operation(summary = "Mettre à jour un document avec payload", description = "Met à jour un document existant en utilisant un objet payload")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Document misà jour avec succès àpartir du payload",
+            @ApiResponse(responseCode = "200", description = "Document mis àjour avec succès àpartir du payload",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Document.class))}),
             @ApiResponse(responseCode = "404", description = "Document non trouvé"),
             @ApiResponse(responseCode = "400", description = "Données de payloadinvalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "Exemple de payload pour mettreà jour un document",
+        content = @Content(
+            mediaType = "application/json",
+            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                value = "{\n" +
+                   "  \"name\": \"Document mis à jour via payload\",\n" +
+                    "  \"fileType\": \"application/pdf\",\n" +
+                    "  \"filePath\": \"/documents/payload_updated_example.pdf\",\n" +
+                    "  \"uploadDate\": \"2025-10-06T14:30:00\",\n" +
+                    "  \"fileSize\":3072000,\n" +
+                    "  \"associationId\": 1,\n" +
+                    "  \"uploadedById\": 2\n" +
+                    "}"
+            )
+        )
+    )
     public ResponseEntity<Document> updateDocumentWithPayload(
-            @Parameter(description = "ID du document à mettre à jour") @PathVariable Long id,
+            @Parameter(description = "ID du documentà mettre à jour") @PathVariable Long id,
             @Parameter(description = "Données du payload pour mettre à jour le document") @RequestBody DocumentPayload payload) {
         return documentService.getDocumentById(id)
                 .map(document -> {
                     documentMapper.updateEntityFromPayload(payload, document);
-                    Document updatedDocument = documentService.updateDocument(id, document);
+                    Document updatedDocument =documentService.updateDocument(id, document);
                     return ResponseEntity.ok(updatedDocument);
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -150,10 +207,10 @@ public class DocumentController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Supprimer un document", description = "Supprime définitivement un document")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Document supprimé avec succès"),
+@ApiResponse(responseCode = "204", description = "Document supprimé avec succès"),
             @ApiResponse(responseCode = "404", description = "Document non trouvé"),
-            @ApiResponse(responseCode = "500", description = "Erreurinterne du serveur")
-    })
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+   })
     public ResponseEntity<Void> deleteDocument(
             @Parameter(description = "ID du document à supprimer") @PathVariable Long id) {
         documentService.deleteDocument(id);
@@ -161,12 +218,12 @@ public class DocumentController {
     }
 
     @DeleteMapping("/{id}/soft")
-    @Operation(summary = "Supprimer logiquement un document", description = "Marque un document comme supprimé sans le retirer de la base de données")
+    @Operation(summary = "Supprimer logiquement un document", description = "Marqueun document comme supprimé sans le retirer de la base de données")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Document supprimé logiquement avec succès"),
             @ApiResponse(responseCode = "404", description = "Document non trouvé"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
-    })
+           @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+   })
     public ResponseEntity<Void> softDeleteDocument(
             @Parameter(description = "ID du document à supprimer logiquement") @PathVariable Long id) {
         documentService.softDeleteDocument(id);
