@@ -1,7 +1,9 @@
 package com.org.testApi.services;
 
+import com.org.testApi.models.Role;
 import com.org.testApi.models.User;
 import com.org.testApi.repository.UserRepository;
+import com.org.testApi.repository.RoleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -41,6 +46,16 @@ public class UserServiceImpl implements UserService {
         }
         return user;
     }
+    
+    @Override
+    public Optional<Role> getRoleById(Long id) {
+        return roleRepository.findById(id.intValue());
+    }
+    
+    @Override
+    public Optional<Role> getRoleByName(Role.ERole name) {
+        return roleRepository.findByName(name);
+    }
 
     @Override
     public User saveUser(User user) {
@@ -51,6 +66,11 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepository.save(user);
         notifyObservers("SAVE", savedUser);
         return savedUser;
+    }
+    
+    @Override
+    public Role saveRole(Role role) {
+        return roleRepository.save(role);
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -18,9 +19,13 @@ import java.io.IOException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.lang.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class JwtTokenFilter extends OncePerRequestFilter implements ApplicationContextAware {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtTokenFilter.class);
 
     private AuthService authService;
     private UserDetailsService userDetailsService;
@@ -48,13 +53,19 @@ public class JwtTokenFilter extends OncePerRequestFilter implements ApplicationC
             if (authService.validateToken(token)) {
                 String username = authService.getCurrentUsernameFromToken(token);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                try {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } catch (UsernameNotFoundException e) {
+                    // If user not found, we continue without setting authentication
+                    // This can happen when trying to create a new user
+                    logger.debug("User not found during JWT authentication: " + username);
+                }
             }
         }
 

@@ -39,6 +39,12 @@ public class DataInitializer implements CommandLineRunner {
             roleRepository.save(memberRole);
         }
 
+        if (!roleRepository.existsByName(Role.ERole.ROLE_MODERATOR)) {
+            Role moderatorRole = new Role();
+            moderatorRole.setName(Role.ERole.ROLE_MODERATOR);
+            roleRepository.save(moderatorRole);
+        }
+
         // Créer un utilisateur admin par défaut s'il n'existe pas
         if (!userRepository.existsByUsername("admin")) {
             User adminUser = new User();
