@@ -36,9 +36,9 @@ public class Role {
 
     /**
      * Description optionnelle du rôle.
-     * Limité à 20 caractères.
+     * Limité à 50 caractères.
      */
-    @Size(max = 20)
+    @Size(max = 50)
     private String description;
 
 
