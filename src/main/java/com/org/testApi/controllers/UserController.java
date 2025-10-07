@@ -77,10 +77,10 @@ public class UserController {
             description = "Retourne une liste de tous les utilisateurs enregistrés dans le système"
     )
     @ApiResponses(value= {
-            @ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès",
+@ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = User.class))),
-            @ApiResponse(responseCode = "500", description = "Erreurinterne du serveur")
+            @ApiResponse(responseCode = "500", description = "Erreurinternedu serveur")
     })
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
@@ -90,13 +90,13 @@ public class UserController {
     @GetMapping("/{id}")
     @Operation(
             summary = "Récupérer un utilisateur par ID",
-            description = "Retourne un utilisateur spécifique en fonction de son identifiant"
+            description = "Retourne unutilisateur spécifique en fonction de son identifiant"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Utilisateur trouvé",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = User.class))),
-            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
+            @ApiResponse(responseCode ="404", description = "Utilisateur non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<User> getUserById(
@@ -191,7 +191,7 @@ public class UserController {
         try {
             User user = userMapper.toEntity(userDTO);
             // Copier manuellement le mot de passe si présent
-            if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
+            if (userDTO.getPassword()!= null && !userDTO.getPassword().isEmpty()) {
                 user.setPassword(userDTO.getPassword());
             }
             
@@ -236,7 +236,7 @@ public class UserController {
                                 newRole.setName(roleName);
                                 newRole.setDescription(roleDTO.getDescription() != null ? 
                                     roleDTO.getDescription() : roleName.name());
-                                Role savedRole = userService.saveRole(newRole);
+                                Role savedRole =userService.saveRole(newRole);
                                 roles.add(savedRole);
                             } catch (Exception e){
                                 logger.error("Error creating role: ", e);
@@ -245,7 +245,7 @@ public class UserController {
                         }
                     } else {
                         return ResponseEntity.badRequest()
-                                .body("Each role must have either an ID or a name");
+                               .body("Each role must have either an ID or a name");
                     }
                 }
 user.setRoles(roles);
@@ -255,19 +255,19 @@ user.setRoles(roles);
             UserDTO responseDTO = userMapper.toDto(savedUser);
             return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
-            logger.error("Error creating user with roles: ", e);
+logger.error("Error creating user with roles: ", e);
             return ResponseEntity.status(500).body("Error creating user: " + e.getMessage());
         }
     }
 
     @PostMapping("/payload")
     @Operation(summary = "Créer un utilisateur à partir d'un payload")
-    @ApiResponses(value = {
+    @ApiResponses(value= {
             @ApiResponse(responseCode = "200", description = "Utilisateur crééavec succès"),
 @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<?> createUserFromPayload(
+   public ResponseEntity<?>createUserFromPayload(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description= "Payload utilisateur à créer",
                     required = true,
@@ -275,14 +275,14 @@ user.setRoles(roles);
                             mediaType = "application/json",
                             schema = @Schema(implementation = UserPayload.class),
                             examples = @ExampleObject(
-                                    name = "Exemple de payload utilisateur",
+                                    name= "Exemple de payload utilisateur",
                                     summary = "Exemple de création de payloadutilisateur",
                                     value = """
                                         {
                                           "username": "elishamavayanza",
                                           "email": "elishama.vayanza@example.com",
                                           "password": "motdepasse123",
-                                          "firstName": "Elishama",
+"firstName": "Elishama",
                                           "lastName": "VAYANZA",
 "phoneNumber": "+234991471988",
                                           "enabled": true,
@@ -299,7 +299,7 @@ user.setRoles(roles);
             User user = userMapper.toNewEntityFromPayload(payload);
 
             // Log what was mapped to the user entity
-            logger.info("Mapped user: username='{}', email='{}', password='{}'",
+           logger.info("Mapped user: username='{}', email='{}', password='{}'",
 user.getUsername(), user.getEmail(), user.getPassword() != null ? "****" : "NULL");
 
             // Gérer le rôle si roleId est fourni
@@ -321,16 +321,37 @@ user.getUsername(), user.getEmail(), user.getPassword() != null ? "****" : "NULL
     @PutMapping("/{id}")
     @Operation(
             summary = "Mettre à jour un utilisateur",
-            description = "Met à jour un utilisateur existant avec les données fournies"
+            description = "Met à jour un utilisateurexistant avec les données fournies"
     )
     @ApiResponses(value = {
-@ApiResponse(responseCode = "200", description = "Utilisateur mis à jour avec succès",
+           @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour avec succès",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = User.class))),
             @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
-           @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet utilisateur à mettreà jour",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = User.class),
+                    examples = @ExampleObject(
+                            name = "Exemple d'utilisateur",
+                            summary = "Exemple de mise à jour d'utilisateur",
+                            value ="""
+                                {
+                                 "username": "johndoe",
+                                  "email": "john.doe@example.com",
+                                  "firstName": "John",
+                                  "lastName": "Doe",
+                                  "phoneNumber": "+1234567890"
+                                }
+                                """
+                    )
+            )
+    )
     public ResponseEntity<User> updateUser(
             @Parameter(description = "ID de l'utilisateur à mettre à jour") @PathVariable Long id,
 @Valid @org.springframework.web.bind.annotation.RequestBody User user) {
@@ -343,18 +364,41 @@ user.getUsername(), user.getEmail(), user.getPassword() != null ? "****" : "NULL
     }
 
     @PutMapping("/{id}/payload")
-@Operation(
-            summary = "Mettre à jour un utilisateur avec payload",
+    @Operation(
+            summary = "Mettre àjour un utilisateur avec payload",
             description = "Met à jour un utilisateur existant en utilisant un objet payload"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour avecsuccès",
+            @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour avec succès",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = User.class))),
             @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
-            @ApiResponse(responseCode = "400", description = "Données de payloadinvalides"),
+           @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Payload utilisateur à mettre à jour",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = UserPayload.class),
+                    examples = @ExampleObject(
+                            name = "Exemple de payload utilisateur",
+                            summary = "Exemple de mise à jour de payload utilisateur",
+                            value = """
+                                {
+                                  "username": "johndoe",
+                                  "email": "john.doe@example.com",
+                                  "firstName": "John",
+                                  "lastName": "Doe",
+                                  "phoneNumber": "+1234567890",
+"enabled": true,
+                                  "roleId": 2
+                                }
+                                """
+                    )
+            )
+    )
     public ResponseEntity<User> updateUserWithPayload(
             @Parameter(description = "ID de l'utilisateur à mettre à jour") @PathVariable Long id,
             @Valid @org.springframework.web.bind.annotation.RequestBody UserPayload payload) {
@@ -388,7 +432,7 @@ user.getUsername(), user.getEmail(), user.getPassword() != null ? "****" : "NULL
             summary = "Supprimer logiquement un utilisateur",
             description = "Marque un utilisateur comme supprimé sans le retirer de la base de données"
     )
-    @ApiResponses(value = {
+    @ApiResponses(value= {
             @ApiResponse(responseCode = "204", description = "Utilisateur supprimé logiquement avec succès"),
             @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
@@ -416,7 +460,7 @@ user.getUsername(), user.getEmail(), user.getPassword() != null ? "****" : "NULL
             @Parameter(description = "Prénom (optionnel)") @RequestParam(required = false) String firstName,
             @Parameter(description = "Nom de famille (optionnel)") @RequestParam(required = false) String lastName,
             @Parameter(description = "ID du rôle (optionnel)") @RequestParam(required = false) Integer roleId) {
-        List<User> users = userService.searchUsersComplexQuery(username, email, firstName, lastName,roleId);
+        List<User> users= userService.searchUsersComplexQuery(username, email, firstName, lastName,roleId);
         return ResponseEntity.ok(users);
     }
 

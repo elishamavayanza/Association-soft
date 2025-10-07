@@ -82,7 +82,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Données invalides ou utilisateur déjà existant"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<User> register(
+    public ResponseEntity<?> register(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Informations de l'utilisateur à inscrire",
                     required = true,
@@ -104,7 +104,14 @@ public class AuthController {
                     )
             ) @Valid @RequestBody RegistrationRequest registrationRequest) {
         try {
-            // Convertir RegistrationRequest en User
+            // Check if user already exists
+            if (userService.getAllUsers().stream()
+                    .anyMatch(u -> u.getUsername().equals(registrationRequest.getUsername()) || 
+                                   u.getEmail().equals(registrationRequest.getEmail()))) {
+                return ResponseEntity.badRequest().body("User with this username or email already exists");
+            }
+            
+            // Convert RegistrationRequest to User
             User user = new User();
             user.setUsername(registrationRequest.getUsername());
             user.setEmail(registrationRequest.getEmail());
@@ -113,18 +120,12 @@ public class AuthController {
             user.setLastName(registrationRequest.getLastName());
             user.setPhoneNumber(registrationRequest.getPhoneNumber());
 
-            // Vérifier si l'utilisateur existe déjà
-            if (userService.getAllUsers().stream()
-                    .anyMatch(u -> u.getUsername().equals(user.getUsername()) || u.getEmail().equals(user.getEmail()))) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            // Dans une vraie application, vous voudrez hasher le mot de passe
-            // et effectuer d'autres vérifications
+            // Save the user
             User registeredUser = userService.saveUser(user);
             return ResponseEntity.ok(registeredUser);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            logger.error("Error during user registration: ", e);
+            return ResponseEntity.status(500).body("Error during registration: " + e.getMessage());
         }
     }
 }
