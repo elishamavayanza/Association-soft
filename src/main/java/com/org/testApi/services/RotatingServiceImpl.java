@@ -28,14 +28,14 @@ public class RotatingServiceImpl implements RotatingService {
     @Autowired
     private MemberRepository memberRepository;
 
-    // Rotating Group methods
+   // Rotating Group methods
     @Override
     public RotatingGroup createRotatingGroup(String name, String description, BigDecimal contributionAmount,
                                            Integer maxMembers, String rotationFrequency, LocalDate startDate) {
         RotatingGroup rotatingGroup = RotatingGroup.builder()
                 .name(name)
                 .description(description)
-                .contributionAmount(contributionAmount)
+                               .contributionAmount(contributionAmount)
                 .maxMembers(maxMembers)
                 .rotationFrequency(RotationFrequency.valueOf(rotationFrequency))
                 .startDate(startDate)
@@ -56,7 +56,7 @@ public class RotatingServiceImpl implements RotatingService {
     }
 
     @Override
-    public RotatingGroup updateRotatingGroup(Long id, RotatingGroup rotatingGroup) {
+            public RotatingGroup updateRotatingGroup(Long id, RotatingGroup rotatingGroup) {
         rotatingGroup.setId(id);
         return rotatingGroupRepository.save(rotatingGroup);
     }
@@ -118,24 +118,33 @@ public class RotatingServiceImpl implements RotatingService {
     // Contribution methods
     @Override
     public Contribution makeContribution(Long memberId, Long roundId, BigDecimal amount, LocalDate contributionDate) {
+        if (memberId == null || roundId == null || amount == null || contributionDate == null) {
+            throw new IllegalArgumentException("Tous les paramètres sont requis : memberId, roundId, amount, contributionDate");
+        }
+        
         Optional<Member> memberOpt = memberRepository.findById(memberId);
         Optional<Round> roundOpt = roundRepository.findById(roundId);
         
-        if (memberOpt.isPresent() && roundOpt.isPresent()) {
-            Contribution contribution = Contribution.builder()
-                    .amount(amount)
-                    .contributionDate(contributionDate)
-                    .status(ContributionStatus.PAID)
-                    .member(memberOpt.get())
-                    .round(roundOpt.get())
-                    .build();
-            
-            return contributionRepository.save(contribution);
+        if (!memberOpt.isPresent()) {
+            throw new RuntimeException("Membre non trouvé avec l'ID : " + memberId);
         }
-        throw new RuntimeException("Member or Round not found");
+        
+        if (!roundOpt.isPresent()) {
+            throw new RuntimeException("Tour non trouvé avec l'ID : " + roundId);
+        }
+        
+        Contribution contribution = Contribution.builder()
+                .amount(amount)
+                .contributionDate(contributionDate)
+                .status(ContributionStatus.PAID)
+                .member(memberOpt.get())
+                .round(roundOpt.get())
+                .build();
+        
+        return contributionRepository.save(contribution);
     }
 
-    @Override
+@Override
     public Optional<Contribution> findContributionById(Long id) {
         return contributionRepository.findById(id);
     }

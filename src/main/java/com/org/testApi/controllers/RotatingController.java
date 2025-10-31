@@ -24,19 +24,19 @@ import java.util.List;
 @RequestMapping("/api/rotating")
 @Tag(name = "Likelemba (Système de rotation financière)", description = "Gestion du système rotatif Likelemba")
 public class RotatingController {
-    
+
     @Autowired
     private RotatingService rotatingService;
-    
+
     @Autowired
     private RotatingGroupMapper rotatingGroupMapper;
-    
+
     @Autowired
     private RoundMapper roundMapper;
-    
+
     @Autowired
     private ContributionMapper contributionMapper;
-    
+
     @Autowired
     private PenaltyMapper penaltyMapper;
 
@@ -50,6 +50,25 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Paramètres pour créer un groupe de rotation",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de groupe",
+                            summary = "Exemple de création de groupe",
+                            value = "{\n" +
+                                    "  \"name\": \"Groupe Likelemba Alpha\",\n" +
+                                    "  \"description\": \"Groupe de rotation pour les membres Alpha\",\n" +
+                                    "  \"contributionAmount\": 10000,\n" +
+                                    "  \"maxMembers\": 10,\n" +
+                                    "  \"rotationFrequency\": \"MONTHLY\",\n" +
+                                    "  \"startDate\": \"2025-11-01\"\n" +
+                                    "}"
+                    )
+            )
+    )
     public ResponseEntity<RotatingGroupDTO> createRotatingGroup(
             @Parameter(description = "Nom du groupe") @RequestParam String name,
             @Parameter(description = "Description du groupe") @RequestParam String description,
@@ -57,7 +76,6 @@ public class RotatingController {
             @Parameter(description = "Nombre maximum de membres") @RequestParam Integer maxMembers,
             @Parameter(description = "Fréquence de rotation") @RequestParam String rotationFrequency,
             @Parameter(description = "Date de début") @RequestParam LocalDate startDate) {
-        
         RotatingGroup rotatingGroup = rotatingService.createRotatingGroup(
                 name, description, contributionAmount, maxMembers, rotationFrequency, startDate);
         return ResponseEntity.ok(rotatingGroupMapper.toDTO(rotatingGroup));
@@ -101,8 +119,31 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<RotatingGroupDTO> updateRotatingGroup(@PathVariable Long id, 
-                                                              @RequestBody RotatingGroupDTO rotatingGroupDTO) {
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet DTO pour mettre à jour un groupe de rotation",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = RotatingGroupDTO.class),
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de mise à jour de groupe",
+                            summary = "Exemple de mise à jour de groupe",
+                            value = "{\n" +
+                                    "  \"id\": 1,\n" +
+                                    "  \"name\": \"Groupe Likelemba Mis à Jour\",\n" +
+                                    "  \"description\": \"Groupe de rotation mis à jour\",\n" +
+                                    "  \"contributionAmount\": 12000,\n" +
+                                    "  \"maxMembers\": 12,\n" +
+                                    "  \"rotationFrequency\": \"WEEKLY\",\n" +
+                                    "  \"startDate\": \"2025-11-01\",\n"+
+                                    "  \"endDate\": \"2026-11-01\",\n" +
+                                    "  \"status\": \"ACTIVE\"\n" +
+                                    "}"
+                    )
+            )
+    )
+    public ResponseEntity<RotatingGroupDTO> updateRotatingGroup(@PathVariable Long id,
+                                                                @RequestBody RotatingGroupDTO rotatingGroupDTO) {
         RotatingGroup rotatingGroup = rotatingGroupMapper.toEntity(rotatingGroupDTO);
         RotatingGroup updatedGroup = rotatingService.updateRotatingGroup(id, rotatingGroup);
         return ResponseEntity.ok(rotatingGroupMapper.toDTO(updatedGroup));
@@ -130,13 +171,68 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<RoundDTO> createRound(
-            @Parameter(description = "ID du groupe") @RequestParam Long rotatingGroupId,
-            @Parameter(description = "Numéro du tour") @RequestParam Integer roundNumber,
-            @Parameter(description = "Date de début") @RequestParam LocalDate startDate,
-            @Parameter(description = "Date de fin") @RequestParam LocalDate endDate) {
-        
-        Round round = rotatingService.createRound(rotatingGroupId, roundNumber, startDate, endDate);
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet payload pour créer un tour",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = RoundPayload.class),
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de tour",
+                            summary = "Exemple de création de tour",
+                            value = "{\n" +
+                                    "  \"rotatingGroupId\": 1,\n" +
+                                    "  \"roundNumber\": 1,\n" +
+                                    "  \"startDate\": \"2025-11-01\",\n" +
+                                    "  \"endDate\": \"2025-11-30\"\n" +
+                                    "}"
+                    )
+            )
+    )
+    public ResponseEntity<RoundDTO> createRound(@RequestBody RoundPayload roundPayload) {
+        Round round = rotatingService.createRound(
+                roundPayload.getRotatingGroupId(),
+                roundPayload.getRoundNumber(),
+                roundPayload.getStartDate(),
+                roundPayload.getEndDate()
+        );
+        return ResponseEntity.ok(roundMapper.toDTO(round));
+    }
+
+    @PostMapping("/rounds/payload")
+    @Operation(summary = "Créer un tour avec payload", description = "Crée un nouveau tour dans un groupe de rotation à partir d'un objet payload")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Tour créé avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = RoundDTO.class))}),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet payload pour créer un tour",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = RoundPayload.class),
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de tour",
+                            summary = "Exemple de création de tour",
+                            value = "{\n" +
+                                    "  \"rotatingGroupId\": 1,\n" +
+                                    "  \"roundNumber\": 1,\n" +
+                                    "  \"startDate\": \"2025-11-01\",\n" +
+                                    "  \"endDate\": \"2025-11-30\"\n" +
+                                    "}"
+                    )
+            )
+    )
+    public ResponseEntity<RoundDTO> createRoundWithPayload(@RequestBody RoundPayload payload) {
+        Round round = rotatingService.createRound(
+                payload.getRotatingGroupId(),
+                payload.getRoundNumber(),
+                payload.getStartDate(),
+                payload.getEndDate()
+        );
         return ResponseEntity.ok(roundMapper.toDTO(round));
     }
 
@@ -165,6 +261,26 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet DTO pour mettre à jour un tour",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = RoundDTO.class),
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de mise à jour de tour",
+                            summary = "Exemple de mise à jour de tour",
+                            value = "{\n" +
+                                    "  \"id\": 1,\n" +
+                                    "  \"roundNumber\": 2,\n" +
+                                    "  \"startDate\": \"2025-12-01\",\n" +
+                                    "  \"endDate\": \"2025-12-31\",\n" +
+                                    "  \"status\": \"ACTIVE\",\n" +
+                                    "  \"rotatingGroupId\": 1\n"+
+                                    "}"
+                    )
+            )
+    )
     public ResponseEntity<RoundDTO> updateRound(@PathVariable Long id, @RequestBody RoundDTO roundDTO) {
         Round round = roundMapper.toEntity(roundDTO);
         Round updatedRound = rotatingService.updateRound(id, round);
@@ -193,14 +309,76 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Paramètres pour faire une contribution",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de contribution",
+                            summary = "Exemple de contribution",
+                            value = "{\n" +
+                                    "  \"memberId\": 1,\n" +
+                                    "  \"roundId\": 1,\n" +
+                                    "  \"amount\": 10000,\n" +
+                                    "  \"contributionDate\": \"2025-11-15\"\n" +
+                                    "}"
+                    )
+            )
+    )
     public ResponseEntity<ContributionDTO> makeContribution(
             @Parameter(description = "ID du membre") @RequestParam Long memberId,
             @Parameter(description = "ID du tour") @RequestParam Long roundId,
             @Parameter(description = "Montant") @RequestParam BigDecimal amount,
             @Parameter(description = "Date de contribution") @RequestParam LocalDate contributionDate) {
-        
         Contribution contribution = rotatingService.makeContribution(memberId, roundId, amount, contributionDate);
         return ResponseEntity.ok(contributionMapper.toDTO(contribution));
+    }
+
+    @PostMapping("/contributions/payload")
+    @Operation(summary = "Faire une contribution avec payload", description = "Enregistre une contribution d'un membre pour un tour à partir d'un objet payload")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contribution créée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ContributionDTO.class))}),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet payload pour faire une contribution",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ContributionPayload.class),
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de contribution",
+                            summary = "Exemple de contribution",
+                            value = "{\n" +
+                                    "  \"memberId\": 1,\n" +
+                                    "  \"roundId\": 1,\n" +
+                                    "  \"amount\": 10000,\n" +
+                                    "  \"contributionDate\": \"2025-11-15\"\n" +
+                                    "}"
+                    )
+            )
+    )
+    public ResponseEntity<?> makeContributionWithPayload(@RequestBody ContributionPayload payload) {
+        try {
+            // Validate payload
+            if (payload.getMemberId() == null || payload.getRoundId() == null ||
+                    payload.getAmount() == null || payload.getContributionDate() == null) {
+                return ResponseEntity.badRequest().body("Tous les champs sont requis : memberId, roundId, amount, contributionDate");
+            }
+
+            Contribution contribution = rotatingService.makeContribution(
+                    payload.getMemberId(),
+                    payload.getRoundId(),
+                    payload.getAmount(),
+                    payload.getContributionDate());
+            return ResponseEntity.ok(contributionMapper.toDTO(contribution));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur lors de la création de la contribution : " + e.getMessage());
+        }
     }
 
     @GetMapping("/contributions/{id}")
@@ -228,8 +406,28 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<ContributionDTO> updateContribution(@PathVariable Long id, 
-                                                            @RequestBody ContributionDTO contributionDTO) {
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet DTO pour mettre à jour une contribution",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ContributionDTO.class),
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de mise à jour de contribution",
+                            summary = "Exemple de mise à jour de contribution",
+                            value = "{\n" +
+                                    "  \"id\": 1,\n" +
+                                    "  \"amount\": 12000,\n" +
+                                    "  \"contributionDate\": \"2025-12-15\",\n" +
+                                    "  \"status\": \"CONFIRMED\",\n" +
+                                    "  \"memberId\": 1,\n" +
+                                    "  \"roundId\": 1\n" +
+                                    "}"
+                    )
+            )
+    )
+    public ResponseEntity<ContributionDTO> updateContribution(@PathVariable Long id,
+                                                              @RequestBody ContributionDTO contributionDTO) {
         Contribution contribution = contributionMapper.toEntity(contributionDTO);
         Contribution updatedContribution = rotatingService.updateContribution(id, contribution);
         return ResponseEntity.ok(contributionMapper.toDTO(updatedContribution));
@@ -257,6 +455,25 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Paramètres pour appliquer une pénalité",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de pénalité",
+                            summary = "Exemple d'application de pénalité",
+                            value = "{\n" +
+                                    "  \"memberId\": 1,\n" +
+                                    "  \"roundId\": 1,\n" +
+                                    "  \"amount\": 5000,\n"+
+                                    "  \"reason\": \"Retard de paiement\",\n"+
+                                    "  \"penaltyType\": \"LATE_PAYMENT\",\n" +
+                                    "  \"penaltyDate\": \"2025-11-20\"\n" +
+                                    "}"
+                    )
+            )
+    )
     public ResponseEntity<PenaltyDTO> applyPenalty(
             @Parameter(description = "ID du membre") @RequestParam Long memberId,
             @Parameter(description = "ID du tour") @RequestParam Long roundId,
@@ -264,7 +481,6 @@ public class RotatingController {
             @Parameter(description = "Raison") @RequestParam String reason,
             @Parameter(description = "Type de pénalité") @RequestParam String penaltyType,
             @Parameter(description = "Date de pénalité") @RequestParam LocalDate penaltyDate) {
-        
         Penalty penalty = rotatingService.applyPenalty(memberId, roundId, amount, reason, penaltyType, penaltyDate);
         return ResponseEntity.ok(penaltyMapper.toDTO(penalty));
     }
@@ -294,6 +510,28 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet DTO pour mettre à jour une pénalité",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = PenaltyDTO.class),
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de mise à jour de pénalité",
+                            summary = "Exemple de mise à jour de pénalité",
+                            value = "{\n" +
+                                    "  \"id\": 1,\n" +
+                                    "  \"amount\": 6000,\n" +
+                                    "  \"reason\": \"Retard de paiement mis à jour\",\n" +
+                                    "  \"penaltyType\": \"LATE_PAYMENT\",\n" +
+                                    "  \"penaltyDate\": \"2025-12-20\",\n" +
+                                    "  \"status\": \"APPLIED\",\n" +
+                                    "  \"memberId\": 1,\n" +
+                                    "  \"roundId\": 1\n" +
+                                    "}"
+                    )
+            )
+    )
     public ResponseEntity<PenaltyDTO> updatePenalty(@PathVariable Long id, @RequestBody PenaltyDTO penaltyDTO) {
         Penalty penalty = penaltyMapper.toEntity(penaltyDTO);
         Penalty updatedPenalty = rotatingService.updatePenalty(id, penalty);
@@ -365,6 +603,28 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet payload pour créer un groupe de rotation",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = RotatingGroupPayload.class),
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de payload de groupe",
+                            summary = "Exemple de création de groupe avec payload",
+                            value = "{\n" +
+                                    "  \"name\": \"Groupe Likelemba Beta\",\n" +
+                                    "  \"description\": \"Groupe de rotation pour les membres Beta\",\n" +
+                                    "  \"contributionAmount\": 15000,\n" +
+                                    "  \"maxMembers\": 15,\n" +
+                                    "  \"rotationFrequency\": \"WEEKLY\",\n" +
+                                    "  \"startDate\": \"2025-11-01\",\n" +
+                                    "  \"endDate\": \"2026-11-01\",\n" +
+                                    "  \"status\": \"ACTIVE\"\n" +
+                                    "}"
+                    )
+            )
+    )
     public ResponseEntity<RotatingGroupDTO> createRotatingGroupWithPayload(@RequestBody RotatingGroupPayload payload) {
         RotatingGroup rotatingGroup = rotatingService.createRotatingGroup(
                 payload.getName(),
@@ -386,8 +646,30 @@ public class RotatingController {
             @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<RotatingGroupDTO> updateRotatingGroupWithPayload(@PathVariable Long id, 
-                                                                         @RequestBody RotatingGroupPayload payload) {
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Objet payload pour mettre à jour un groupe de rotation",
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = RotatingGroupPayload.class),
+                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                            name = "Exemple de mise à jour de groupe avec payload",
+                            summary = "Exemple de mise à jour de groupe avec payload",
+                            value = "{\n" +
+                                    "  \"name\": \"Groupe Likelemba Mis à Jour\",\n" +
+                                    "  \"description\": \"Groupe de rotation mis à jour avec payload\",\n" +
+                                    "  \"contributionAmount\": 13000,\n" +
+                                    "  \"maxMembers\": 13,\n" +
+                                    "  \"rotationFrequency\": \"MONTHLY\",\n" +
+                                    "  \"startDate\": \"2025-11-01\",\n" +
+                                    "  \"endDate\": \"2026-11-01\",\n" +
+                                    "  \"status\": \"ACTIVE\"\n" +
+                                    "}"
+                    )
+            )
+    )
+    public ResponseEntity<RotatingGroupDTO> updateRotatingGroupWithPayload(@PathVariable Long id,
+                                                                           @RequestBody RotatingGroupPayload payload) {
         RotatingGroup rotatingGroup = rotatingGroupMapper.toEntity(rotatingGroupMapper.toDTO(payload));
         rotatingGroup.setId(id);
         RotatingGroup updatedGroup = rotatingService.updateRotatingGroup(id, rotatingGroup);

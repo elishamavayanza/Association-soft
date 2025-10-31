@@ -51,5 +51,14 @@ public class Role {
         ROLE_MEMBER,     // Membre standard
         ROLE_GUEST       // Invité avec accès limité
     }
-
+    
+    // Manually adding the setter method to fix compilation error
+    public void setName(ERole name) {
+        this.name = name;
+    }
+    
+    // Manually adding the getter method to fix compilation error
+    public ERole getName() {
+        return this.name;
+    }
 }

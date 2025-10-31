@@ -35,12 +35,12 @@ import java.util.List;
 @ToString(callSuper = true)
 public class User extends BaseEntity {
 
-    /**
+/**
      * Nom d'utilisateur unique.
      */
     @Column(nullable = false, length = 50)
     @NotBlank(message = "Le nom d'utilisateur ne peut pas être vide")
-    @Size(min = 3, max = 50, message = "Le nom d'utilisateur doit contenir entre 3 et 50 caractères")
+    @Size(min = 3, max = 50, message = "Le nom d'utilisateur doit contenir entre3 et 50 caractères")
     private String username;
 
     /**
@@ -48,7 +48,7 @@ public class User extends BaseEntity {
      * Limité à 100 caractères.
      */
     @Column(nullable = false, length = 100)
-    @NotBlank(message = "L'email ne peut pas être vide")
+    @NotBlank(message = "L'emailne peut pas être vide")
     @Email(message = "L'email doit être une adresse valide")
     @Size(max = 100, message = "L'email ne doit pas dépasser 100 caractères")
     private String email;
@@ -62,7 +62,7 @@ public class User extends BaseEntity {
     private String password;
 
     /**
-     * Ensemble des rôles attribués à l'utilisateur.
+     * Ensemble des rôlesattribués à l'utilisateur.
      */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
@@ -82,7 +82,7 @@ public class User extends BaseEntity {
     private List<Activity> createdEvents = new ArrayList<>();
 
     /**
-     * Liste des activités auxquelles cet utilisateur participe.
+* Liste des activités auxquelles cet utilisateur participe.
      */
     @ManyToMany(mappedBy = "participants")
     @Builder.Default
@@ -99,7 +99,7 @@ public class User extends BaseEntity {
     /**
      * Nom de famille de l'utilisateur.
      */
-    @Size(max = 50, message = "Le nom de famille ne doit pas dépasser 50 caractères")
+    @Size(max = 50, message = "Le nom de famille ne doit pas dépasser50 caractères")
     private String lastName;
 
     /**
@@ -109,7 +109,7 @@ public class User extends BaseEntity {
     private String phoneNumber;
 
     /**
-     * Date et heure de la dernière connexion.
+     * Date et heurede la dernière connexion.
      */
     private LocalDateTime lastLogin;
 
@@ -133,11 +133,59 @@ public class User extends BaseEntity {
     /**
      * Taille de la photo de profil en octets.
      */
-    private Long profilePhotoSize;
+private Long profilePhotoSize;
 
     /**
      * Token de l'appareil pour les notifications push.
      */
     private String deviceToken;
-
+// Manually adding missing setter methods to fix compilation errors
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    public void setEmail(String email) {
+        this.email = email;
+    }
+    
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    
+public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+    
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+    
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+    
+    // Manually adding missing getter methods tofix compilation errors
+    public String getUsername() {
+        return this.username;
+    }
+    
+    public String getEmail() {
+        return this.email;
+    }
+    
+    public String getPassword() {
+        return this.password;
+    }
+    
+    public String getFirstName() {
+        return this.firstName;
+    }
+    
+    public String getLastName() {
+        return this.lastName;
+    }
+    
+    public Set<Role> getRoles() {
+        return this.roles;
+    }
 }

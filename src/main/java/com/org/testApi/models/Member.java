@@ -31,7 +31,7 @@ import com.org.testApi.models.RotatingGroup;
 public class Member extends BaseEntity {
 
     /**
-     * Code unique du membre au sein de l'association.
+    * Code unique du membre au sein de l'association.
      * Ce code est généré automatiquement à la création du membre.
      */
     @Column(name = "member_code", unique = true)
@@ -39,7 +39,7 @@ public class Member extends BaseEntity {
 
     /**
      * Utilisateur associé au membre.
-     * Ce lien est obligatoire.
+     * Celien est obligatoire.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -50,7 +50,7 @@ public class Member extends BaseEntity {
     /**
      * Association à laquelle appartient ce membre.
      * Ce lien est obligatoire.
-     */
+*/
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "association_id", nullable = false)
     @ToString.Exclude
@@ -59,7 +59,7 @@ public class Member extends BaseEntity {
 
     /**
      * Date d'adhésion du membre à l'association.
-     * Si non renseignée, sera initialisée à la date courante lors de la création.
+     * Si non renseignée,sera initialisée à la date courante lors de la création.
      */
     private LocalDate joinDate;
 
@@ -70,7 +70,7 @@ public class Member extends BaseEntity {
     private LocalDate leaveDate;
 
     /**
-     * Type du membre (régulier, honoraire, bénévole, etc.).
+     * Typedu membre (régulier, honoraire, bénévole, etc.).
      * Par défaut, un membre est de type REGULAR.
      */
     @Enumerated(EnumType.STRING)
@@ -106,7 +106,7 @@ public class Member extends BaseEntity {
 
     /**
      * Liste des contributions du membre dans les groupes de rotation.
-     */
+    */
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
@@ -116,7 +116,7 @@ public class Member extends BaseEntity {
     /**
      * Liste des pénalités appliquées au membre.
      */
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy ="member", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
@@ -125,7 +125,7 @@ public class Member extends BaseEntity {
     /**
      * Groupes de rotation financière auxquels le membre appartient.
      */
-    @ManyToMany(mappedBy = "members", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "members",fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
@@ -135,7 +135,7 @@ public class Member extends BaseEntity {
      * Indique si ce membre a des droits d'administrateur.
      */
     @Column(columnDefinition = "boolean default false")
-    private boolean isAdmin;
+private boolean isAdmin;
 
 
     /**
@@ -147,7 +147,7 @@ public class Member extends BaseEntity {
             this.joinDate = LocalDate.now();
         }
         
-        // Générer un code unique si ce n'est pas déjà fait
+       // Générer un code unique si ce n'est pas déjà fait
         if (this.memberCode == null) {
             this.memberCode = generateMemberCode();
         }
@@ -161,7 +161,7 @@ public class Member extends BaseEntity {
      */
     private String generateMemberCode() {
         // À implémenter correctement dans le service
-        // Cette implémentation basique sera remplacée par une plus robuste
+        // Cette implémentation basiquesera remplacée par une plus robuste
         return "MBR-" + System.currentTimeMillis();
     }
 
@@ -169,7 +169,7 @@ public class Member extends BaseEntity {
      * Indique si le membre est actuellement actif (pas de date de départ définie).
      *
      * @return true si le membre est actif, false sinon.
-     */
+    */
     public boolean isActive() {
         return leaveDate == null;
     }
@@ -178,13 +178,13 @@ public class Member extends BaseEntity {
      * Vérifie si le membre est éligible pour emprunter.
      * Un membre est éligible s'il:
      * 1. Est actif
-     * 2. A payé au moins une cotisation
+     * 2. A payéau moins une cotisation
      * 3. N'a pas de prêts en retard
      *
      * @return true si le membre est éligible, false sinon
      */
     public boolean isEligibleForLoan() {
-        // Vérifier si le membre est actif
+                // Vérifier si le membre est actif
         if (!isActive()) {
             return false;
         }
@@ -194,12 +194,12 @@ public class Member extends BaseEntity {
             return false;
         }
 
-        // Vérifier si le membre a des prêts en retard
+                // Vérifier si le membre a des prêts en retard
         if (loans != null) {
             boolean hasOverdueLoans = loans.stream()
                     .filter(loan -> loan != null)
                     .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
-            if (hasOverdueLoans) {
+                        if (hasOverdueLoans) {
                 return false;
             }
         }
@@ -218,5 +218,10 @@ public class Member extends BaseEntity {
         BENEFACTOR,    // Bienfaiteur
         VOLUNTEER,     // Bénévole
         BOARD_MEMBER   // Membre du conseil d'administration
+    }
+    
+// Manually adding missing getter method to fix compilation error
+    public List<Loan> getLoans() {
+        return this.loans;
     }
 }

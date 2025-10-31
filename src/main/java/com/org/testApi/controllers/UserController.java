@@ -389,6 +389,7 @@ user.getUsername(), user.getEmail(), user.getPassword() != null ? "****" : "NULL
                                 {
                                   "username": "johndoe",
                                   "email": "john.doe@example.com",
+                                  "password": "Ma1234",                       
                                   "firstName": "John",
                                   "lastName": "Doe",
                                   "phoneNumber": "+1234567890",
