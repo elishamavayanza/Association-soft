@@ -13,4 +13,5 @@ public interface ContributionRepository extends JpaRepository<Contribution, Long
     List<Contribution> findByMember(Member member);
     List<Contribution> findByRound(Round round);
     List<Contribution> findByStatus(String status);
+    List<Contribution> findByMemberAndRound(Member member, Round round);
 }

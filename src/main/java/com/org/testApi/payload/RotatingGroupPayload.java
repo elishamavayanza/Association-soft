@@ -23,4 +23,19 @@ public class RotatingGroupPayload extends BasePayload {
     private String status;
     @Builder.Default
     private List<Long> memberIds = new ArrayList<>();
+    
+    // Method to add member IDs
+    public void addMemberId(Long memberId) {
+        if (this.memberIds == null) {
+            this.memberIds = new ArrayList<>();
+        }
+        this.memberIds.add(memberId);
+    }
+    
+    // Method to remove member IDs
+    public void removeMemberId(Long memberId) {
+        if (this.memberIds != null) {
+            this.memberIds.remove(memberId);
+        }
+    }
 }

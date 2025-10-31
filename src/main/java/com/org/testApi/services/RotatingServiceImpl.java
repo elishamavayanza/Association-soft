@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class RotatingServiceImpl implements RotatingService {
@@ -28,14 +29,14 @@ public class RotatingServiceImpl implements RotatingService {
     @Autowired
     private MemberRepository memberRepository;
 
-   // Rotating Group methods
+    // Rotating Group methods
     @Override
     public RotatingGroup createRotatingGroup(String name, String description, BigDecimal contributionAmount,
                                            Integer maxMembers, String rotationFrequency, LocalDate startDate) {
         RotatingGroup rotatingGroup = RotatingGroup.builder()
                 .name(name)
                 .description(description)
-                               .contributionAmount(contributionAmount)
+                .contributionAmount(contributionAmount)
                 .maxMembers(maxMembers)
                 .rotationFrequency(RotationFrequency.valueOf(rotationFrequency))
                 .startDate(startDate)
@@ -56,7 +57,7 @@ public class RotatingServiceImpl implements RotatingService {
     }
 
     @Override
-            public RotatingGroup updateRotatingGroup(Long id, RotatingGroup rotatingGroup) {
+    public RotatingGroup updateRotatingGroup(Long id, RotatingGroup rotatingGroup) {
         rotatingGroup.setId(id);
         return rotatingGroupRepository.save(rotatingGroup);
     }
@@ -69,6 +70,74 @@ public class RotatingServiceImpl implements RotatingService {
     @Override
     public List<RotatingGroup> findActiveRotatingGroups() {
         return rotatingGroupRepository.findByStatus(GroupStatus.ACTIVE.name());
+    }
+
+    @Override
+    public RotatingGroup addMembersToGroup(Long groupId, List<Long> memberIds) {
+        // Find the rotating group
+        Optional<RotatingGroup> groupOpt = rotatingGroupRepository.findById(groupId);
+        if (!groupOpt.isPresent()) {
+            throw new RuntimeException("Groupe de rotation non trouvé avec l'ID : " + groupId);
+        }
+        
+        RotatingGroup group = groupOpt.get();
+        
+        // Check if the group has reached maximum members
+        if (group.getMaxMembers() != null && 
+            (group.getMembers().size() + memberIds.size()) > group.getMaxMembers()) {
+            throw new RuntimeException("Impossible d'ajouter des membres : le nombre maximum de membres serait dépassé");
+        }
+        
+        // Find all members by their IDs
+        List<Member> membersToAdd = memberRepository.findAllById(memberIds);
+        
+        // Check if all members were found
+        if (membersToAdd.size() != memberIds.size()) {
+            List<Long> foundMemberIds = membersToAdd.stream()
+                    .map(Member::getId)
+                    .collect(Collectors.toList());
+            List<Long> notFoundMemberIds = memberIds.stream()
+                    .filter(id -> !foundMemberIds.contains(id))
+                    .collect(Collectors.toList());
+            throw new RuntimeException("Certains membres n'ont pas été trouvés : " + notFoundMemberIds);
+        }
+        
+        // Add members to the group
+        group.getMembers().addAll(membersToAdd);
+        
+        // Save and return the updated group
+        return rotatingGroupRepository.save(group);
+    }
+
+    @Override
+    public RotatingGroup removeMembersFromGroup(Long groupId, List<Long> memberIds) {
+        // Find the rotating group
+        Optional<RotatingGroup> groupOpt = rotatingGroupRepository.findById(groupId);
+        if (!groupOpt.isPresent()) {
+            throw new RuntimeException("Groupe de rotation non trouvé avec l'ID : " + groupId);
+        }
+        
+        RotatingGroup group = groupOpt.get();
+        
+        // Find members to remove by their IDs
+        List<Member> membersToRemove = memberRepository.findAllById(memberIds);
+        
+        // Check if all members were found
+        if (membersToRemove.size() != memberIds.size()) {
+            List<Long> foundMemberIds = membersToRemove.stream()
+                    .map(Member::getId)
+                    .collect(Collectors.toList());
+            List<Long> notFoundMemberIds = memberIds.stream()
+                    .filter(id -> !foundMemberIds.contains(id))
+                    .collect(Collectors.toList());
+            throw new RuntimeException("Certains membres n'ont pas été trouvés : " + notFoundMemberIds);
+        }
+        
+        // Remove members from the group
+        group.getMembers().removeAll(membersToRemove);
+        
+        // Save and return the updated group
+        return rotatingGroupRepository.save(group);
     }
 
     // Round methods
@@ -123,7 +192,8 @@ public class RotatingServiceImpl implements RotatingService {
         }
         
         Optional<Member> memberOpt = memberRepository.findById(memberId);
-        Optional<Round> roundOpt = roundRepository.findById(roundId);
+        // Use the new method to fetch round with rotating group and members
+        Optional<Round> roundOpt = roundRepository.findWithRotatingGroupAndMembersById(roundId);
         
         if (!memberOpt.isPresent()) {
             throw new RuntimeException("Membre non trouvé avec l'ID : " + memberId);
@@ -133,18 +203,36 @@ public class RotatingServiceImpl implements RotatingService {
             throw new RuntimeException("Tour non trouvé avec l'ID : " + roundId);
         }
         
+        Member member = memberOpt.get();
+        Round round = roundOpt.get();
+        RotatingGroup group = round.getRotatingGroup();
+        
+        // Check if member belongs to the rotating group
+        // Fix: properly check if member belongs to the rotating group
+        boolean isMemberInGroup = group.getMembers().stream()
+                .anyMatch(m -> m.getId().equals(memberId));
+        if (!isMemberInGroup) {
+            throw new RuntimeException("Le membre n'appartient pas au groupe de rotation");
+        }
+        
+        // Check if contribution already exists for this member and round
+        List<Contribution> existingContributions = contributionRepository.findByMemberAndRound(member, round);
+        if (!existingContributions.isEmpty()) {
+            throw new RuntimeException("Une contribution existe déjà pour ce membre et ce tour");
+        }
+        
         Contribution contribution = Contribution.builder()
                 .amount(amount)
                 .contributionDate(contributionDate)
                 .status(ContributionStatus.PAID)
-                .member(memberOpt.get())
-                .round(roundOpt.get())
+                .member(member)
+                .round(round)
                 .build();
         
         return contributionRepository.save(contribution);
     }
 
-@Override
+    @Override
     public Optional<Contribution> findContributionById(Long id) {
         return contributionRepository.findById(id);
     }

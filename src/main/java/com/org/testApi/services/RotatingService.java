@@ -27,6 +27,12 @@ public interface RotatingService {
     
     List<RotatingGroup> findActiveRotatingGroups();
     
+    // Method to add members to a rotating group
+    RotatingGroup addMembersToGroup(Long groupId, List<Long> memberIds);
+    
+    // Method to remove members from a rotating group
+    RotatingGroup removeMembersFromGroup(Long groupId, List<Long> memberIds);
+    
     // Round methods
     Round createRound(Long rotatingGroupId, Integer roundNumber, LocalDate startDate, LocalDate endDate);
     
