@@ -23,7 +23,7 @@ public class Role {
      * Identifiant unique du rôle.
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.TABLE)
     private Integer id;
 
 
