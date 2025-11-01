@@ -9,14 +9,16 @@ spring:
     password:
   
   jpa:
-    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    database-platform: com.org.testApi.config.SQLiteDialect
     hibernate:
       ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        globally_quoted_identifiers: true
+        globally_quoted_identifiers: false
+        id:
+          new_generator_mappings: false
   
   # CONFIGURATION POUR AUTORISER L'OVERRIDE DES BEANS
   main:
@@ -32,8 +34,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: votre-email@gmail.com
-    password: votre-mot-de-passe-app
+    username: vayanzaelishama.com
+    password: El16.12.2003
     properties:
       mail:
         smtp:
@@ -84,11 +86,11 @@ aws:
 # ==============================================
 twilio:
   account:
-    sid: votre-account-sid
+    sid: vayanzaelishama@gmail.com
   auth:
-    token: votre-auth-token
+    token: El16.12.2004
   phone:
-    number: "+1234567890"
+    number: "+243991471988"
 
 # ==============================================
 # CONFIGURATION FIREBASE
@@ -115,7 +117,7 @@ apns:
 # CONFIGURATIONS DIVERSES
 # ==============================================
 server:
-  port: 8087
+  port: 8089
 
 # ====================================================
 # CONFIGURATION SPRINGDOC OPENAPI (SWAGGER)

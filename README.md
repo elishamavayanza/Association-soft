@@ -30,24 +30,24 @@ src/
 │   │├── models/#Entités JPA représentant les tables de la base de données
 │   │   ├── repositories/                      # Interfaces JPA pour l'accès aux données (DAO)
 │   │   ├── services/                          # Logique métier (services appelés par les contrôleurs)
-│   │├── security/# Configuration dela sécurité (JWT, Auth, filtres, services utilisateur)
+│   │├── security/# Configuration delasécurité (JWT, Auth, filtres, services utilisateur)
 │   │   └── utils/                             # Classes utilitaires (helpers, formatters, générateurs, constantes)
 │
 │   └── resources/                             # Ressources de l'application (noncompilées)
-│       ├── application.properties             # Fichier de configuration par défaut
+│├── application.properties             # Fichier de configuration par défaut
 │       ├── application-dev.properties         # Configuration spécifique à l'environnement de développement
 │       ├── application-prod.properties        # Configuration pour l’environnement de production
-│       ├── static/                            #Fichiers statiques (CSS, JS, images pour une app web)
+│       ├── static/                            #Fichiers statiques (CSS,JS, images pour une app web)
 │       └── templates/                         # Templates HTML (si utilisation de Thymeleaf, FreeMarker...)
 │
 └── test/                                      # Tests unitaires et d'intégration
 
 ````
 
-## 🔄Système Likelemba (rotation financière)
+## 🔄Système Likelemba (rotationfinancière)
 
 ### Description
-Module complet de gestion du système rotatif Likelemba, permettant la création de groupes de tontine, la gestion des tours, des contributions, et des pénalités. L'objectif est d'automatiserla rotation financière entremembresselon l'ordre défini et d'assurer le suivi transparent des montants versés et reçus.
+Module complet de gestion du système rotatif Likelemba, permettant la création de groupes de tontine, la gestion des tours, des contributions, et des pénalités. L'objectif est d'automatiserla rotation financière entremembresselonl'ordre défini et d'assurer le suivi transparent des montants versés et reçus.
 
 ### Structure
 - **RotatingGroup** : Entité représentant un groupe de rotation financière
@@ -61,7 +61,7 @@ Module complet de gestion du système rotatif Likelemba, permettant la création
 - API REST complète pour l'intégration avec l'interface utilisateur
 
 ### Endpoints API
-- `/api/rotating/groups`- Gestion des groupes de rotation
+- `/api/rotating/groups`- Gestiondes groupes de rotation
 - `/api/rotating/rounds` - Gestion des tours
 - `/api/rotating/contributions` - Gestion des contributions
 - `/api/rotating/penalties` - Gestion des pénalités
@@ -91,7 +91,7 @@ spring.h2.console.enabled=truespring.h2.console.path=/h2-console
 ### 2. Clubs et organisations communautaires
 - **Clubs sportifs** : Gestion des membres, des cotisations et des événements sportifs
 - **Groupes de hobby** : Organisation d'activités et gestion des participants
-- **Associations de quartier** : Coordination des initiatives communautaires
+- **Associationsde quartier** : Coordination des initiatives communautaires
 - **Groupes de tontine communautaires** : Mise en place de systèmes de rotation financière
 
 ### 3. Organisations professionnelles
@@ -105,14 +105,14 @@ spring.h2.console.enabled=truespring.h2.console.path=/h2-console
 - Suivi des rôles et permissions (admin, modérateur, membre, invité)
 -Gestion des cotisationset vérification du statut à jour
 
-### Système financier intégré
+### Système financierintégré
 - Suivi des paiements et des cotisations
 - Gestion des prêts entre membres avec calcul des intérêts
 - Système de rotation financière Likelemba (tontine)
 - Catégorisation des transactions financières
 - Rapports financiers automatiques
 
-###Communication et notification
+### Communication et notification
 - Système de notifications par email, SMS et push
 - Annonces et mises à jour aux membres
 - Confirmation automatique pour les événements
@@ -127,7 +127,7 @@ spring.h2.console.enabled=truespring.h2.console.path=/h2-console
 ### Pour une association locale
 1. Inscription de nouveaux membres via l'interface d'authentification
 2. Paiement des cotisations annuelles avec suivi automatique
-3. Organisation d'événements (assemblées générales, activités sociales)
+3. Organisation d'événements (assembléesgénérales, activités sociales)
 4. Gestion des finances avec rapport mensuel des entrées/sorties
 5. Communication avec les membres via notifications
 
@@ -145,3 +145,73 @@ ___
 - **Historique complet** :Suivi de toutes les activités et modifications
 
 Cette application serait particulièrement utile pour les associations qui ont besoin d'un système de gestion intégré mais n'ont pas les ressources pour développer une solution personnalisée. Elle peut être déployée sur un serveur local ou cloud selon les besoinsde l'organisation.
+
+#TestApi Application
+
+This is a Spring Boot application that can run with SQLite as the database.
+
+## Running with SQLite (Default)
+
+The application is configured to use SQLite by default. When you run the application, it will automatically create a SQLite database file named `association.db` in the project root directory.
+
+To run the application withSQLite:
+
+```bash
+./mvnw spring-boot:run
+```
+
+Or build and run:
+
+```bash
+./mvnw clean package
+java -jar target/Association-soft-0.0.1-SNAPSHOT.jar
+```
+
+## Configuration
+
+The SQLite configuration is defined in:
+- `src/main/resources/application.properties`
+- `src/main/resources/application.yml`
+
+Key configuration properties:
+```properties
+# SQLite Database Configuration
+spring.datasource.url=jdbc:sqlite:./association.db
+spring.datasource.driver-class-name=org.sqlite.JDBC
+spring.datasource.username=
+spring.datasource.password=
+
+# JPA/Hibernate Properties for SQLite
+spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.globally_quoted_identifiers=false
+spring.jpa.properties.hibernate.id.new_generator_mappings=false
+```
+
+## Database Schema
+
+Theapplication uses Hibernate to automatically generate the database schema. The `ddl-auto=update` setting means that Hibernate will:
+- Create the database schema on first run
+- Update the schema when entity classes change
+- Preserve existing data
+
+## Scripts
+
+The project includes several scripts for different environments:
+- `run_default.sh` -Run with SQLite (default configuration)
+- `run_prod.sh` - Run with MariaDB (production configuration)
+- `test_build.sh` - Build and run tests
+
+To run with SQLite using the script:
+```bash
+./run_default.sh
+```
+
+## Accessing the Application
+
+Once the application is running:
+-REST API: http://localhost:8090/api/
+- Swagger UI: http://localhost:8090/swagger-ui.html
+- Database file: `association.db` in the project root directory

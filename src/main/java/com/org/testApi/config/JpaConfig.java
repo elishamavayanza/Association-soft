@@ -37,6 +37,8 @@ public class JpaConfig {
         properties.setProperty("hibernate.hbm2ddl.auto", "update");
         properties.setProperty("hibernate.show_sql", "true");
         properties.setProperty("hibernate.format_sql", "true");
+        properties.setProperty("hibernate.id.new_generator_mappings", "false");
+        properties.setProperty("hibernate.globally_quoted_identifiers", "false");
         return properties;
     }
 }

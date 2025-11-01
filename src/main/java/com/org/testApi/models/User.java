@@ -40,7 +40,7 @@ public class User extends BaseEntity {
      */
     @Column(nullable = false, length = 50)
     @NotBlank(message = "Le nom d'utilisateur ne peut pas être vide")
-    @Size(min = 3, max = 50, message = "Le nom d'utilisateur doit contenir entre3 et 50 caractères")
+    @Size(min = 3, max = 50, message = "Le nom d'utilisateur doit contenir entre3et 50 caractères")
     private String username;
 
     /**
@@ -48,14 +48,14 @@ public class User extends BaseEntity {
      * Limité à 100 caractères.
      */
     @Column(nullable = false, length = 100)
-    @NotBlank(message = "L'emailne peut pas être vide")
+    @NotBlank(message = "L'emailne peutpas être vide")
     @Email(message = "L'email doit être une adresse valide")
     @Size(max = 100, message = "L'email ne doit pas dépasser 100 caractères")
     private String email;
 
     /**
      * Mot de passe hashé de l'utilisateur.
-     */
+  */
     @Column(nullable = false)
     @NotBlank(message = "Le mot de passe ne peut pas être vide")
     @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
@@ -70,7 +70,7 @@ public class User extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Builder.Default
     @JsonIgnore
-    private Set<Role> roles = new HashSet<>();
+    private Set<Role>roles = new HashSet<>();
 
     /**
      * Liste des activités créées par cet utilisateur.
@@ -82,7 +82,7 @@ public class User extends BaseEntity {
     private List<Activity> createdEvents = new ArrayList<>();
 
     /**
-* Liste des activités auxquelles cet utilisateur participe.
+* Listedes activités auxquelles cet utilisateur participe.
      */
     @ManyToMany(mappedBy = "participants")
     @Builder.Default
@@ -93,51 +93,60 @@ public class User extends BaseEntity {
     /**
      * Prénom de l'utilisateur.
      */
-    @Size(max = 50, message = "Le prénom ne doit pas dépasser 50 caractères")
+    @Size(max =50, message = "Le prénom ne doit pas dépasser 50 caractères")
+    @Column(name = "first_name")
     private String firstName;
 
     /**
      * Nom de famille de l'utilisateur.
      */
-    @Size(max = 50, message = "Le nom de famille ne doit pas dépasser50 caractères")
+    @Size(max = 50, message = "Le nom de famille nedoit pas dépasser50 caractères")
+    @Column(name = "last_name")
     private String lastName;
 
     /**
      * Numéro de téléphone de l'utilisateur.
      */
     @Size(max = 20, message = "Le numéro de téléphone ne doit pas dépasser 20 caractères")
+    @Column(name = "phone_number")
     private String phoneNumber;
 
     /**
      * Date et heurede la dernière connexion.
      */
+    @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
     /**
      * Nombre de tentatives de connexion échouées.
      */
+    @Column(name= "login_attempts")
     private int loginAttempts = 0;
 
     /**
      * Chemin vers la photo de profil dans le système de fichiers.
      * Ex: "/uploads/profiles/user123.jpg"
      */
+    @Column(name = "profile_photo_path")
     private String profilePhotoPath;
 
-    /**
+/**
      * Type MIME de la photo de profil.
-     * Ex: "image/jpeg", "image/png"
+* Ex: "image/jpeg", "image/png"
      */
+    @Column(name = "profile_photo_mime_type")
     private String profilePhotoMimeType;
 
     /**
      * Taille de la photo de profil en octets.
      */
-private Long profilePhotoSize;
+    @Column(name ="profile_photo_size")
+    private Long profilePhotoSize;
 
     /**
      * Token de l'appareil pour les notifications push.
-     */
+    */
+    @Column(name = "device_token", nullable = true)
     private String deviceToken;
 // Manually adding missing setter methods to fix compilation errors
     public void setUsername(String username) {
@@ -161,11 +170,11 @@ public void setFirstName(String firstName) {
     }
     
     public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+        this.roles =roles;
     }
     
     // Manually adding missing getter methods tofix compilation errors
-    public String getUsername() {
+  public String getUsername() {
         return this.username;
     }
     
