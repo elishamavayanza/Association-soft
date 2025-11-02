@@ -3,6 +3,7 @@ package com.org.testApi.services;
 import com.org.testApi.models.Activity;
 import com.org.testApi.models.User;
 import com.org.testApi.repository.ActivityRepository;
+import com.org.testApi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,10 +15,12 @@ import java.util.stream.Collectors;
 @Service
 public class ActivityServiceImpl implements ActivityService {
 
-    @Autowired
+@Autowired
     private ActivityRepository activityRepository;
+@Autowired
+    private UserRepository userRepository;
 
-    private List<Observer<Activity>> observers = new ArrayList<>();
+private List<Observer<Activity>> observers = new ArrayList<>();
 
     @Override
     public List<Activity> getAllActivities() {
@@ -40,7 +43,7 @@ public class ActivityServiceImpl implements ActivityService {
     public Activity updateActivity(Long id, Activity activity) {
         if (activityRepository.existsById(id)) {
             activity.setId(id);
-            Activity updatedActivity = activityRepository.save(activity);
+           Activity updatedActivity = activityRepository.save(activity);
             notifyObservers("UPDATE", updatedActivity);
             return updatedActivity;
         }
@@ -50,7 +53,7 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     public void deleteActivity(Long id) {
         Activity activity = activityRepository.findById(id).orElse(null);
-        activityRepository.deleteById(id);
+activityRepository.deleteById(id);
         if (activity != null) {
             notifyObservers("DELETE", activity);
         }
@@ -61,7 +64,7 @@ public class ActivityServiceImpl implements ActivityService {
         Activity activity = activityRepository.findById(id).orElse(null);
         if (activity != null) {
             try {
-                activityRepository.softDeleteActivity(activity);
+activityRepository.softDeleteActivity(activity);
                 notifyObservers("SOFT_DELETE", activity);
             } catch (Exception e) {
                 throw new RuntimeException("Error soft deleting activity with id: " + id, e);
@@ -81,7 +84,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public List<Activity> getActivitiesByUserId(Long userId) {
-        return activityRepository.findByParticipantsId(userId);
+       return activityRepository.findByParticipantsId(userId);
     }
 
     @Override
@@ -89,9 +92,17 @@ public class ActivityServiceImpl implements ActivityService {
         Optional<Activity> activityOpt = activityRepository.findById(activityId);
         if (activityOpt.isPresent()) {
             Activity activity = activityOpt.get();
-            // In a real implementation, you would fetch users from a UserRepository and add them to participants
-            // For now, we'll just return the activity as is
-            return activityRepository.save(activity);
+            
+// Fetch users from repository
+            List<User> usersToAdd = userRepository.findAllById(userIds);
+            
+            // Add users to participants (avoiding duplicates)
+            for (User user : usersToAdd) {
+                if (!activity.getParticipants().contains(user)) {
+                    activity.getParticipants().add(user);
+                }
+            }
+return activityRepository.save(activity);
         }
         throw new RuntimeException("Activity not found with id: " + activityId);
     }
@@ -101,14 +112,16 @@ public class ActivityServiceImpl implements ActivityService {
         Optional<Activity> activityOpt = activityRepository.findById(activityId);
         if (activityOpt.isPresent()) {
             Activity activity = activityOpt.get();
-            // In a real implementation, you would remove users from participants
-            // For now, we'll just return the activity as is
+            
+// Removeusers from participants
+            activity.getParticipants().removeIf(user -> userIds.contains(user.getId()));
+            
             return activityRepository.save(activity);
         }
         throw new RuntimeException("Activity not found with id: " + activityId);
     }
 
-    @Override
+@Override
     public void addObserver(Observer<Activity> observer) {
         observers.add(observer);
     }
@@ -120,7 +133,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public void notifyObservers(String event, Activity entity) {
-        for (Observer<Activity> observer : observers) {
+        for (Observer<Activity> observer :observers) {
             observer.update(event, entity);
         }
     }
