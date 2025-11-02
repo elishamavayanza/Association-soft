@@ -151,10 +151,7 @@ public class Loan extends BaseEntity {
     public boolean hasOverdueLoans() {
         if (member != null) {
             return member.getLoans().stream()
-                    .anyMatch(loan -> loan.getStatus() == LoanStatus.OVERDUE ||
-                           (loan.getStatus() == LoanStatus.ACTIVE &&
-                                    loan.getDueDate() != null &&
-                                    loan.getDueDate().isBefore(LocalDate.now())));
+                    .anyMatch(loan -> loan.isOverdue());
         }
         return false;
     }
@@ -196,6 +193,6 @@ public class Loan extends BaseEntity {
     public enum LoanStatus {
         ACTIVE,  // Prêt en cours
         OVERDUE,  // Prêt en retard
-        REPAID    // Prêt remboursé}
+        REPAID    // Prêt remboursé
     }
 }

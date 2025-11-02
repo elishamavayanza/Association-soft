@@ -11,4 +11,11 @@ public interface ActivityService extends ObservableService<Activity> {
     Activity updateActivity(Long id, Activity activity);
     void deleteActivity(Long id);
     void softDeleteActivity(Long id);
+    
+    // Added missing methods
+    List<Activity> getActivitiesByAssociationId(Long associationId);
+    List<Activity> getActivitiesByProjectId(Long projectId);
+    List<Activity> getActivitiesByUserId(Long userId);
+    Activity addParticipants(Long activityId, List<Long> userIds);
+    Activity removeParticipants(Long activityId, List<Long> userIds);
 }

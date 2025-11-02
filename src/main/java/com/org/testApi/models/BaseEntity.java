@@ -35,7 +35,7 @@ public abstract class BaseEntity {
      * Généré automatiquement par la base de données.
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // ← Changer ici
     @Column(name = "id")
     private Long id;
 

@@ -41,4 +41,7 @@ public interface ActivityRepository extends BaseRepository<Activity, Long>, Acti
 
     @Query("SELECT COUNT(a) FROM Activity a WHERE a.startDateTime BETWEEN :startDate AND :endDate")
     long countByStartDateTimeBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    
+    // Added missing method
+    List<Activity> findByParticipantsId(Long userId);
 }

@@ -2,33 +2,46 @@ package com.org.testApi.services;
 
 import com.org.testApi.models.User;
 
-/**
- * Service interface for handling notifications across multiple channels
- * including email, SMS, and push notifications.
- */
-public interface NotificationService extends ObservableService<String> {
+public interface NotificationService {
     
     /**
-     * Send a notification to a specific user through all available channels
-     * (email, SMS, push) based on the user's configured contact information.
-     * 
+     * Sends a notification to a specific user
      * @param user The user to send the notification to
-     * @param message The message content to send
+     * @param message The message content
      */
     void sendNotificationToUser(User user, String message);
     
     /**
-     * Send a notification to all users in the system.
-     * 
-     * @param message The message content to send
+     * Sends a notification to all users
+     * @param message The message content
      */
     void sendNotificationToAllUsers(String message);
     
     /**
-     * Send a notification to all users with a specific role.
-     * 
-     * @param role The role name to filter users by
-     * @param message The message content to send
+     * Sends a notification to users with a specific role
+     * @param role The role to target
+     * @param message The message content
      */
     void sendNotificationToRole(String role, String message);
+
+    void addObserver(Observer<String> observer);
+
+    void removeObserver(Observer<String> observer);
+
+    void notifyObservers(String event, String entity);
+
+    /**
+     * Sends an email notification to the specified email address
+     * @param emailAddress The recipient's email address
+     * @param subject The email subject
+     * @param message The email message content
+     */
+    void sendEmailNotification(String emailAddress, String subject, String message);
+    
+    /**
+     * Sends an SMS notification to the specified phone number
+     * @param phoneNumber The recipient's phone number
+     * @param message The SMS message content
+     */
+    void sendSmsNotification(String phoneNumber, String message);
 }

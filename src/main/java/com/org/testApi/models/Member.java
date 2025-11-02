@@ -198,7 +198,7 @@ private boolean isAdmin;
         if (loans != null) {
             boolean hasOverdueLoans = loans.stream()
                     .filter(loan -> loan != null)
-                    .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
+                    .anyMatch(Loan::isOverdue);
                         if (hasOverdueLoans) {
                 return false;
             }

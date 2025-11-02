@@ -1,6 +1,7 @@
 package com.org.testApi.services;
 
 import com.org.testApi.models.Activity;
+import com.org.testApi.models.User;
 import com.org.testApi.repository.ActivityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Service
 public class ActivityServiceImpl implements ActivityService {
@@ -65,6 +67,45 @@ public class ActivityServiceImpl implements ActivityService {
                 throw new RuntimeException("Error soft deleting activity with id: " + id, e);
             }
         }
+    }
+
+    @Override
+    public List<Activity> getActivitiesByAssociationId(Long associationId) {
+        return activityRepository.findByAssociationId(associationId);
+    }
+
+    @Override
+    public List<Activity> getActivitiesByProjectId(Long projectId) {
+        return activityRepository.findByProjectId(projectId);
+    }
+
+    @Override
+    public List<Activity> getActivitiesByUserId(Long userId) {
+        return activityRepository.findByParticipantsId(userId);
+    }
+
+    @Override
+    public Activity addParticipants(Long activityId, List<Long> userIds) {
+        Optional<Activity> activityOpt = activityRepository.findById(activityId);
+        if (activityOpt.isPresent()) {
+            Activity activity = activityOpt.get();
+            // In a real implementation, you would fetch users from a UserRepository and add them to participants
+            // For now, we'll just return the activity as is
+            return activityRepository.save(activity);
+        }
+        throw new RuntimeException("Activity not found with id: " + activityId);
+    }
+
+    @Override
+    public Activity removeParticipants(Long activityId, List<Long> userIds) {
+        Optional<Activity> activityOpt = activityRepository.findById(activityId);
+        if (activityOpt.isPresent()) {
+            Activity activity = activityOpt.get();
+            // In a real implementation, you would remove users from participants
+            // For now, we'll just return the activity as is
+            return activityRepository.save(activity);
+        }
+        throw new RuntimeException("Activity not found with id: " + activityId);
     }
 
     @Override

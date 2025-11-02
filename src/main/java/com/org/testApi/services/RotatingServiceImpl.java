@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,6 +29,9 @@ public class RotatingServiceImpl implements RotatingService {
     
     @Autowired
     private MemberRepository memberRepository;
+    
+    @Autowired
+    private NotificationServiceImpl notificationService;
 
     // Rotating Group methods
     @Override
@@ -321,6 +325,138 @@ public class RotatingServiceImpl implements RotatingService {
     @Override
     public void deletePenalty(Long id) {
         penaltyRepository.deleteById(id);
+    }
+
+    // Beneficiary methods for Likelemba system
+    @Override
+    public Round assignBeneficiariesToRound(Long roundId, List<Long> beneficiaryIds) {
+        Optional<Round> roundOpt = roundRepository.findById(roundId);
+        if (!roundOpt.isPresent()) {
+            throw new RuntimeException("Tour non trouvé avec l'ID : " + roundId);
+        }
+        
+        Round round = roundOpt.get();
+        
+        // Find all beneficiaries by their IDs
+        List<Member> beneficiaries = memberRepository.findAllById(beneficiaryIds);
+        
+        // Check if all beneficiaries were found
+        if (beneficiaries.size() != beneficiaryIds.size()) {
+            List<Long> foundBeneficiaryIds = beneficiaries.stream()
+                    .map(Member::getId)
+                    .collect(Collectors.toList());
+            List<Long> notFoundBeneficiaryIds = beneficiaryIds.stream()
+                    .filter(id -> !foundBeneficiaryIds.contains(id))
+                    .collect(Collectors.toList());
+            throw new RuntimeException("Certains bénéficiaires n'ont pas été trouvés : " + notFoundBeneficiaryIds);
+        }
+        
+        // Validate that beneficiaries belong to the rotating group
+        RotatingGroup group = round.getRotatingGroup();
+        for (Member beneficiary : beneficiaries) {
+            boolean isMemberInGroup = group.getMembers().stream()
+                    .anyMatch(m -> m.getId().equals(beneficiary.getId()));
+            if (!isMemberInGroup) {
+                throw new RuntimeException("Le membre " + beneficiary.getId() + " n'appartient pas au groupe de rotation");
+            }
+        }
+        
+        // Assign beneficiaries to the round
+        round.getBeneficiaries().clear();
+        round.getBeneficiaries().addAll(beneficiaries);
+        
+        // Calculate amount per beneficiary
+        if (!beneficiaries.isEmpty()) {
+            BigDecimal totalAmount = calculateTotalRoundContributions(roundId);
+            round.setTotalAmountDistributed(totalAmount);
+            round.setAmountPerBeneficiary(totalAmount.divide(new BigDecimal(beneficiaries.size()), 2, BigDecimal.ROUND_HALF_UP));
+        }
+        
+        // Save and return the updated round
+        return roundRepository.save(round);
+    }
+    
+    @Override
+    public List<Member> getRoundBeneficiaries(Long roundId) {
+        Optional<Round> roundOpt = roundRepository.findById(roundId);
+        if (!roundOpt.isPresent()) {
+            throw new RuntimeException("Tour non trouvé avec l'ID : " + roundId);
+        }
+        
+        return roundOpt.get().getBeneficiaries();
+    }
+    
+    @Override
+    public Round distributeFundsToBeneficiaries(Long roundId) {
+        Optional<Round> roundOpt = roundRepository.findById(roundId);
+        if (!roundOpt.isPresent()) {
+            throw new RuntimeException("Tour non trouvé avec l'ID : " + roundId);
+        }
+        
+        Round round = roundOpt.get();
+        
+        // Set distribution date
+        round.setDistributionDate(LocalDateTime.now());
+        
+        // Calculate total amount
+        BigDecimal totalAmount = calculateTotalRoundContributions(roundId);
+        round.setTotalAmountDistributed(totalAmount);
+        
+        // Calculate amount per beneficiary
+        if (!round.getBeneficiaries().isEmpty()) {
+            round.setAmountPerBeneficiary(totalAmount.divide(
+                new BigDecimal(round.getBeneficiaries().size()), 2, BigDecimal.ROUND_HALF_UP));
+        }
+        
+        // Send notifications to beneficiaries
+        sendDistributionNotifications(round);
+        
+        // Update round status
+        round.setStatus(RoundStatus.COMPLETED);
+        
+        // Save and return the updated round
+        return roundRepository.save(round);
+    }
+    
+    private BigDecimal calculateTotalRoundContributions(Long roundId) {
+        List<Contribution> contributions = findContributionsByRound(roundId);
+        return contributions.stream()
+                .map(Contribution::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    
+    private void sendDistributionNotifications(Round round) {
+        String subject = "Distribution de fonds - Groupe de rotation: " + round.getRotatingGroup().getName();
+        String message = String.format(
+                "Bonjour,\n\n" +
+                "Vous recevez ce message pour vous informer que la distribution des fonds du tour #%d " +
+                "du groupe \"%s\" a été effectuée.\n" +
+                "Montant total distribué: %s\n" +
+                "Votre part: %s\n" +
+                "Date de distribution: %s\n\n" +
+                "Cordialement,\nL'équipe Likelemba",
+                round.getRoundNumber(),
+                round.getRotatingGroup().getName(),
+                round.getTotalAmountDistributed() != null ? round.getTotalAmountDistributed().toString() : "N/A",
+                round.getAmountPerBeneficiary() != null ? round.getAmountPerBeneficiary().toString() : "N/A",
+                round.getDistributionDate() != null ? round.getDistributionDate().toString() : "N/A");
+        
+        for (Member beneficiary : round.getBeneficiaries()) {
+            // Send email notification
+            if (beneficiary.getUser() != null && beneficiary.getUser().getEmail() != null) {
+                notificationService.sendEmailNotification(
+                        beneficiary.getUser().getEmail(),
+                        subject,
+                        message);
+            }
+            
+            // Send SMS notification (if phone number is available)
+            if (beneficiary.getUser() != null && beneficiary.getUser().getPhoneNumber() != null) {
+                notificationService.sendSmsNotification(
+                        beneficiary.getUser().getPhoneNumber(),
+                        message);
+            }
+        }
     }
 
     // Utility methods

@@ -1,6 +1,8 @@
 package com.org.testApi.controllers;
 
+import com.org.testApi.models.Member;
 import com.org.testApi.models.RotatingGroup;
+import com.org.testApi.models.Round;
 import com.org.testApi.payload.ResponsePayload;
 import com.org.testApi.payload.RotatingGroupPayload;
 import com.org.testApi.services.RotatingService;
@@ -80,6 +82,98 @@ public class RotatingGroupController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             ResponsePayload<RotatingGroup> response = new ResponsePayload<>();
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    // Round beneficiary management endpoints
+    @PostMapping("/rounds/{roundId}/beneficiaries")
+    @Operation(summary = "Attribuer des bénéficiaires à un tour", 
+               description = "Attribue un ou plusieurs membres comme bénéficiaires d'un tour de rotation")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Bénéficiaires attribués avec succès au tour",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = Round.class))}),
+        @ApiResponse(responseCode = "400", description = "Requête invalide"),
+        @ApiResponse(responseCode = "404", description = "Tour non trouvé"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<ResponsePayload<Round>> assignBeneficiariesToRound(
+            @Parameter(description = "ID du tour") @PathVariable Long roundId,
+            @Parameter(description = "Liste des IDs des membres bénéficiaires") @RequestBody List<Long> beneficiaryIds) {
+        
+        try {
+            Round updatedRound = rotatingService.assignBeneficiariesToRound(roundId, beneficiaryIds);
+            ResponsePayload<Round> response = new ResponsePayload<>();
+            response.setSuccess(true);
+            response.setMessage("Bénéficiaires attribués avec succès au tour");
+            response.setData(updatedRound);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ResponsePayload<Round> response = new ResponsePayload<>();
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @GetMapping("/rounds/{roundId}/beneficiaries")
+    @Operation(summary = "Obtenir les bénéficiaires d'un tour", 
+               description = "Récupère la liste des membres bénéficiaires d'un tour de rotation")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Bénéficiaires récupérés avec succès",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = Member.class))}),
+        @ApiResponse(responseCode = "400", description = "Requête invalide"),
+        @ApiResponse(responseCode = "404", description = "Tour non trouvé"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<ResponsePayload<List<Member>>> getRoundBeneficiaries(
+            @Parameter(description = "ID du tour") @PathVariable Long roundId) {
+        
+        try {
+            List<Member> beneficiaries = rotatingService.getRoundBeneficiaries(roundId);
+            ResponsePayload<List<Member>> response = new ResponsePayload<>();
+            response.setSuccess(true);
+            response.setMessage("Bénéficiaires récupérés avec succès");
+            response.setData(beneficiaries);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ResponsePayload<List<Member>> response = new ResponsePayload<>();
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PostMapping("/rounds/{roundId}/distribute")
+    @Operation(summary = "Distribuer les fonds aux bénéficiaires", 
+               description = "Distribue les fonds collectés aux bénéficiaires et envoie des notifications")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Fonds distribués avec succès",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = Round.class))}),
+        @ApiResponse(responseCode = "400", description = "Requête invalide"),
+        @ApiResponse(responseCode = "404", description = "Tour non trouvé"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<ResponsePayload<Round>> distributeFundsToBeneficiaries(
+            @Parameter(description = "ID du tour") @PathVariable Long roundId) {
+        
+        try {
+            Round updatedRound = rotatingService.distributeFundsToBeneficiaries(roundId);
+            ResponsePayload<Round> response = new ResponsePayload<>();
+            response.setSuccess(true);
+            response.setMessage("Fonds distribués avec succès aux bénéficiaires");
+            response.setData(updatedRound);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ResponsePayload<Round> response = new ResponsePayload<>();
             response.setSuccess(false);
             response.setMessage(e.getMessage());
             response.setData(null);

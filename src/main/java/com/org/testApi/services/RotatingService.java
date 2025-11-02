@@ -1,11 +1,6 @@
 package com.org.testApi.services;
 
-import com.org.testApi.models.RotatingGroup;
-import com.org.testApi.models.Round;
-import com.org.testApi.models.Contribution;
-import com.org.testApi.models.Penalty;
-import com.org.testApi.models.Member;
-
+import com.org.testApi.models.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -14,8 +9,8 @@ import java.util.Optional;
 public interface RotatingService {
     
     // Rotating Group methods
-    RotatingGroup createRotatingGroup(String name, String description, BigDecimal contributionAmount, 
-                                     Integer maxMembers, String rotationFrequency, LocalDate startDate);
+    RotatingGroup createRotatingGroup(String name, String description, BigDecimal contributionAmount,
+                                   Integer maxMembers, String rotationFrequency, LocalDate startDate);
     
     Optional<RotatingGroup> findRotatingGroupById(Long id);
     
@@ -27,12 +22,10 @@ public interface RotatingService {
     
     List<RotatingGroup> findActiveRotatingGroups();
     
-    // Method to add members to a rotating group
     RotatingGroup addMembersToGroup(Long groupId, List<Long> memberIds);
     
-    // Method to remove members from a rotating group
     RotatingGroup removeMembersFromGroup(Long groupId, List<Long> memberIds);
-    
+
     // Round methods
     Round createRound(Long rotatingGroupId, Integer roundNumber, LocalDate startDate, LocalDate endDate);
     
@@ -43,7 +36,7 @@ public interface RotatingService {
     Round updateRound(Long id, Round round);
     
     void deleteRound(Long id);
-    
+
     // Contribution methods
     Contribution makeContribution(Long memberId, Long roundId, BigDecimal amount, LocalDate contributionDate);
     
@@ -56,10 +49,10 @@ public interface RotatingService {
     Contribution updateContribution(Long id, Contribution contribution);
     
     void deleteContribution(Long id);
-    
+
     // Penalty methods
-    Penalty applyPenalty(Long memberId, Long roundId, BigDecimal amount, String reason, 
-                        String penaltyType, LocalDate penaltyDate);
+    Penalty applyPenalty(Long memberId, Long roundId, BigDecimal amount, String reason,
+                      String penaltyType, LocalDate penaltyDate);
     
     Optional<Penalty> findPenaltyById(Long id);
     
@@ -71,6 +64,13 @@ public interface RotatingService {
     
     void deletePenalty(Long id);
     
+    // Beneficiary methods for Likelemba system
+    Round assignBeneficiariesToRound(Long roundId, List<Long> beneficiaryIds);
+    
+    List<Member> getRoundBeneficiaries(Long roundId);
+    
+    Round distributeFundsToBeneficiaries(Long roundId);
+
     // Utility methods
     BigDecimal calculateTotalContributionsForMember(Long memberId);
     

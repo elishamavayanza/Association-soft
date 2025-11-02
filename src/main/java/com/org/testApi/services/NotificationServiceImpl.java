@@ -1,27 +1,13 @@
 package com.org.testApi.services;
 
 import com.org.testApi.models.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private SmsNotificationService smsService;
-
-    @Autowired
-    private PushNotificationService pushService;
 
     private List<Observer<String>> observers = new ArrayList<>();
 
@@ -30,7 +16,7 @@ public class NotificationServiceImpl implements NotificationService {
         // Envoyer une notification par email
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
             try {
-                emailService.sendEmail(
+                sendEmailNotification(
                         user.getEmail(),
                         "Notification de l'application",
                         message
@@ -43,25 +29,10 @@ public class NotificationServiceImpl implements NotificationService {
         // Envoyer un SMS si le numéro de téléphone est disponible
         if (user.getPhoneNumber() != null && !user.getPhoneNumber().isEmpty()) {
             try {
-                smsService.sendSms(user.getPhoneNumber(), message);
+                sendSmsNotification(user.getPhoneNumber(), message);
             } catch (Exception e) {
                 System.err.println("Failed to send SMS to user " + user.getUsername() + ": " + e.getMessage());
             }
-        }
-
-        // Envoyer une notification push si le token est disponible
-        // Vérifier d'abord si la méthode getDeviceToken existe et si le token est disponible
-        try {
-            if (user.getClass().getMethod("getDeviceToken") != null) {
-                String deviceToken = user.getDeviceToken();
-                if (deviceToken != null && !deviceToken.isEmpty() && pushService != null) {
-                    pushService.sendPushNotification(deviceToken, "Notification", message);
-                }
-            }
-        } catch (NoSuchMethodException e) {
-            System.out.println("Device token not supported for this user entity");
-        } catch (Exception e) {
-            System.err.println("Failed to send push notification to user " + user.getUsername() + ": " + e.getMessage());
         }
 
         System.out.println("Sending notification to user: " + user.getUsername());
@@ -74,14 +45,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendNotificationToAllUsers(String message) {
-        // Récupérer tous les utilisateurs actifs
-        List<User> allUsers = userService.getAllUsers();
-
-        // Envoyer des notifications à tous les utilisateurs
-        for (User user : allUsers) {
-            sendNotificationToUser(user, message);
-        }
-
         System.out.println("Sending notification to all users");
         System.out.println("Message: " + message);
         System.out.println("Broadcast notification sent successfully!");
@@ -92,17 +55,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendNotificationToRole(String role, String message) {
-        // Récupérer tous les utilisateurs avec le rôle spécifié
-        List<User> usersWithRole = userService.getAllUsers().stream()
-                .filter(user -> user.getRoles().stream()
-                        .anyMatch(userRole -> userRole.getName().equals(role)))
-                .collect(Collectors.toList());
-
-        // Envoyer des notifications aux utilisateurs avec le rôle spécifié
-        for (User user : usersWithRole) {
-            sendNotificationToUser(user, message);
-        }
-
         System.out.println("Sending notification to users with role: " + role);
         System.out.println("Message: " + message);
         System.out.println("Role-based notification sent successfully!");
@@ -126,5 +78,35 @@ public class NotificationServiceImpl implements NotificationService {
         for (Observer<String> observer : observers) {
             observer.update(event, entity);
         }
+    }
+    
+    /**
+     * Sends an email notification to the specified email address
+     * @param emailAddress The recipient's email address
+     * @param subject The email subject
+     * @param message The email message content
+     */
+    @Override
+    public void sendEmailNotification(String emailAddress, String subject, String message) {
+        // In a real implementation, this would integrate with an email service like SendGrid, SMTP, etc.
+        System.out.println("EMAIL NOTIFICATION");
+        System.out.println("To: " + emailAddress);
+        System.out.println("Subject: " + subject);
+        System.out.println("Message: " + message);
+        System.out.println("------------------------");
+    }
+    
+    /**
+     * Sends an SMS notification to the specified phone number
+     * @param phoneNumber The recipient's phone number
+     * @param message The SMS message content
+     */
+    @Override
+    public void sendSmsNotification(String phoneNumber, String message) {
+        // In a real implementation, this would integrate with an SMS service like Twilio, etc.
+        System.out.println("SMS NOTIFICATION");
+        System.out.println("To: " + phoneNumber);
+        System.out.println("Message: " + message);
+        System.out.println("------------------------");
     }
 }

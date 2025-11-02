@@ -2,7 +2,9 @@ package com.org.testApi.models;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,4 +45,27 @@ public class Round extends BaseEntity {
     @Builder.Default
     @ToString.Exclude
     private List<Penalty> penalties = new ArrayList<>();
+    
+    // Many-to-many relationship for beneficiaries (members who receive money from this round)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "round_beneficiaries",
+        joinColumns = @JoinColumn(name = "round_id"),
+        inverseJoinColumns = @JoinColumn(name = "member_id")
+    )
+    @Builder.Default
+    @ToString.Exclude
+    private List<Member> beneficiaries = new ArrayList<>();
+    
+    // Total amount distributed in this round
+    @Column(name = "total_amount_distributed")
+    private BigDecimal totalAmountDistributed;
+    
+    // Date when the money was distributed to beneficiaries
+    @Column(name = "distribution_date")
+    private LocalDateTime distributionDate;
+    
+    // Amount each beneficiary receives (if equally distributed)
+    @Column(name = "amount_per_beneficiary")
+    private BigDecimal amountPerBeneficiary;
 }
