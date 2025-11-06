@@ -4,7 +4,7 @@ import com.org.testApi.models.Member;
 import com.org.testApi.models.RotatingGroup;
 import com.org.testApi.models.Round;
 import com.org.testApi.payload.ResponsePayload;
-import com.org.testApi.payload.RotatingGroupPayload;
+import com.org.testApi.services.GroupStatusManagementService;
 import com.org.testApi.services.RotatingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +26,9 @@ public class RotatingGroupController {
 
     @Autowired
     private RotatingService rotatingService;
+    
+    @Autowired
+    private GroupStatusManagementService groupStatusManagementService;
 
     @PostMapping("/{groupId}/members")
     @Operation(summary = "Ajouter des membres à un groupe de rotation", 
@@ -74,10 +77,41 @@ public class RotatingGroupController {
             @Parameter(description = "Liste des IDs des membres à supprimer") @RequestBody List<Long> memberIds) {
         
         try {
-            RotatingGroup updatedGroup = rotatingService.removeMembersFromGroup(groupId, memberIds);
+            RotatingGroup updatedGroup = rotatingService.removeMembersFromGroup(groupId,memberIds);
             ResponsePayload<RotatingGroup> response = new ResponsePayload<>();
             response.setSuccess(true);
             response.setMessage("Membres supprimés avec succès du groupe");
+            response.setData(updatedGroup);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ResponsePayload<RotatingGroup> response = new ResponsePayload<>();
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PostMapping("/{groupId}/auto-generate")
+    @Operation(summary = "Configurer la génération automatique des tours", 
+               description = "Active ou désactive la génération automatique des tours pour un groupe")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Paramètre mis à jour avec succès",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = RotatingGroup.class))}),
+        @ApiResponse(responseCode = "400", description = "Requête invalide"),
+        @ApiResponse(responseCode = "404", description = "Groupe non trouvé"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<ResponsePayload<RotatingGroup>> setAutoGenerateRounds(
+            @Parameter(description = "ID du groupe de rotation") @PathVariable Long groupId,
+            @Parameter(description = "Activation/désactivation de la génération automatique") @RequestBody Boolean autoGenerate) {
+        
+        try {
+            RotatingGroup updatedGroup = rotatingService.setAutoGenerateRounds(groupId, autoGenerate);
+            ResponsePayload<RotatingGroup> response = new ResponsePayload<>();
+            response.setSuccess(true);
+            response.setMessage("Paramètre de génération automatique mis à jour avec succès");
             response.setData(updatedGroup);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -178,6 +212,91 @@ public class RotatingGroupController {
             response.setMessage(e.getMessage());
             response.setData(null);
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PostMapping("/rounds/{roundId}/auto-select-beneficiaries")
+    @Operation(summary = "Sélectionner automatiquement les bénéficiaires", 
+               description = "Sélectionne automatiquement les bénéficiaires selon un algorithme équitable")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Bénéficiaires sélectionnés avec succès",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = Round.class))}),
+        @ApiResponse(responseCode = "400", description = "Requête invalide"),
+        @ApiResponse(responseCode = "404", description = "Tour non trouvé"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<ResponsePayload<Round>> autoSelectBeneficiaries(
+            @Parameter(description = "ID du tour") @PathVariable Long roundId) {
+        
+        try {
+            Round updatedRound = rotatingService.selectBeneficiariesAutomatically(roundId);
+            ResponsePayload<Round> response = new ResponsePayload<>();
+            response.setSuccess(true);
+            response.setMessage("Bénéficiaires sélectionnés automatiquement avec succès");
+            response.setData(updatedRound);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ResponsePayload<Round> response = new ResponsePayload<>();
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PostMapping("/{groupId}/generate-rounds")
+    @Operation(summary = "Générer automatiquement les tours", 
+               description = "Génère automatiquement les tours en fonction de la fréquence de rotation du groupe")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Tours générés avec succès",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = Round.class))}),
+        @ApiResponse(responseCode = "400", description = "Requête invalide"),
+        @ApiResponse(responseCode = "404", description = "Groupe non trouvé"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<ResponsePayload<List<Round>>> generateRoundsForGroup(
+            @Parameter(description = "ID du groupe de rotation") @PathVariable Long groupId) {
+        
+        try {
+            rotatingService.generateRoundsForGroup(groupId);
+            List<Round> rounds = rotatingService.findRoundsByRotatingGroup(groupId);
+            ResponsePayload<List<Round>> response = new ResponsePayload<>();
+            response.setSuccess(true);
+            response.setMessage("Tours générés avec succès pour le groupe");
+            response.setData(rounds);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ResponsePayload<List<Round>> response = new ResponsePayload<>();
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PostMapping("/update-statuses")
+    @Operation(summary = "Mettre à jour les statuts des groupes", 
+               description = "Met à jour automatiquement les statuts de tous les groupes selon les critères définis")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Statuts mis à jour avec succès"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<ResponsePayload<String>> updateAllGroupStatuses() {
+        try {
+            groupStatusManagementService.updateGroupStatuses();
+            ResponsePayload<String> response = new ResponsePayload<>();
+            response.setSuccess(true);
+            response.setMessage("Statuts des groupes mis à jour avec succès");
+            response.setData("Mise à jour terminée");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ResponsePayload<String> response = new ResponsePayload<>();
+            response.setSuccess(false);
+            response.setMessage("Erreur lors de la mise à jour des statuts: " + e.getMessage());
+            response.setData(null);
+            return ResponseEntity.status(500).body(response);
         }
     }
 }

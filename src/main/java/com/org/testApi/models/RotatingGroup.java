@@ -43,6 +43,10 @@ public class RotatingGroup extends BaseEntity {
     @Column(name = "status")
     private GroupStatus status = GroupStatus.ACTIVE;
 
+    @Column(name = "auto_generate_rounds")
+    @Builder.Default
+    private Boolean autoGenerateRounds = Boolean.TRUE;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "rotating_group_members",

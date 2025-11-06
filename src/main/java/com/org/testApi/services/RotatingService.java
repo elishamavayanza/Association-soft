@@ -10,7 +10,7 @@ public interface RotatingService {
     
     // Rotating Group methods
     RotatingGroup createRotatingGroup(String name, String description, BigDecimal contributionAmount,
-                                   Integer maxMembers, String rotationFrequency, LocalDate startDate);
+                                      Integer maxMembers, String rotationFrequency, LocalDate startDate);
     
     Optional<RotatingGroup> findRotatingGroupById(Long id);
     
@@ -55,7 +55,6 @@ public interface RotatingService {
                       String penaltyType, LocalDate penaltyDate);
     
     Optional<Penalty> findPenaltyById(Long id);
-    
     List<Penalty> findPenaltiesByMember(Long memberId);
     
     List<Penalty> findPenaltiesByRound(Long roundId);
@@ -69,12 +68,27 @@ public interface RotatingService {
     
     List<Member> getRoundBeneficiaries(Long roundId);
     
+    /**
+     * Automatically select beneficiaries using a fair rotation algorithm.
+     * 
+     * @param roundId The ID of the round to select beneficiaries for
+     * @return The updated round with beneficiaries assigned
+     */
+    Round selectBeneficiariesAutomatically(Long roundId);
+    
     Round distributeFundsToBeneficiaries(Long roundId);
 
     // Utility methods
-    BigDecimal calculateTotalContributionsForMember(Long memberId);
-    
     BigDecimal calculateTotalPenaltiesForMember(Long memberId);
     
+    BigDecimal calculateTotalContributionsForMember(Long memberId);
+    
     BigDecimal calculateRemainingAmountForMember(Long memberId);
+    
+    // Automated round creation methods
+    void generateRoundsForGroup(Long groupId);
+    
+    List<Round> createAutomaticRounds(RotatingGroup group);
+    
+    RotatingGroup setAutoGenerateRounds(Long groupId, Boolean autoGenerate);
 }

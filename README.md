@@ -37,7 +37,7 @@ src/
 │├── application.properties             # Fichier de configuration par défaut
 │       ├── application-dev.properties         # Configuration spécifique à l'environnement de développement
 │       ├── application-prod.properties        # Configuration pour l’environnement de production
-│       ├── static/                            #Fichiers statiques (CSS,JS, images pour une app web)
+│       ├── static/                            #Fichiers statiques(CSS,JS, images pour une app web)
 │       └── templates/                         # Templates HTML (si utilisation de Thymeleaf, FreeMarker...)
 │
 └── test/                                      # Tests unitaires et d'intégration
@@ -66,7 +66,25 @@ Module complet de gestion du système rotatif Likelemba, permettant la création
 - `/api/rotating/contributions` - Gestion des contributions
 - `/api/rotating/penalties` - Gestion des pénalités
 
-Tous les endpoints supportent lesopérations CRUD (Create, Read, Update, Delete) ainsi que des opérations spécifiques comme le calcul des totaux et des montants restants.
+Tous les endpointssupportent lesopérations CRUD (Create, Read, Update, Delete) ainsi que des opérations spécifiques comme le calcul des totaux et des montants restants.
+
+## 📊 Rapports financiers améliorés
+
+### Description
+Ajout de fonctionnalités de reporting avancées pour les groupes de rotation financière, permettant un suivi détaillé des contributions, des performances et des distributions.
+
+### Fonctionnalités
+- Historique des contributions individuelles des membres
+- Métriques de performance du groupe
+- Soldes impayés et pénalités par membre
+- Historique des distributions
+
+### Endpoints API
+- `/api/financial-reports/groups/{groupId}/member-contributions` - Historique des contributions des membres
+- `/api/financial-reports/groups/{groupId}/performance-metrics` - Métriques de performance du groupe
+- `/api/financial-reports/groups/{groupId}/member-balances` - Soldes impayés et pénalités par membre
+- `/api/financial-reports/groups/{groupId}/distribution-history` - Historique des distributions
+- `/api/financial-reports/groups/{groupId}/full-report` - Rapport financier complet
 
 ##🛠️ Configuration H2
 Le projet utilise une base de données H2 persistante accessible via la console intégrée :
@@ -81,12 +99,12 @@ spring.h2.console.enabled=truespring.h2.console.path=/h2-console
 
 ## 📊 Domaines d'application
 
-### 1.Associations et organisations non lucratives
+###1.Associations et organisations non lucratives
 - **Gestion des membres** : Suivi des adhésions, renouvellements et historique des rôles
 - **Gestion financière** : Suivi des cotisations, des transactions et des catégories de dépenses/revenus
 - **Organisation d'événements** : Planification et suivi des activités organisées par l'association
 - **Gestion de projets** : Coordination des projets associatifs avec affectation des membres
-- **Système de tontine Likelemba** : Gestion des groupes de rotation financière entre membres
+- **Système de tontine Likelemba** :Gestion des groupes de rotation financière entre membres
 
 ### 2. Clubs et organisations communautaires
 - **Clubs sportifs** : Gestion des membres, des cotisations et des événements sportifs
@@ -95,17 +113,17 @@ spring.h2.console.enabled=truespring.h2.console.path=/h2-console
 - **Groupes de tontine communautaires** : Mise en place de systèmes de rotation financière
 
 ### 3. Organisations professionnelles
-- **Ordres professionnels** : Gestion des membres, des cotisations obligatoires et des formations
+- **Ordres professionnels** : Gestion des membres, descotisations obligatoires et des formations
 - **Chambres de commerce**: Suivi des membres et organisation d'événements professionnels
 - **Groupes d'investissement** : Mise en place de systèmes de rotation d'investissement
 
-##⚙️ Fonctionnalités clés pour une utilisation réelle
+##⚙️ Fonctionnalités clés pourune utilisation réelle
 ### Gestion complètedes membres
 - Base de données centralisée des membres avec historique
 - Suivi des rôles et permissions (admin, modérateur, membre, invité)
 -Gestion des cotisationset vérification du statut à jour
 
-### Système financierintégré
+###Système financierintégré
 - Suivi des paiements et des cotisations
 - Gestion des prêts entre membres avec calcul des intérêts
 - Système de rotation financière Likelemba (tontine)
@@ -127,13 +145,13 @@ spring.h2.console.enabled=truespring.h2.console.path=/h2-console
 ### Pour une association locale
 1. Inscription de nouveaux membres via l'interface d'authentification
 2. Paiement des cotisations annuelles avec suivi automatique
-3. Organisation d'événements (assembléesgénérales, activités sociales)
+3. Organisation d'événements(assembléesgénérales, activités sociales)
 4. Gestion des finances avec rapport mensuel des entrées/sorties
 5. Communication avec les membres via notifications
 
 ### Pour une organisation professionnelle
 1. Vérification du statut des membres (à jour dans leurs cotisations)
-2. Gestion desprêtsentre membres ou à l'organisation
+2.Gestion desprêtsentre membres ou à l'organisation
 3. Suivi des projets professionnels ou communautaires
 4. Planification de formations et événements réseautage
 ___
@@ -144,74 +162,54 @@ ___
 - **Communication efficace** :Notifications multi-canaux aux membres
 - **Historique complet** :Suivi de toutes les activités et modifications
 
-Cette application serait particulièrement utile pour les associations qui ont besoin d'un système de gestion intégré mais n'ont pas les ressources pour développer une solution personnalisée. Elle peut être déployée sur un serveur local ou cloud selon les besoinsde l'organisation.
+Cette application serait particulièrement utile pour les associations qui ont besoin d'un système de gestion intégré mais n'ont pas les ressources pour développer une solution personnalisée. Elle peut être déployée sur un serveur local ou cloud selonles besoinsde l'organisation.
 
 #TestApi Application
 
-This is a Spring Boot application that can run with SQLite as the database.
+##Description
+TestApi is a financial rotation system (Likelemba) that allows users to create and manage rotating savings and credit associations (ROSCAs/ASCAs).
 
-## Running with SQLite (Default)
+## Features
 
-The application is configured to use SQLite by default. When you run the application, it will automatically create a SQLite database file named `association.db` in the project root directory.
+### Financial Rotation System (Likelemba)
+- Create and manage rotating groups with customizable parameters
+- Automatic round generation based on grouprotation frequency
+- Fair beneficiary selection algorithms
+- Contribution tracking and penalty management
+- Fund distribution with notifications
 
-To run the application withSQLite:
+### Automatic Group Status Management
+The system now automatically updates group statuses based on the following criteria:
+1. **COMPLETED**: Groups automatically marked as completed when their end date has passed
+2. **INACTIVE**:Groups with no members are marked as inactive
+3. **SUSPENDED**: Groups with no activity for 30 days are marked as suspended
+4. **ACTIVE**: Groups that meet none of the above criteria remain active
 
-```bash
-./mvnw spring-boot:run
-```
+Status updates happen automatically every day at midnight, or can be triggered manually via the API.
 
-Or build and run:
+### API Endpoints
+- `POST /api/rotating-groups/update-statuses` - Manually trigger status updates for all groups
+- `POST /api/rotating-groups/{groupId}/members` - Add members to a group (automatically updates status)
+- `DELETE /api/rotating-groups/{groupId}/members` - Remove members from a group (automatically updates status)
 
-```bash
-./mvnw clean package
-java -jar target/Association-soft-0.0.1-SNAPSHOT.jar
-```
+## Installation
+1. Clone the repository
+2. Configure the database in `application.properties`
+3. Run `mvn spring-boot:run` to start the application
 
-## Configuration
+## Technologies Used
+- Java 17
+- Spring Boot
+-Spring Data JPA
+- SQLite (can be configured for other databases)
+- Maven
 
-The SQLite configuration is defined in:
-- `src/main/resources/application.properties`
-- `src/main/resources/application.yml`
+## Testing
+Run `mvn test` to execute all tests.
 
-Key configuration properties:
-```properties
-# SQLite Database Configuration
-spring.datasource.url=jdbc:sqlite:./association.db
-spring.datasource.driver-class-name=org.sqlite.JDBC
-spring.datasource.username=
-spring.datasource.password=
-
-# JPA/Hibernate Properties for SQLite
-spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
-spring.jpa.properties.hibernate.globally_quoted_identifiers=false
-spring.jpa.properties.hibernate.id.new_generator_mappings=false
-```
-
-## Database Schema
-
-Theapplication uses Hibernate to automatically generate the database schema. The `ddl-auto=update` setting means that Hibernate will:
-- Create the database schema on first run
-- Update the schema when entity classes change
-- Preserve existing data
-
-## Scripts
-
-The project includes several scripts for different environments:
-- `run_default.sh` -Run with SQLite (default configuration)
-- `run_prod.sh` - Run with MariaDB (production configuration)
-- `test_build.sh` - Build and run tests
-
-To run with SQLite using the script:
-```bash
-./run_default.sh
-```
-
-## Accessing the Application
-
-Once the application is running:
--REST API: http://localhost:8090/api/
-- Swagger UI: http://localhost:8090/swagger-ui.html
-- Database file: `association.db` in the project root directory
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Createa Pull Request

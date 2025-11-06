@@ -1,6 +1,9 @@
 package com.org.testApi.services;
 
 import com.org.testApi.models.User;
+import com.org.testApi.models.Round;
+import com.org.testApi.models.Contribution;
+import com.org.testApi.models.Penalty;
 
 public interface NotificationService {
     
@@ -44,4 +47,28 @@ public interface NotificationService {
      * @param message The SMS message content
      */
     void sendSmsNotification(String phoneNumber, String message);
+    
+    /**
+     * Sends a reminder for an upcoming round
+     * @param round The round for which to send the reminder
+     */
+    void sendUpcomingRoundReminder(Round round);
+    
+    /**
+     * Sends a payment due notification to a member
+     * @param contribution The contribution that is due
+     */
+    void sendPaymentDueNotification(Contribution contribution);
+    
+    /**
+     * Sends an announcement about fund distribution
+     * @param round The round for which funds are being distributed
+     */
+    void sendDistributionAnnouncement(Round round);
+    
+    /**
+     * Sends a warning about an incurred penalty
+     * @param penalty The penalty that was incurred
+     */
+    void sendPenaltyWarning(Penalty penalty);
 }

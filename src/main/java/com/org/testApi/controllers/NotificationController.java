@@ -2,6 +2,7 @@ package com.org.testApi.controllers;
 
 import com.org.testApi.models.User;
 import com.org.testApi.payload.NotificationPayload;
+import com.org.testApi.payload.EnhancedNotificationPayload;
 import com.org.testApi.services.NotificationService;
 import com.org.testApi.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -101,5 +102,33 @@ public class NotificationController {
 
         notificationService.sendNotificationToRole(roleName, message);
         return ResponseEntity.ok("Notification envoyée avec succès aux utilisateurs avec le rôle : " + roleName);
+    }
+    
+    @Operation(summary = "Envoyer une notification améliorée", description = "Envoyer une notification améliorée avec un type spécifique")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Notification envoyée avec succès"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+    })
+    @PostMapping("/enhanced")
+    public ResponseEntity<String> sendEnhancedNotification(
+            @Parameter(description = "Charge utile de notification améliorée")
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = EnhancedNotificationPayload.class),
+                            examples = @ExampleObject(
+                                    value = "{\n  \"userId\": 1,\n  \"message\": \"Ceci est une notification améliorée\",\n  \"notificationType\": \"UPCOMING_ROUND_REMINDER\",\n  \"entityId\": 1\n}"
+                            )
+                    )
+            )
+            @RequestBody EnhancedNotificationPayload payload) {
+
+        Optional<User> userOptional = userService.getUserById(payload.getUserId());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        notificationService.sendNotificationToUser(userOptional.get(), payload.getMessage());
+        return ResponseEntity.ok("Notification améliorée envoyée avec succès à l'utilisateur : " + userOptional.get().getUsername());
     }
 }

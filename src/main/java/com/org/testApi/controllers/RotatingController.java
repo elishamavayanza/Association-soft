@@ -64,7 +64,8 @@ public class RotatingController {
                                     "  \"contributionAmount\": 10000,\n" +
                                     "  \"maxMembers\": 10,\n" +
                                     "  \"rotationFrequency\": \"MONTHLY\",\n" +
-                                    "  \"startDate\": \"2025-11-01\"\n" +
+                                    "  \"startDate\": \"2025-11-01\",\n" +
+                                    "  \"autoGenerateRounds\": true\n" +
                                     "}"
                     )
             )
@@ -75,9 +76,18 @@ public class RotatingController {
             @Parameter(description = "Montant de contribution") @RequestParam BigDecimal contributionAmount,
             @Parameter(description = "Nombre maximum de membres") @RequestParam Integer maxMembers,
             @Parameter(description = "Fréquence de rotation") @RequestParam String rotationFrequency,
-            @Parameter(description = "Date de début") @RequestParam LocalDate startDate){
-RotatingGroup rotatingGroup = rotatingService.createRotatingGroup(
+            @Parameter(description = "Date de début") @RequestParam LocalDate startDate,
+            @Parameter(description = "Génération automatique des tours") @RequestParam(required = false, defaultValue = "true") Boolean autoGenerateRounds){
+        
+        RotatingGroup rotatingGroup = rotatingService.createRotatingGroup(
                 name, description, contributionAmount, maxMembers, rotationFrequency, startDate);
+        
+        // Update the autoGenerateRounds field if provided
+        if (autoGenerateRounds != null) {
+            rotatingGroup.setAutoGenerateRounds(autoGenerateRounds);
+            rotatingGroup = rotatingService.updateRotatingGroup(rotatingGroup.getId(), rotatingGroup);
+        }
+        
         return ResponseEntity.ok(rotatingGroupMapper.toDTO(rotatingGroup));
     }
 

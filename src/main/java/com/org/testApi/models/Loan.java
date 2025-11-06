@@ -90,6 +90,7 @@ public class Loan extends BaseEntity {
      * Par défaut, un prêt est actif.
      */
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private LoanStatus status = LoanStatus.ACTIVE;
 
     /**

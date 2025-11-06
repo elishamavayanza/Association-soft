@@ -2,15 +2,20 @@ package com.org.testApi.services;
 
 import com.org.testApi.models.*;
 import com.org.testApi.repository.*;
+import com.org.testApi.services.GroupStatusManagementService;
+import com.org.testApi.services.NotificationServiceImpl;
+import com.org.testApi.services.RotatingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Service
 public class RotatingServiceImpl implements RotatingService {
@@ -32,11 +37,14 @@ public class RotatingServiceImpl implements RotatingService {
     
     @Autowired
     private NotificationServiceImpl notificationService;
+    
+    @Autowired
+    private GroupStatusManagementService groupStatusManagementService;
 
     // Rotating Group methods
     @Override
     public RotatingGroup createRotatingGroup(String name, String description, BigDecimal contributionAmount,
-                                           Integer maxMembers, String rotationFrequency, LocalDate startDate) {
+                                             Integer maxMembers, String rotationFrequency, LocalDate startDate) {
         RotatingGroup rotatingGroup = RotatingGroup.builder()
                 .name(name)
                 .description(description)
@@ -45,6 +53,7 @@ public class RotatingServiceImpl implements RotatingService {
                 .rotationFrequency(RotationFrequency.valueOf(rotationFrequency))
                 .startDate(startDate)
                 .status(GroupStatus.ACTIVE)
+                .autoGenerateRounds(Boolean.TRUE)
                 .build();
         
         return rotatingGroupRepository.save(rotatingGroup);
@@ -109,8 +118,22 @@ public class RotatingServiceImpl implements RotatingService {
         // Add members to the group
         group.getMembers().addAll(membersToAdd);
         
-        // Save and return the updated group
-        return rotatingGroupRepository.save(group);
+        // Save the updated group
+        RotatingGroup savedGroup = rotatingGroupRepository.save(group);
+        
+        // Update group status based on new member count
+        GroupStatus newStatus = groupStatusManagementService.determineGroupStatus(savedGroup);
+        if (newStatus != savedGroup.getStatus()) {
+            savedGroup.setStatus(newStatus);
+            savedGroup = rotatingGroupRepository.save(savedGroup);
+        }
+        
+        // If auto-generate is enabled, recreate the rounds
+        if (savedGroup.getAutoGenerateRounds() != null && savedGroup.getAutoGenerateRounds()) {
+            createAutomaticRounds(savedGroup);
+        }
+        
+        return savedGroup;
     }
 
     @Override
@@ -118,7 +141,7 @@ public class RotatingServiceImpl implements RotatingService {
         // Find the rotating group
         Optional<RotatingGroup> groupOpt = rotatingGroupRepository.findById(groupId);
         if (!groupOpt.isPresent()) {
-            throw new RuntimeException("Groupe de rotation non trouvé avec l'ID : " + groupId);
+            throw new RuntimeException("Groupe de rotation non trouvé avec l'ID: " + groupId);
         }
         
         RotatingGroup group = groupOpt.get();
@@ -140,8 +163,22 @@ public class RotatingServiceImpl implements RotatingService {
         // Remove members from the group
         group.getMembers().removeAll(membersToRemove);
         
-        // Save and return the updated group
-        return rotatingGroupRepository.save(group);
+        // Save the updated group
+        RotatingGroup savedGroup = rotatingGroupRepository.save(group);
+        
+        // Update group status based on new member count
+        GroupStatus newStatus = groupStatusManagementService.determineGroupStatus(savedGroup);
+        if (newStatus != savedGroup.getStatus()) {
+            savedGroup.setStatus(newStatus);
+            savedGroup = rotatingGroupRepository.save(savedGroup);
+        }
+        
+        // If auto-generate is enabled, recreate the rounds
+        if (savedGroup.getAutoGenerateRounds() != null && savedGroup.getAutoGenerateRounds()) {
+            createAutomaticRounds(savedGroup);
+        }
+        
+        return savedGroup;
     }
 
     // Round methods
@@ -184,7 +221,7 @@ public class RotatingServiceImpl implements RotatingService {
     }
 
     @Override
-    public void deleteRound(Long id) {
+    public void deleteRound(Long id){
         roundRepository.deleteById(id);
     }
 
@@ -273,7 +310,7 @@ public class RotatingServiceImpl implements RotatingService {
     // Penalty methods
     @Override
     public Penalty applyPenalty(Long memberId, Long roundId, BigDecimal amount, String reason,
-                              String penaltyType, LocalDate penaltyDate) {
+                                String penaltyType, LocalDate penaltyDate) {
         Optional<Member> memberOpt = memberRepository.findById(memberId);
         Optional<Round> roundOpt = roundRepository.findById(roundId);
         
@@ -308,7 +345,7 @@ public class RotatingServiceImpl implements RotatingService {
     }
 
     @Override
-    public List<Penalty> findPenaltiesByRound(Long roundId) {
+    public List<Penalty> findPenaltiesByRound(Long roundId){
         Optional<Round> roundOpt = roundRepository.findById(roundId);
         if (roundOpt.isPresent()) {
             return penaltyRepository.findByRound(roundOpt.get());
@@ -386,11 +423,145 @@ public class RotatingServiceImpl implements RotatingService {
         return roundOpt.get().getBeneficiaries();
     }
     
+    /**
+     * Select beneficiaries for a round using a fair rotation algorithm.
+     * This method ensures that each member gets a turn in a predetermined order.
+     * 
+     * @param roundId The ID of the round to select beneficiaries for
+     * @return The updated round with beneficiaries assigned
+     */
+    @Override
+    public Round selectBeneficiariesAutomatically(Long roundId) {
+        Optional<Round> roundOpt = roundRepository.findById(roundId);
+        if (!roundOpt.isPresent()) {
+            throw new RuntimeException("Tour non trouvé avec l'ID: " + roundId);
+        }
+        
+        Round round = roundOpt.get();
+        RotatingGroup group = round.getRotatingGroup();
+        
+        // Get all active members of the rotating group
+        List<Member> members = group.getMembers();
+        if (members.isEmpty()) {
+            throw new RuntimeException("Aucun membre dans le groupe de rotation");
+        }
+        
+        // Sort members by ID to ensure consistent ordering
+        members.sort((m1, m2) -> m1.getId().compareTo(m2.getId()));
+        
+        // Determine beneficiaries based on round number and fair rotation algorithm
+        List<Member> beneficiaries = determineBeneficiariesByFairRotation(members, round);
+        
+        // Assign beneficiaries to the round
+        round.getBeneficiaries().clear();
+        round.getBeneficiaries().addAll(beneficiaries);
+        
+        // Calculate amount per beneficiary
+        if (!beneficiaries.isEmpty()) {
+            BigDecimal totalAmount = calculateTotalRoundContributions(roundId);
+            round.setTotalAmountDistributed(totalAmount);
+            round.setAmountPerBeneficiary(totalAmount.divide(new BigDecimal(beneficiaries.size()), 2, BigDecimal.ROUND_HALF_UP));
+        }
+        
+        return roundRepository.save(round);
+    }
+    
+    /**
+     * Determine beneficiaries using a fair rotation algorithm.
+     * This algorithm ensures that each member gets a turn in a predetermined order.
+     * 
+     * @param members List of all members in the rotating group
+     * @param round The round for which beneficiaries are being determined
+     * @return List of beneficiaries for this round
+     */
+    private List<Member> determineBeneficiariesByFairRotation(List<Member> members, Round round) {
+        int roundNumber = round.getRoundNumber();
+        int totalMembers = members.size();
+        
+        // Simple rotation: each round benefits the next member in line
+        // Member index is determined by (round number - 1) modulo total members
+        int beneficiaryIndex = (roundNumber - 1) % totalMembers;
+        Member beneficiary = members.get(beneficiaryIndex);
+        
+        List<Member> beneficiaries = new ArrayList<>();
+        beneficiaries.add(beneficiary);
+        
+        return beneficiaries;
+    }
+    
+    /**
+     * Enhanced fair selection algorithm that considers member history.
+     * This method prioritizes members who have not received funds recently.
+     * 
+     * @param rotatingGroupId The ID of the rotating group
+     * @param numberOfBeneficiaries Number of beneficiaries to select
+     * @return List of selected beneficiaries
+     */
+    public List<Member> selectBeneficiariesWithHistory(Long rotatingGroupId, int numberOfBeneficiaries) {
+        Optional<RotatingGroup> groupOpt = rotatingGroupRepository.findById(rotatingGroupId);
+        if (!groupOpt.isPresent()) {
+            throw new RuntimeException("Groupe de rotation non trouvé avec l'ID: " + rotatingGroupId);
+        }
+        
+        RotatingGroup group = groupOpt.get();
+        List<Member> members = new ArrayList<>(group.getMembers());
+        
+        if (members.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // Sort members by ID to ensure consistent ordering
+        members.sort((m1, m2) -> m1.getId().compareTo(m2.getId()));
+        
+        // Get the recent beneficiaries from previous rounds
+        List<Round> previousRounds = roundRepository.findByRotatingGroupOrderByRoundNumberDesc(group);
+        List<Member> recentBeneficiaries = new ArrayList<>();
+        
+        // Consider beneficiaries from the last N rounds (where N = number of members)
+        int roundsToConsider = Math.min(members.size(), previousRounds.size());
+        for (int i = 0; i < roundsToConsider; i++) {
+            recentBeneficiaries.addAll(previousRounds.get(i).getBeneficiaries());
+        }
+        
+        // Create a list of candidates weighted by how recently they received funds
+        List<Member> candidates = new ArrayList<>();
+        for (Member member : members) {
+            // Count how many times this member appears in recent beneficiaries
+            long recentCount = recentBeneficiaries.stream()
+                    .filter(m -> m.getId().equals(member.getId()))
+                    .count();
+            
+            // Add member multiple times inversely proportional to their recent selection count
+            // Members not recently selected get added more times, increasing their chances
+            int weight = Math.max(1, members.size() - (int) recentCount);
+            for (int i = 0; i < weight; i++) {
+                candidates.add(member);
+            }
+        }
+        
+        // Shuffle candidates and select unique beneficiaries
+        List<Member> selectedBeneficiaries = new ArrayList<>();
+        while (selectedBeneficiaries.size() < numberOfBeneficiaries && !candidates.isEmpty()) {
+            // Pick a random candidate
+            Member selected = candidates.get((int) (Math.random() * candidates.size()));
+            
+            // Add to beneficiaries if not already selected
+            if (!selectedBeneficiaries.contains(selected)) {
+                selectedBeneficiaries.add(selected);
+            }
+            
+            // Remove all instances of this member from candidates
+            candidates.removeIf(m -> m.getId().equals(selected.getId()));
+        }
+        
+        return selectedBeneficiaries;
+    }
+    
     @Override
     public Round distributeFundsToBeneficiaries(Long roundId) {
         Optional<Round> roundOpt = roundRepository.findById(roundId);
         if (!roundOpt.isPresent()) {
-            throw new RuntimeException("Tour non trouvé avec l'ID : " + roundId);
+            throw new RuntimeException("Tour non trouvé avec l'ID: " + roundId);
         }
         
         Round round = roundOpt.get();
@@ -481,5 +652,93 @@ public class RotatingServiceImpl implements RotatingService {
         BigDecimal totalContributions = calculateTotalContributionsForMember(memberId);
         BigDecimal totalPenalties = calculateTotalPenaltiesForMember(memberId);
         return totalContributions.subtract(totalPenalties);
+    }
+    
+    @Override
+    public void generateRoundsForGroup(Long groupId) {
+        Optional<RotatingGroup> groupOpt = rotatingGroupRepository.findById(groupId);
+        if (!groupOpt.isPresent()) {
+            throw new RuntimeException("Rotating group not found with id: " + groupId);
+        }
+        
+        RotatingGroup group = groupOpt.get();
+        createAutomaticRounds(group);
+    }
+    
+    @Override
+    public List<Round> createAutomaticRounds(RotatingGroup group) {
+        List<Round> createdRounds = new ArrayList<>();
+        
+        // Determine the number of rounds based on group members count
+        int numberOfRounds = group.getMembers().size();
+        if (numberOfRounds <= 0) {
+            return createdRounds; // No members, no rounds to create
+        }
+        
+        LocalDate currentDate = group.getStartDate();
+        RotationFrequency frequency = group.getRotationFrequency();
+        
+        // Delete existing rounds if any
+        if (!group.getRounds().isEmpty()) {
+            roundRepository.deleteAll(group.getRounds());
+            group.getRounds().clear();
+        }
+        
+        for (int i = 1; i <= numberOfRounds; i++) {
+            LocalDate startDate = currentDate;
+            LocalDate endDate = calculateEndDate(currentDate, frequency);
+            
+            Round round = Round.builder()
+                    .roundNumber(i)
+                    .startDate(startDate)
+                    .endDate(endDate)
+                    .status(RoundStatus.UPCOMING)
+                    .rotatingGroup(group)
+                    .build();
+            
+            Round savedRound = roundRepository.save(round);
+            createdRounds.add(savedRound);
+            
+            // Move to the next period
+            currentDate = endDate.plusDays(1);
+        }
+        
+        // Update group end date based on last round
+        if (!createdRounds.isEmpty()) {
+            Round lastRound = createdRounds.get(createdRounds.size() - 1);
+            group.setEndDate(lastRound.getEndDate());
+            rotatingGroupRepository.save(group);
+        }
+        
+        return createdRounds;
+    }
+    
+    private LocalDate calculateEndDate(LocalDate startDate, RotationFrequency frequency) {
+        switch (frequency) {
+            case DAILY:
+                return startDate;
+            case WEEKLY:
+                return startDate.plusDays(6); // Week is 7 days, so end date is 6 days after start
+            case MONTHLY:
+                return startDate.plusMonths(1).minusDays(1); // Last day of the month
+            case QUARTERLY:
+                return startDate.plusMonths(3).minusDays(1); // Last day of the quarter
+            case YEARLY:
+                return startDate.plusYears(1).minusDays(1); // Last day of the year
+            default:
+                return startDate.plusMonths(1).minusDays(1); // Default to monthly
+        }
+    }
+    
+    @Override
+    public RotatingGroup setAutoGenerateRounds(Long groupId, Boolean autoGenerate) {
+        Optional<RotatingGroup> groupOpt = rotatingGroupRepository.findById(groupId);
+        if (!groupOpt.isPresent()) {
+            throw new RuntimeException("Rotating group not found with id: " + groupId);
+        }
+        
+        RotatingGroup group = groupOpt.get();
+        group.setAutoGenerateRounds(autoGenerate);
+        return rotatingGroupRepository.save(group);
     }
 }

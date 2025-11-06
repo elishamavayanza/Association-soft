@@ -28,6 +28,10 @@ spring:
     console:
       enabled: false
 
+  # Configuration du fuseau horaire
+  jackson:
+    time-zone: Africa/Lubumbashi
+
   # ==============================================
   # CONFIGURATION DES EMAILS (reste inchangé)
   # ==============================================

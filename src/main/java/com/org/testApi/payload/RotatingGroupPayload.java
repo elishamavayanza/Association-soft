@@ -21,6 +21,7 @@ public class RotatingGroupPayload extends BasePayload {
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;
+    private Boolean autoGenerateRounds;
     @Builder.Default
     private List<Long> memberIds = new ArrayList<>();
     
