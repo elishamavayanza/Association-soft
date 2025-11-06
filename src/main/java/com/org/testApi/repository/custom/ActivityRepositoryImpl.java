@@ -58,7 +58,6 @@ public class ActivityRepositoryImpl implements ActivityRepositoryCustom {
     }
     
     @Override
-    @Transactional
     public void softDeleteActivity(Activity activity) {
         try {
             activity.setDeleted(true);

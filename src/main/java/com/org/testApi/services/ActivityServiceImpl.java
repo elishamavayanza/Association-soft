@@ -6,6 +6,7 @@ import com.org.testApi.repository.ActivityRepository;
 import com.org.testApi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,12 +16,13 @@ import java.util.stream.Collectors;
 @Service
 public class ActivityServiceImpl implements ActivityService {
 
-@Autowired
+    @Autowired
     private ActivityRepository activityRepository;
-@Autowired
+
+    @Autowired
     private UserRepository userRepository;
 
-private List<Observer<Activity>> observers = new ArrayList<>();
+    private List<Observer<Activity>> observers = new ArrayList<>();
 
     @Override
     public List<Activity> getAllActivities() {
@@ -33,6 +35,7 @@ private List<Observer<Activity>> observers = new ArrayList<>();
     }
 
     @Override
+    @Transactional
     public Activity saveActivity(Activity activity) {
         Activity savedActivity = activityRepository.save(activity);
         notifyObservers("SAVE", savedActivity);
@@ -40,10 +43,11 @@ private List<Observer<Activity>> observers = new ArrayList<>();
     }
 
     @Override
+    @Transactional
     public Activity updateActivity(Long id, Activity activity) {
         if (activityRepository.existsById(id)) {
             activity.setId(id);
-           Activity updatedActivity = activityRepository.save(activity);
+            Activity updatedActivity = activityRepository.save(activity);
             notifyObservers("UPDATE", updatedActivity);
             return updatedActivity;
         }
@@ -51,20 +55,22 @@ private List<Observer<Activity>> observers = new ArrayList<>();
     }
 
     @Override
+    @Transactional
     public void deleteActivity(Long id) {
         Activity activity = activityRepository.findById(id).orElse(null);
-activityRepository.deleteById(id);
+        activityRepository.deleteById(id);
         if (activity != null) {
             notifyObservers("DELETE", activity);
         }
     }
 
     @Override
+    @Transactional
     public void softDeleteActivity(Long id) {
         Activity activity = activityRepository.findById(id).orElse(null);
         if (activity != null) {
             try {
-activityRepository.softDeleteActivity(activity);
+                activityRepository.softDeleteActivity(activity);
                 notifyObservers("SOFT_DELETE", activity);
             } catch (Exception e) {
                 throw new RuntimeException("Error soft deleting activity with id: " + id, e);
@@ -88,12 +94,13 @@ activityRepository.softDeleteActivity(activity);
     }
 
     @Override
+    @Transactional
     public Activity addParticipants(Long activityId, List<Long> userIds) {
         Optional<Activity> activityOpt = activityRepository.findById(activityId);
         if (activityOpt.isPresent()) {
             Activity activity = activityOpt.get();
             
-// Fetch users from repository
+            // Fetch users from repository
             List<User> usersToAdd = userRepository.findAllById(userIds);
             
             // Add users to participants (avoiding duplicates)
@@ -102,18 +109,19 @@ activityRepository.softDeleteActivity(activity);
                     activity.getParticipants().add(user);
                 }
             }
-return activityRepository.save(activity);
+            return activityRepository.save(activity);
         }
         throw new RuntimeException("Activity not found with id: " + activityId);
     }
 
     @Override
+    @Transactional
     public Activity removeParticipants(Long activityId, List<Long> userIds) {
         Optional<Activity> activityOpt = activityRepository.findById(activityId);
         if (activityOpt.isPresent()) {
             Activity activity = activityOpt.get();
             
-// Removeusers from participants
+            // Remove users from participants
             activity.getParticipants().removeIf(user -> userIds.contains(user.getId()));
             
             return activityRepository.save(activity);
@@ -121,7 +129,7 @@ return activityRepository.save(activity);
         throw new RuntimeException("Activity not found with id: " + activityId);
     }
 
-@Override
+    @Override
     public void addObserver(Observer<Activity> observer) {
         observers.add(observer);
     }
@@ -133,7 +141,7 @@ return activityRepository.save(activity);
 
     @Override
     public void notifyObservers(String event, Activity entity) {
-        for (Observer<Activity> observer :observers) {
+        for (Observer<Activity> observer : observers) {
             observer.update(event, entity);
         }
     }
