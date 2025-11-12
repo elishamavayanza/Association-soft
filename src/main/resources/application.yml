@@ -9,7 +9,7 @@ spring:
     password:
   
   jpa:
-    database-platform: com.org.testApi.config.SQLiteDialect
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:
       ddl-auto: update
     show-sql: true

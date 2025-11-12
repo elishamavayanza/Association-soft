@@ -25,6 +25,7 @@ public class ContributionMapper {
                 .lastModifiedBy(contribution.getLastModifiedBy())
                 .active(contribution.isActive())
                 .amount(contribution.getAmount())
+                .currency(contribution.getCurrency())
                 .contributionDate(contribution.getContributionDate())
                 .status(contribution.getStatus() != null ? contribution.getStatus().name() : null)
                 .memberId(contribution.getMember() != null ? contribution.getMember().getId() : null)
@@ -45,6 +46,7 @@ public class ContributionMapper {
         contribution.setLastModifiedBy(contributionDTO.getLastModifiedBy());
         contribution.setActive(contributionDTO.isActive());
         contribution.setAmount(contributionDTO.getAmount());
+        contribution.setCurrency(contributionDTO.getCurrency());
         contribution.setContributionDate(contributionDTO.getContributionDate());
         contribution.setStatus(contributionDTO.getStatus() != null ? 
                              ContributionStatus.valueOf(contributionDTO.getStatus()) : null);
@@ -67,6 +69,7 @@ public class ContributionMapper {
                 .createdBy(payload.getCreatedBy() != null ? payload.getCreatedBy().toString() : null)
                 .lastModifiedBy(payload.getUpdatedBy() != null ? payload.getUpdatedBy().toString() : null)
                 .amount(payload.getAmount())
+                .currency(payload.getCurrency())
                 .contributionDate(payload.getContributionDate())
                 .status(payload.getStatus())
                 .memberId(payload.getMemberId())

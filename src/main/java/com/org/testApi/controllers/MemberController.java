@@ -1,5 +1,6 @@
 package com.org.testApi.controllers;
 
+import com.org.testApi.models.MemberType;
 import com.org.testApi.models.Member;
 import com.org.testApi.payload.MemberPayload;
 import com.org.testApi.services.MemberService;
@@ -48,7 +49,7 @@ public class MemberController {
     private AssociationService associationService;
 
     @GetMapping
-    @Operation(summary = "Récupérer tous les membres", description = "Retourne une liste de tous les membres")
+    @Operation(summary = "Récupérer tous les membres", description ="Retourne une liste de tous les membres")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des membres récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
@@ -66,7 +67,7 @@ public class MemberController {
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un membre par ID", description = "Retourne un membre spécifique en fonction de son ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Membre trouvé",
+           @ApiResponse(responseCode = "200", description = "Membre trouvé",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MemberDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
@@ -81,12 +82,12 @@ public class MemberController {
 
     // New endpoint to find member by memberCode
     @GetMapping("/code/{memberCode}")
-    @Operation(summary = "Récupérer un membre par code membre", description = "Retourne un membre spécifique en fonction de son code membre")
+    @Operation(summary = "Récupérer un membre par code membre", description = "Retourne un membrespécifique en fonction de son code membre")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Membre trouvé",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MemberDTO.class))}),
-            @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
+            @ApiResponse(responseCode ="404", description = "Membre non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<MemberDTO> getMemberByMemberCode(
@@ -116,7 +117,7 @@ public class MemberController {
                             examples = @ExampleObject(
                                     name = "Exemple de création de membre avec entité complète",
                                     summary = "Exemple de création de membre avec entité complète",
-                                    value = "{\n  \"user\": {\n    \"id\": 6\n  },\n  \"association\": {\n    \"id\": 3\n  }\n}"
+value = "{\n  \"user\": {\n    \"id\": 6\n  },\n  \"association\": {\n    \"id\": 3\n  }\n}"
                             )
                     )
             ) @RequestBody Member member) {
@@ -127,10 +128,10 @@ public class MemberController {
             member.setUser(user);
         }
 
-        // Check if association exists when association ID is provided directly in the member entity
+        //Check if association exists when association ID is provided directly in the member entity
         if (member.getAssociation() != null && member.getAssociation().getId() != null) {
             Association association = associationService.getAssociationById(member.getAssociation().getId())
-                    .orElseThrow(() -> new RuntimeException("Association not found with id: " + member.getAssociation().getId()));
+                    .orElseThrow(() -> new RuntimeException("Association not found with id:" + member.getAssociation().getId()));
             member.setAssociation(association);
         }
 
@@ -149,24 +150,24 @@ public class MemberController {
         @ApiResponse(responseCode = "200", description = "Membre créé avec succès",
                 content = {@Content(mediaType = "application/json",
                         schema = @Schema(implementation = MemberDTO.class))}),
-        @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+        @ApiResponse(responseCode = "400", description= "Données de requête invalides"),
         @ApiResponse(responseCode = "404", description = "Utilisateur ou association non trouvé"),
         @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<?> createMemberFromPayload(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+           @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Données du membre à créer",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = MemberPayload.class),
                             examples = @ExampleObject(
                                     name = "Exemple de création de membre",
-                                    summary = "Exemple de création de membre",
-                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2\n}"
+summary = "Exemple de création de membre",
+                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2,\n  \"photo\": \"/path/to/photo.jpg\"\n}"
                             )
                     )
             ) @RequestBody MemberPayload payload) {
-        try {
+        try{
             logger.info("Starting member creation from payload: {}", payload);
 
             // Check if user exists
@@ -177,17 +178,37 @@ public class MemberController {
                         return new RuntimeException("User not found with id: " + payload.getUserId());
                     });
 
+            // Update user information from payload if provided
+            if (payload.getFirstName() != null) {
+                user.setFirstName(payload.getFirstName());
+            }
+            if (payload.getLastName() != null) {
+                user.setLastName(payload.getLastName());
+            }
+            if (payload.getEmail() != null) {
+                user.setEmail(payload.getEmail());
+            }
+            if (payload.getPhone() != null) {
+                user.setPhoneNumber(payload.getPhone());
+            }
+            if (payload.getPhoto() != null) {
+                user.setPhoto(payload.getPhoto());
+            }
+            
+            // Save updated user information
+            userService.updateUser(user.getId(), user);
+
             // Check if association exists
             logger.info("Checking if association exists with ID: {}", payload.getAssociationId());
             Association association = associationService.getAssociationById(payload.getAssociationId())
                     .orElseThrow(() -> {
-                        logger.error("Association not found with id: {}", payload.getAssociationId());
+logger.error("Association not found with id: {}", payload.getAssociationId());
                         return new RuntimeException("Association not found with id: " + payload.getAssociationId());
                     });
 
             logger.info("Creating member entity from payload");
             Member member = memberMapper.toEntityFromPayload(payload);
-            if (member == null) {
+            if (member == null){
                 logger.error("Failed to map payload to Member entity");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Failed to map payload to Member entity");
@@ -207,7 +228,7 @@ public class MemberController {
                 }
             }
 
-            logger.info("Saving member with code: {}", member.getMemberCode());
+           logger.info("Saving member with code: {}", member.getMemberCode());
             Member savedMember = memberService.saveMember(member);
             logger.info("Member created successfully with ID: {}", savedMember.getId());
             return ResponseEntity.ok(memberMapper.toDto(savedMember));
@@ -259,7 +280,7 @@ public class MemberController {
                             examples = @ExampleObject(
                                     name = "Exemple de mise à jour de membre",
                                     summary = "Exemple de mise à jour de membre",
-                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2\n}"
+                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2\n}"
                             )
                     )
             ) @RequestBody MemberPayload payload) {
@@ -270,7 +291,7 @@ public class MemberController {
                             // Update user and association if IDs are provided in payload
                             if (payload.getUserId() != null) {
                                 User user = userService.getUserById(payload.getUserId())
-                                        .orElseThrow(() -> new RuntimeException("User not found with id: " + payload.getUserId()));
+                                        .orElseThrow(() -> new RuntimeException("User not found with id: "+ payload.getUserId()));
                                 member.setUser(user);
 
                                 // Mettre à jour les informations personnelles de l'utilisateur
@@ -288,7 +309,7 @@ public class MemberController {
                                         currentUser.setLastName(payload.getLastName());
                                     }
 
-                                    if (payload.getEmail() != null) {
+                                    if (payload.getEmail()!= null) {
                                         currentUser.setEmail(payload.getEmail());
                                     }
 
@@ -312,7 +333,7 @@ public class MemberController {
                             return ResponseEntity.ok(memberMapper.toDto(updatedMember));
                         } catch (Exception e) {
                             logger.error("Error updating member with id: " + id, e);
-                            throw new RuntimeException("Error updating member", e);
+                           throw new RuntimeException("Error updating member", e);
                         }
                     })
                     .orElse(ResponseEntity.notFound().build());
@@ -337,11 +358,11 @@ public class MemberController {
     }
 
     @DeleteMapping("/{id}/soft")
-    @Operation(summary = "Supprimer logiquement un membre", description = "Marque un membre comme supprimé sans le retirer de la base de données")
+    @Operation(summary = "Supprimer logiquement un membre", description = "Marque un membre comme supprimé sans le retirer de labase de données")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Membre supprimé logiquement avec succès"),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode = "500",description = "Erreur interne du serveur")
     })
     public ResponseEntity<Void> softDeleteMember(
             @Parameter(description = "ID du membre à supprimer logiquement") @PathVariable Long id) {
@@ -353,7 +374,7 @@ public class MemberController {
      * Recherche des membres avec des filtres complexes.
      */
     @GetMapping("/search")
-    @Operation(summary = "Rechercher des membres", description = "Recherche des membres avec des filtres complexes")
+@Operation(summary = "Rechercher des membres", description = "Recherche des membres avec des filtres complexes")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Résultats de recherche récupérés avec succès",
                     content = {@Content(mediaType = "application/json",
@@ -363,7 +384,7 @@ public class MemberController {
     public ResponseEntity<List<MemberDTO>> searchMembers(
             @Parameter(description = "Nom du membre (optionnel)") @RequestParam(required = false) String name,
             @Parameter(description = "Email du membre (optionnel)") @RequestParam(required = false) String email,
-            @Parameter(description = "Type de membre (optionnel)") @RequestParam(required = false) Member.MemberType memberType,
+            @Parameter(description = "Type de membre (optionnel)") @RequestParam(required = false) MemberType memberType,
             @Parameter(description = "ID de l'association (optionnel)") @RequestParam(required = false) Long associationId,
             @Parameter(description = "Statut d'activité (optionnel)") @RequestParam(required = false) Boolean isActive) {
         // Note: Pour une implémentation complète, vous devriez ajouter cette méthode au service
@@ -380,7 +401,7 @@ public class MemberController {
     @GetMapping("/{id}/eligible")
     @Operation(summary = "Vérifier l'éligibilité d'un membre pour un prêt", description = "Indique si un membre est éligible pour emprunter")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Éligibilité du membre déterminée avec succès",
+@ApiResponse(responseCode = "200", description = "Éligibilité du membre déterminée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Boolean.class))}),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
@@ -391,7 +412,7 @@ public class MemberController {
         // Note: Vous devriez ajouter cette méthode au MemberService
         Member member = memberService.getMemberById(id).orElse(null);
         if (member != null) {
-            boolean eligible = member.isEligibleForLoan();
+           boolean eligible = member.isEligibleForLoan();
             return ResponseEntity.ok(eligible);
         }
         return ResponseEntity.notFound().build();
@@ -402,6 +423,6 @@ public class MemberController {
      * @return Un code membre unique
      */
     private String generateUniqueMemberCode() {
-        return "MBR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+return "MBR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

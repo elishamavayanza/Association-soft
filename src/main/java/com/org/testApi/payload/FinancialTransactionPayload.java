@@ -1,5 +1,6 @@
 package com.org.testApi.payload;
 
+import com.org.testApi.models.Currency;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 public class FinancialTransactionPayload extends BasePayload {
     private Long id;
     private BigDecimal amount;
+    private Currency currency;
     private LocalDate transactionDate;
     private String description;
     private String type;

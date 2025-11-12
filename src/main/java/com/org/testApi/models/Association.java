@@ -65,7 +65,7 @@ public class Association extends BaseEntity {
     /**
      * Liste des membres appartenant à cette association.
      */
-    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
@@ -74,8 +74,8 @@ public class Association extends BaseEntity {
     /**
      * Liste des activités organisées par cette association.
      */
-    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL)
-@Builder.Default
+    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     @ToString.Exclude
     @JsonIgnore
     private List<Activity> activities = new ArrayList<>();
@@ -84,7 +84,7 @@ public class Association extends BaseEntity {
     /**
      * Liste des transactions financières associées à l'association.
      */
-    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
@@ -93,7 +93,7 @@ public class Association extends BaseEntity {
     /**
      * Listedes documents liés à l'association.
      */
-    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore

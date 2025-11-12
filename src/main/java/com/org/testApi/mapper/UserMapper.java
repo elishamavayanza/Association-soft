@@ -57,6 +57,7 @@ public abstract UserResponseDTO toResponseDto(User entity);
 
     // Payload mappings
     @Mapping(target = "password", ignore = true)
+@Mapping(target = "photo", ignore = true)
 public abstract User toEntityFromPayload(UserPayload payload);
 
     // Nouvelle méthode pour la création d'utilisateur qui inclut le mot de passe

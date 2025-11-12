@@ -99,6 +99,7 @@ public class LoanController {
                                    value = "{\n" +
                                             "\"memberId\": 1,\n" +
                                             "\"amount\": 10,\n" +
+                                            "\"currency\": \"CDF\",\n" +
                                             "\"interestRate\": 0.05,\n" +
                                             "\"penaltyRate\": 0.1,\n" +
                                             "\"dueDate\": \"2025-12-31\",\n" +
@@ -399,7 +400,7 @@ schema = @Schema(implementation = Boolean.class))}),
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"memberId\": 7,\n  \"documentId\":1,\n  \"amount\": 1500.00,\n  \"interestRate\": 0.07,\n  \"penaltyRate\": 0.10,\n  \"dueDate\": \"2025-12-31\",\n  \"repaymentDate\": \"2025-12-30\",\n  \"amountRepaid\": 1600.00,\n  \"status\": \"REPAID\"\n}"
+                                    value = "{\n  \"memberId\": 7,\n  \"documentId\":1,\n  \"amount\": 1500.00,\n  \"currency\": \"USD\",\n  \"interestRate\": 0.07,\n  \"penaltyRate\": 0.10,\n  \"dueDate\": \"2025-12-31\",\n  \"repaymentDate\": \"2025-12-30\",\n  \"amountRepaid\": 1600.00,\n  \"status\": \"REPAID\"\n}"
                            )
                     )
             )

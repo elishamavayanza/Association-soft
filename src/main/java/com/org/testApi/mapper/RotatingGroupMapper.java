@@ -28,6 +28,7 @@ public class RotatingGroupMapper {
                 .name(rotatingGroup.getName())
                 .description(rotatingGroup.getDescription())
                 .contributionAmount(rotatingGroup.getContributionAmount())
+                .currency(rotatingGroup.getCurrency())
                 .maxMembers(rotatingGroup.getMaxMembers())
                 .rotationFrequency(rotatingGroup.getRotationFrequency() != null ? 
                                  rotatingGroup.getRotationFrequency().name() : null)
@@ -57,6 +58,7 @@ public class RotatingGroupMapper {
         rotatingGroup.setName(rotatingGroupDTO.getName());
         rotatingGroup.setDescription(rotatingGroupDTO.getDescription());
         rotatingGroup.setContributionAmount(rotatingGroupDTO.getContributionAmount());
+        rotatingGroup.setCurrency(rotatingGroupDTO.getCurrency());
         rotatingGroup.setMaxMembers(rotatingGroupDTO.getMaxMembers());
         rotatingGroup.setRotationFrequency(rotatingGroupDTO.getRotationFrequency() != null ? 
                                          RotationFrequency.valueOf(rotatingGroupDTO.getRotationFrequency()) : null);
@@ -85,6 +87,7 @@ public class RotatingGroupMapper {
                 .name(payload.getName())
                 .description(payload.getDescription())
                 .contributionAmount(payload.getContributionAmount())
+                .currency(payload.getCurrency())
                 .maxMembers(payload.getMaxMembers())
                 .rotationFrequency(payload.getRotationFrequency())
                 .startDate(payload.getStartDate())

@@ -62,6 +62,7 @@ public class RotatingController {
                                     "  \"name\": \"Groupe Likelemba Alpha\",\n" +
                                     "  \"description\": \"Groupe de rotationpour les membres Alpha\",\n" +
                                     "  \"contributionAmount\": 10000,\n" +
+                                    "  \"currency\": \"CDF\",\n" +
                                     "  \"maxMembers\": 10,\n" +
                                     "  \"rotationFrequency\": \"MONTHLY\",\n" +
                                     "  \"startDate\": \"2025-11-01\",\n" +
@@ -143,6 +144,7 @@ public class RotatingController {
                                     "  \"name\": \"Groupe Likelemba Mis à Jour\",\n" +
                                     "  \"description\":\"Groupe de rotation mis à jour\",\n" +
                                     "  \"contributionAmount\": 12000,\n" +
+                                    "  \"currency\": \"USD\",\n" +
                                     "  \"maxMembers\": 12,\n" +
                                     "  \"rotationFrequency\": \"WEEKLY\",\n" +
                                     "  \"startDate\":\"2025-11-01\",\n"+
@@ -372,6 +374,7 @@ public class RotatingController {
                                     "  \"memberId\": 1,\n" +
                                     "  \"roundId\": 1,\n" +
                                    "  \"amount\": 10000,\n" +
+                                    "  \"currency\": \"CDF\",\n" +
                                     "  \"contributionDate\": \"2025-11-15\"\n" +
                                    "}"
                     )
@@ -433,6 +436,7 @@ public class RotatingController {
                             value = "{\n" +
                                     "  \"id\": 1,\n" +
                                     "  \"amount\": 12000,\n" +
+                                    "  \"currency\": \"USD\",\n" +
                                     "  \"contributionDate\": \"2025-12-15\",\n" +
                                     "\"status\": \"CONFIRMED\",\n" +
                                     "  \"memberId\": 1,\n" +
@@ -482,6 +486,7 @@ public class RotatingController {
                                     "  \"memberId\": 1,\n" +
                                     "  \"roundId\": 1,\n" +
                                     "  \"amount\": 5000,\n"+
+                                    "  \"currency\": \"CDF\",\n"+
                                     "  \"reason\": \"Retard de paiement\",\n"+
                                     "\"penaltyType\": \"LATE_PAYMENT\",\n" +
                                     "  \"penaltyDate\": \"2025-11-20\"\n" +
@@ -537,6 +542,7 @@ summary = "Exemple de mise à jour de pénalité",
                             value = "{\n" +
                                     "  \"id\": 1,\n" +
                                     "  \"amount\": 6000,\n" +
+                                    "  \"currency\": \"USD\",\n" +
                                     "  \"reason\": \"Retard de paiement mis à jour\",\n" +
                                     "  \"penaltyType\": \"LATE_PAYMENT\",\n" +
                                     "  \"penaltyDate\": \"2025-12-20\",\n" +
@@ -631,6 +637,7 @@ summary = "Exemple de mise à jour de pénalité",
                                     "  \"name\": \"Groupe Likelemba Beta\",\n" +
                                     "  \"description\": \"Groupe de rotation pour les membres Beta\",\n" +
                                     "  \"contributionAmount\": 15000,\n" +
+                                    "  \"currency\": \"CDF\",\n" +
                                     "  \"maxMembers\": 15,\n" +
                                     "  \"rotationFrequency\": \"WEEKLY\",\n" +
                                     "  \"startDate\": \"2025-11-01\",\n" +
@@ -674,6 +681,7 @@ summary = "Exemple de mise à jour de pénalité",
                                     "  \"name\": \"Groupe Likelemba Mis à Jour\",\n" +
                                     "  \"description\": \"Groupe de rotation mis à jour avec payload\",\n"+
                                     "  \"contributionAmount\": 13000,\n" +
+                                    "  \"currency\": \"USD\",\n" +
                                     "  \"maxMembers\": 13,\n" +
                                     "  \"rotationFrequency\": \"MONTHLY\",\n" +
                                     "  \"startDate\": \"2025-11-01\",\n"+

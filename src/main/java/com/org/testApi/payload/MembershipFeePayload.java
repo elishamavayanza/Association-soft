@@ -1,5 +1,6 @@
 package com.org.testApi.payload;
 
+import com.org.testApi.models.Currency;
 import com.org.testApi.models.MembershipFee;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,6 +13,7 @@ public class MembershipFeePayload extends BasePayload {
     private Long id;
     private Long memberId;
     private BigDecimal amount;
+    private Currency currency;
     private LocalDate paymentDate;
     private LocalDate startDate;
     private LocalDate endDate;

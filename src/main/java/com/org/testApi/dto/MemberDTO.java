@@ -1,12 +1,11 @@
 package com.org.testApi.dto;
 
+import com.org.testApi.models.MemberType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * DTO pour l'entité Member.
@@ -20,7 +19,7 @@ public class MemberDTO extends BaseEntityDTO {
     private Long associationId;
     private LocalDate joinDate;
     private LocalDate leaveDate;
-    private String type;
+    private MemberType type;
     private boolean isAdmin;
     private String memberCode;
 }

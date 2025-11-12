@@ -23,16 +23,25 @@ public class CustomRepositoryFactoryBean<T extends JpaRepository<S, ID>, S, ID e
     }
 
     private static class CustomRepositoryFactory extends JpaRepositoryFactory {
+        private final EntityManager entityManager;
+
         public CustomRepositoryFactory(EntityManager entityManager) {
             super(entityManager);
+            this.entityManager = entityManager;
         }
 
         @Override
         protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
-            if (metadata.getRepositoryInterface().getName().equals("com.org.testApi.repository.base.BaseRepository")) {
+            // For BaseRepository, use our custom implementation
+            if (isBaseRepository(metadata.getRepositoryInterface())) {
                 return BaseRepositoryImpl.class;
             }
             return super.getRepositoryBaseClass(metadata);
+        }
+
+        private boolean isBaseRepository(Class<?> repositoryInterface) {
+            // Check if the repository interface extends BaseRepository
+            return com.org.testApi.repository.base.BaseRepository.class.isAssignableFrom(repositoryInterface);
         }
     }
 }

@@ -24,6 +24,7 @@ public interface FinancialTransactionMapper extends BaseMapper<FinancialTransact
     @Mapping(target = "projectId", source = "project.id")
     @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "type", source = "type")
+    @Mapping(target = "currency", source = "currency")
     FinancialTransactionDTO toDto(FinancialTransaction entity);
 
     // Payload mappings
@@ -37,6 +38,7 @@ public interface FinancialTransactionMapper extends BaseMapper<FinancialTransact
     @Mapping(target = "activityId", source = "activity.id")
     @Mapping(target = "projectId", source = "project.id")
     @Mapping(target = "categoryId", source = "category.id")
+    @Mapping(target = "currency", source = "currency")
     FinancialTransactionPayload toPayload(FinancialTransaction entity);
 
     @Mapping(target = "association", ignore = true)

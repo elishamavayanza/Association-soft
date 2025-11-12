@@ -1,5 +1,6 @@
 package com.org.testApi.dto;
 
+import com.org.testApi.models.Currency;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -18,13 +19,12 @@ public class RotatingGroupDTO extends BaseEntityDTO {
     private String name;
     private String description;
     private BigDecimal contributionAmount;
+    private Currency currency;
     private Integer maxMembers;
     private String rotationFrequency;
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;
-    @Builder.Default
-    private List<Long> memberIds = new ArrayList<>();
-    @Builder.Default
-    private List<Long> roundIds = new ArrayList<>();
+    private List<Long> memberIds;
+    private List<Long> roundIds;
 }

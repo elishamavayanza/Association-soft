@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.List;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
+@Autowired
     private UserRepository userRepository;
 
     private final AuthenticationManager authenticationManager;
@@ -38,7 +39,7 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     public AuthServiceImpl(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
-    }
+   }
 
     @Override
     public User authenticateUser(String username, String password) {
@@ -50,12 +51,15 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+// Update last login time
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
 
         notifyObservers("AUTHENTICATION", user);
         return user;
     }
 
-    @Override
+   @Override
     public String generateToken(User user) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + tokenValidity);
@@ -94,7 +98,7 @@ public class AuthServiceImpl implements AuthService {
                     .orElseThrow(() -> new RuntimeException("Current user not found: " + username));
             notifyObservers("CURRENT_USER_RETRIEVAL", user);
             return user;
-        }
+}
         throw new RuntimeException("No authenticated user found");
     }
 
@@ -116,7 +120,7 @@ public class AuthServiceImpl implements AuthService {
         return extractClaims(token).getSubject();
     }
 
-    @Override
+@Override
     public void addObserver(Observer<User> observer) {
         observers.add(observer);
     }

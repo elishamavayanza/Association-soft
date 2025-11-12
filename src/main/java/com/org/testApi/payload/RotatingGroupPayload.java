@@ -1,5 +1,6 @@
 package com.org.testApi.payload;
 
+import com.org.testApi.models.Currency;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ public class RotatingGroupPayload extends BasePayload {
     private String name;
     private String description;
     private BigDecimal contributionAmount;
+    private Currency currency;
     private Integer maxMembers;
     private String rotationFrequency;
     private LocalDate startDate;

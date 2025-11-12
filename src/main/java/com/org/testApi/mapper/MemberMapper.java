@@ -13,7 +13,7 @@ import org.mapstruct.Named;
 /**
  * Mapper pour l'entité Member et ses DTOs associés.
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {MemberPhotoMapper.class})
 public interface MemberMapper extends BaseMapper<Member, MemberDTO> {
 
     @Mapping(target = "user", ignore = true)
@@ -26,6 +26,7 @@ public interface MemberMapper extends BaseMapper<Member, MemberDTO> {
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "associationId", source = "association.id")
     @Mapping(target = "memberCode", source = "memberCode")
+    @Mapping(target = "photo", source = ".", qualifiedByName = "extractPhotoFromMember")
     MemberResponseDTO toResponseDto(Member entity);
 
     @Mapping(target = "user", ignore = true)
@@ -54,6 +55,7 @@ public interface MemberMapper extends BaseMapper<Member, MemberDTO> {
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "associationId", source = "association.id")
     @Mapping(target = "memberCode", source = "memberCode")
+    @Mapping(target = "photo", source = ".", qualifiedByName = "extractPhotoFromMember")
     MemberPayload toPayload(Member entity);
 
     @Mapping(target = "user", ignore = true)
@@ -67,5 +69,13 @@ public interface MemberMapper extends BaseMapper<Member, MemberDTO> {
     @Named("mapMemberCode")
     default String mapMemberCode(String memberCode) {
         return memberCode != null ? memberCode : null;
+    }
+    
+    @Named("extractPhotoFromMember")
+    default String extractPhotoFromMember(Member member) {
+        if (member != null && member.getUser() != null) {
+            return member.getUser().getPhoto();
+        }
+        return null;
     }
 }

@@ -1,5 +1,6 @@
 package com.org.testApi.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -29,21 +30,25 @@ public class Round extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
+    @Builder.Default
     private RoundStatus status = RoundStatus.UPCOMING;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "rotating_group_id", nullable = false)
     @ToString.Exclude
+    @JsonIgnore
     private RotatingGroup rotatingGroup;
 
-    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<Contribution> contributions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<Penalty> penalties = new ArrayList<>();
     
     // Many-to-many relationship for beneficiaries (members who receive money from this round)
@@ -55,11 +60,20 @@ public class Round extends BaseEntity {
     )
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private List<Member> beneficiaries = new ArrayList<>();
     
     // Total amount distributed in this round
     @Column(name = "total_amount_distributed")
     private BigDecimal totalAmountDistributed;
+    
+    /**
+     * Devise du montant total distribué.
+     * Hérite de la devise du groupe rotatif.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency")
+    private Currency currency;
     
     // Date when the money was distributed to beneficiaries
     @Column(name = "distribution_date")

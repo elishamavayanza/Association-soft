@@ -30,6 +30,15 @@ public class FinancialTransaction extends BaseEntity {
     private BigDecimal amount;
 
     /**
+     * Devise du montant de la transaction.
+     * Par défaut, CDF (Franc congolais).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency", nullable = false)
+    @Builder.Default
+    private Currency currency = Currency.CDF;
+
+    /**
      * Date à laquelle la transaction a eu lieu.
      * Si non fournie, la date du jour est utilisée automatiquement.
      */

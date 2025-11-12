@@ -43,6 +43,15 @@ public class MembershipFee extends BaseEntity {
     private BigDecimal amount;
 
     /**
+     * Devise du montant de la cotisation.
+     * Par défaut, CDF (Franc congolais).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency", nullable = false)
+    @Builder.Default
+    private Currency currency = Currency.CDF;
+
+    /**
      * Date à laquelle le paiement a été effectué.
      * Ce champ est obligatoire.
      */

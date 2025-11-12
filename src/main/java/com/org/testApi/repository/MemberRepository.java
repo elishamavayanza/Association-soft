@@ -1,6 +1,7 @@
 package com.org.testApi.repository;
 
 import com.org.testApi.models.Member;
+import com.org.testApi.models.MemberType;
 import com.org.testApi.repository.base.BaseRepository;
 import com.org.testApi.repository.custom.MemberRepositoryCustom;
 import org.springframework.data.domain.Page;
@@ -21,7 +22,7 @@ public interface MemberRepository extends BaseRepository<Member, Long>, MemberRe
 
     List<Member> findByAssociationId(Long associationId);
 
-    List<Member> findByType(Member.MemberType type);
+    List<Member> findByType(MemberType type);
 
     @Query("SELECT m FROM Member m WHERE m.leaveDate IS NULL")
     List<Member> findByIsActiveTrue();

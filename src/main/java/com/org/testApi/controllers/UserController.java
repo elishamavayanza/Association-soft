@@ -103,7 +103,7 @@ public class UserController {
             @Parameter(description = "ID de l'utilisateur à récupérer") @PathVariable Long id) {
         return userService.getUserById(id)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElse(ResponseEntity.<User>notFound().build());
     }
 
     @PostMapping
@@ -318,6 +318,33 @@ user.getUsername(), user.getEmail(), user.getPassword() != null ? "****" : "NULL
         }
     }
 
+    @PostMapping("/upload-photo/{id}")
+    @Operation(summary = "Uploader une photo pour un utilisateur", description = "Permet de téléverser une photo pour un utilisateur existant")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Photo téléchargée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<User> uploadUserPhoto(
+            @Parameter(description = "ID de l'utilisateur") @PathVariable Long id,
+            @Parameter(description = "Chemin du fichier à téléverser") @RequestParam("filePath") String filePath) {
+        try {
+            User user = userService.getUserById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+            
+            // Update the user's photo path
+            user.setPhoto(filePath);
+            
+            User updatedUser = userService.updateUser(id, user);
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            logger.error("Error uploading photo for user: ", e);
+            return ResponseEntity.status(500).body((User) null);
+        }
+    }
+
     @PutMapping("/{id}")
     @Operation(
             summary = "Mettre à jour un utilisateur",
@@ -359,7 +386,7 @@ user.getUsername(), user.getEmail(), user.getPassword() != null ? "****" : "NULL
             User updatedUser = userService.updateUser(id, user);
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.<User>notFound().build();
         }
     }
 
@@ -403,13 +430,15 @@ user.getUsername(), user.getEmail(), user.getPassword() != null ? "****" : "NULL
     public ResponseEntity<User> updateUserWithPayload(
             @Parameter(description = "ID de l'utilisateur à mettre à jour") @PathVariable Long id,
             @Valid @org.springframework.web.bind.annotation.RequestBody UserPayload payload) {
-        return userService.getUserById(id)
-                .map(user -> {
-                    userMapper.updateEntityFromPayload(payload, user);
-                    User updatedUser = userService.updateUser(id, user);
-                    return ResponseEntity.ok(updatedUser);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        Optional<User> userOptional = userService.getUserById(id);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            userMapper.updateEntityFromPayload(payload, user);
+            User updatedUser = userService.updateUser(id, user);
+            return ResponseEntity.ok(updatedUser);
+        } else {
+            return ResponseEntity.<User>notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")

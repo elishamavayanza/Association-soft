@@ -68,8 +68,7 @@ public class Activity extends BaseEntity {
     @Column(length = 100)
     private String location;
 
-    @Builder.Default
-    private Boolean deleted = false;
+    private Boolean deleted;
 
 
     /**
@@ -130,6 +129,7 @@ public class Activity extends BaseEntity {
      * Statut actuel de l'activité (par défaut : {@code PLANNED}).
      */
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private ActivityStatus status = ActivityStatus.PLANNED;
 
     /**

@@ -51,5 +51,5 @@ public abstract class BaseEntityDTO {
     /**
      * Indique si l'entité est active ou non.
      */
-    private boolean active = true;
+    private boolean active;
 }

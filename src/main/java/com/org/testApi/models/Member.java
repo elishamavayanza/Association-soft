@@ -7,19 +7,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.org.testApi.models.Loan;
-import com.org.testApi.models.Contribution;
-import com.org.testApi.models.Penalty;
-import com.org.testApi.models.RotatingGroup;
-
-/**
- * Représente un membre d'une association.
- * <p>
- * Un membre est lié à un {@link User} et une {@link Association}.
- * Il peut avoir différents types (régulier, honoraire, bénévole, etc.)
- * et possède une historique des rôles ainsi que des cotisations.
- * </p>
- */
 @Entity
 @Table(name = "members")
 @Data
@@ -31,197 +18,107 @@ import com.org.testApi.models.RotatingGroup;
 public class Member extends BaseEntity {
 
     /**
-    * Code unique du membre au sein de l'association.
+     * Code unique du membre au sein de l'association.
      * Ce code est généré automatiquement à la création du membre.
      */
     @Column(name = "member_code", unique = true)
     private String memberCode;
 
-    /**
-     * Utilisateur associé au membre.
-     * Celien est obligatoire.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @Column(name = "join_date")
+    private LocalDate joinDate;
+
+    @Column(name = "leave_date")
+    private LocalDate leaveDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type")
+    @Builder.Default
+    private MemberType type = MemberType.REGULAR;
+
+    @Column(name = "is_admin")
+    private Boolean isAdmin;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "user_id", nullable = true)
     @ToString.Exclude
     @JsonIgnore
     private User user;
-
-    /**
-     * Association à laquelle appartient ce membre.
-     * Ce lien est obligatoire.
-*/
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "association_id", nullable = false)
+    
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "association_id", nullable = true)
     @ToString.Exclude
     @JsonIgnore
     private Association association;
 
-    /**
-     * Date d'adhésion du membre à l'association.
-     * Si non renseignée,sera initialisée à la date courante lors de la création.
-     */
-    private LocalDate joinDate;
-
-    /**
-     * Date de départ ou de désinscription du membre.
-     * Permet de savoir si un membre est actif ou non.
-     */
-    private LocalDate leaveDate;
-
-    /**
-     * Typedu membre (régulier, honoraire, bénévole, etc.).
-     * Par défaut, un membre est de type REGULAR.
-     */
-    @Enumerated(EnumType.STRING)
-    private MemberType type = MemberType.REGULAR;
-
-    /**
-     * Liste des cotisations (fees) associées à ce membre.
-     */
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
     private List<MembershipFee> fees = new ArrayList<>();
-
-    /**
-     * Historique des rôles que ce membre a eus au sein de l'association.
-     */
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
     private List<MemberRoleHistory> roleHistory = new ArrayList<>();
-
-
-    /**
-     * Liste des prêts associés à ce membre.
-     */
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
     private List<Loan> loans = new ArrayList<>();
 
-    /**
-     * Liste des contributions du membre dans les groupes de rotation.
-    */
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonIgnore
-    private List<Contribution> contributions = new ArrayList<>();
-
-    /**
-     * Liste des pénalités appliquées au membre.
-     */
-    @OneToMany(mappedBy ="member", cascade = CascadeType.ALL)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonIgnore
-    private List<Penalty> penalties = new ArrayList<>();
-
-    /**
-     * Groupes de rotation financière auxquels le membre appartient.
-     */
-    @ManyToMany(mappedBy = "members",fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "members", fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
     private List<RotatingGroup> rotatingGroups = new ArrayList<>();
 
-    /**
-     * Indique si ce membre a des droits d'administrateur.
-     */
-    @Column(columnDefinition = "boolean default false")
-private boolean isAdmin;
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Contribution> contributions = new ArrayList<>();
 
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Penalty> penalties = new ArrayList<>();
 
-    /**
-     * Initialise la date d'adhésion si elle n'a pas été définie avant la persistance.
-     */
-    @PrePersist
-    protected void onCreate() {
-        if (this.joinDate == null) {
-            this.joinDate = LocalDate.now();
-        }
-        
-       // Générer un code unique si ce n'est pas déjà fait
-        if (this.memberCode == null) {
-            this.memberCode = generateMemberCode();
-        }
-    }
+    @ManyToMany(mappedBy = "beneficiaries", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Round> roundsAsBeneficiary = new ArrayList<>();
 
     /**
-     * Génère un code unique pour le membre.
-     * Format: MBR-XXX-YYYYY (où XXX est l'ID de l'association et YYYYY est l'ID du membre)
-     * 
-     * @return Le code unique généré
-     */
-    private String generateMemberCode() {
-        // À implémenter correctement dans le service
-        // Cette implémentation basiquesera remplacée par une plus robuste
-        return "MBR-" + System.currentTimeMillis();
-    }
-
-    /**
-     * Indique si le membre est actuellement actif (pas de date de départ définie).
+     * Checks if the member is eligible for a loan.
+     * A member is eligible if they are active, have paid fees, and have no overdue loans.
      *
-     * @return true si le membre est actif, false sinon.
-    */
-    public boolean isActive() {
-        return leaveDate == null;
-    }
-
-    /**
-     * Vérifie si le membre est éligible pour emprunter.
-     * Un membre est éligible s'il:
-     * 1. Est actif
-     * 2. A payéau moins une cotisation
-     * 3. N'a pas de prêts en retard
-     *
-     * @return true si le membre est éligible, false sinon
+     * @return true if the member is eligible for a loan, false otherwise
      */
     public boolean isEligibleForLoan() {
-                // Vérifier si le membre est actif
-        if (!isActive()) {
+        // Check if member is active (has not left the association)
+        if (this.leaveDate != null) {
             return false;
         }
 
-        // Vérifier si le membre a payé au moins une cotisation
-        if (fees == null || fees.isEmpty()) {
+        // Check if member has paid any fees
+        if (this.fees == null || this.fees.isEmpty()) {
             return false;
         }
 
-                // Vérifier si le membre a des prêts en retard
-        if (loans != null) {
-            boolean hasOverdueLoans = loans.stream()
+        // Check if member has any overdue loans
+        if (this.loans != null) {
+            boolean hasOverdueLoans = this.loans.stream()
                     .filter(loan -> loan != null)
-                    .anyMatch(Loan::isOverdue);
-                        if (hasOverdueLoans) {
+                    .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
+            if (hasOverdueLoans) {
                 return false;
             }
         }
 
-        // Si toutes les conditions sont remplies, le membre est éligible
         return true;
-    }
-
-
-    /**
-     * Enumération des différents types de membres possibles.
-     */
-    public enum MemberType {
-        REGULAR,       // Membre régulier
-        HONORARY,      // Membre honoraire
-        BENEFACTOR,    // Bienfaiteur
-        VOLUNTEER,     // Bénévole
-        BOARD_MEMBER   // Membre du conseil d'administration
-    }
-    
-// Manually adding missing getter method to fix compilation error
-    public List<Loan> getLoans() {
-        return this.loans;
     }
 }

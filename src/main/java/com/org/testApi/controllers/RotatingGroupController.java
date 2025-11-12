@@ -1,5 +1,7 @@
 package com.org.testApi.controllers;
 
+import com.org.testApi.dto.RoundDTO;
+import com.org.testApi.mapper.RoundMapper;
 import com.org.testApi.models.Member;
 import com.org.testApi.models.RotatingGroup;
 import com.org.testApi.models.Round;
@@ -29,6 +31,9 @@ public class RotatingGroupController {
     
     @Autowired
     private GroupStatusManagementService groupStatusManagementService;
+
+    @Autowired
+    private RoundMapper roundMapper;
 
     @PostMapping("/{groupId}/members")
     @Operation(summary = "Ajouter des membres à un groupe de rotation", 
@@ -108,7 +113,7 @@ public class RotatingGroupController {
             @Parameter(description = "Activation/désactivation de la génération automatique") @RequestBody Boolean autoGenerate) {
         
         try {
-            RotatingGroup updatedGroup = rotatingService.setAutoGenerateRounds(groupId, autoGenerate);
+            RotatingGroup updatedGroup = rotatingService.setAutoGenerateRounds(groupId,autoGenerate);
             ResponsePayload<RotatingGroup> response = new ResponsePayload<>();
             response.setSuccess(true);
             response.setMessage("Paramètre de génération automatique mis à jour avec succès");
@@ -135,19 +140,20 @@ public class RotatingGroupController {
         @ApiResponse(responseCode = "404", description = "Tour non trouvé"),
         @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<ResponsePayload<Round>> assignBeneficiariesToRound(
+    public ResponseEntity<ResponsePayload<RoundDTO>> assignBeneficiariesToRound(
             @Parameter(description = "ID du tour") @PathVariable Long roundId,
             @Parameter(description = "Liste des IDs des membres bénéficiaires") @RequestBody List<Long> beneficiaryIds) {
         
         try {
             Round updatedRound = rotatingService.assignBeneficiariesToRound(roundId, beneficiaryIds);
-            ResponsePayload<Round> response = new ResponsePayload<>();
+            RoundDTO roundDTO = roundMapper.toDTO(updatedRound);
+            ResponsePayload<RoundDTO> response = new ResponsePayload<>();
             response.setSuccess(true);
             response.setMessage("Bénéficiaires attribués avec succès au tour");
-            response.setData(updatedRound);
+            response.setData(roundDTO);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            ResponsePayload<Round> response = new ResponsePayload<>();
+            ResponsePayload<RoundDTO> response = new ResponsePayload<>();
             response.setSuccess(false);
             response.setMessage(e.getMessage());
             response.setData(null);
@@ -196,18 +202,19 @@ public class RotatingGroupController {
         @ApiResponse(responseCode = "404", description = "Tour non trouvé"),
         @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<ResponsePayload<Round>> distributeFundsToBeneficiaries(
+    public ResponseEntity<ResponsePayload<RoundDTO>> distributeFundsToBeneficiaries(
             @Parameter(description = "ID du tour") @PathVariable Long roundId) {
         
         try {
             Round updatedRound = rotatingService.distributeFundsToBeneficiaries(roundId);
-            ResponsePayload<Round> response = new ResponsePayload<>();
+            RoundDTO roundDTO = roundMapper.toDTO(updatedRound);
+            ResponsePayload<RoundDTO> response = new ResponsePayload<>();
             response.setSuccess(true);
             response.setMessage("Fonds distribués avec succès aux bénéficiaires");
-            response.setData(updatedRound);
+            response.setData(roundDTO);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            ResponsePayload<Round> response = new ResponsePayload<>();
+            ResponsePayload<RoundDTO> response = new ResponsePayload<>();
             response.setSuccess(false);
             response.setMessage(e.getMessage());
             response.setData(null);
@@ -226,18 +233,19 @@ public class RotatingGroupController {
         @ApiResponse(responseCode = "404", description = "Tour non trouvé"),
         @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<ResponsePayload<Round>> autoSelectBeneficiaries(
+    public ResponseEntity<ResponsePayload<RoundDTO>> autoSelectBeneficiaries(
             @Parameter(description = "ID du tour") @PathVariable Long roundId) {
         
         try {
             Round updatedRound = rotatingService.selectBeneficiariesAutomatically(roundId);
-            ResponsePayload<Round> response = new ResponsePayload<>();
+            RoundDTO roundDTO = roundMapper.toDTO(updatedRound);
+            ResponsePayload<RoundDTO> response = new ResponsePayload<>();
             response.setSuccess(true);
             response.setMessage("Bénéficiaires sélectionnés automatiquement avec succès");
-            response.setData(updatedRound);
+            response.setData(roundDTO);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            ResponsePayload<Round> response = new ResponsePayload<>();
+            ResponsePayload<RoundDTO> response = new ResponsePayload<>();
             response.setSuccess(false);
             response.setMessage(e.getMessage());
             response.setData(null);
@@ -256,19 +264,20 @@ public class RotatingGroupController {
         @ApiResponse(responseCode = "404", description = "Groupe non trouvé"),
         @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<ResponsePayload<List<Round>>> generateRoundsForGroup(
+    public ResponseEntity<ResponsePayload<List<RoundDTO>>> generateRoundsForGroup(
             @Parameter(description = "ID du groupe de rotation") @PathVariable Long groupId) {
         
         try {
             rotatingService.generateRoundsForGroup(groupId);
             List<Round> rounds = rotatingService.findRoundsByRotatingGroup(groupId);
-            ResponsePayload<List<Round>> response = new ResponsePayload<>();
+            List<RoundDTO> roundDTOs = roundMapper.toDTOList(rounds);
+            ResponsePayload<List<RoundDTO>> response = new ResponsePayload<>();
             response.setSuccess(true);
             response.setMessage("Tours générés avec succès pour le groupe");
-            response.setData(rounds);
+            response.setData(roundDTOs);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            ResponsePayload<List<Round>> response = new ResponsePayload<>();
+            ResponsePayload<List<RoundDTO>> response = new ResponsePayload<>();
             response.setSuccess(false);
             response.setMessage(e.getMessage());
             response.setData(null);

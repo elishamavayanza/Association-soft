@@ -29,6 +29,8 @@ public class RoundMapper {
                 .endDate(round.getEndDate())
                 .status(round.getStatus() != null ? round.getStatus().name() : null)
                 .rotatingGroupId(round.getRotatingGroup() != null ? round.getRotatingGroup().getId() : null)
+                .totalAmountDistributed(round.getTotalAmountDistributed())
+                .currency(round.getCurrency())
                 .contributionIds(round.getContributions() != null ? 
                                round.getContributions().stream().map(contribution -> contribution.getId()).collect(Collectors.toList()) : List.of())
                 .penaltyIds(round.getPenalties() != null ? 
@@ -51,6 +53,8 @@ public class RoundMapper {
         round.setRoundNumber(roundDTO.getRoundNumber());
         round.setStartDate(roundDTO.getStartDate());
         round.setEndDate(roundDTO.getEndDate());
+        round.setTotalAmountDistributed(roundDTO.getTotalAmountDistributed());
+        round.setCurrency(roundDTO.getCurrency());
         round.setStatus(roundDTO.getStatus() != null ? RoundStatus.valueOf(roundDTO.getStatus()) : null);
         
         return round;
@@ -75,6 +79,8 @@ public class RoundMapper {
                 .endDate(payload.getEndDate())
                 .status(payload.getStatus())
                 .rotatingGroupId(payload.getRotatingGroupId())
+                .totalAmountDistributed(payload.getTotalAmountDistributed())
+                .currency(payload.getCurrency())
                 .contributionIds(payload.getContributionIds())
                 .penaltyIds(payload.getPenaltyIds())
                 .build();

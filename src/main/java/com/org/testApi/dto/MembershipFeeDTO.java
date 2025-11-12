@@ -1,5 +1,6 @@
 package com.org.testApi.dto;
 
+import com.org.testApi.models.Currency;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
@@ -16,6 +17,7 @@ public class MembershipFeeDTO extends BaseEntityDTO {
 
     private Long memberId;
     private BigDecimal amount;
+    private Currency currency;
     private LocalDate paymentDate;
     private LocalDate periodStart;
     private LocalDate periodEnd;
