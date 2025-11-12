@@ -27,6 +27,10 @@ public interface MemberMapper extends BaseMapper<Member, MemberDTO> {
     @Mapping(target = "associationId", source = "association.id")
     @Mapping(target = "memberCode", source = "memberCode")
     @Mapping(target = "photo", source = ".", qualifiedByName = "extractPhotoFromMember")
+    @Mapping(target = "firstName", source = "user.firstName")
+    @Mapping(target = "lastName", source = "user.lastName")
+    @Mapping(target = "email", source = "user.email")
+    @Mapping(target = "phone", source = "user.phoneNumber")
     MemberResponseDTO toResponseDto(Member entity);
 
     @Mapping(target = "user", ignore = true)

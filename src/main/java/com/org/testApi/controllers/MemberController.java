@@ -1,5 +1,6 @@
 package com.org.testApi.controllers;
 
+import com.org.testApi.dto.response.MemberResponseDTO;
 import com.org.testApi.models.MemberType;
 import com.org.testApi.models.Member;
 import com.org.testApi.payload.MemberPayload;
@@ -231,7 +232,13 @@ logger.error("Association not found with id: {}", payload.getAssociationId());
            logger.info("Saving member with code: {}", member.getMemberCode());
             Member savedMember = memberService.saveMember(member);
             logger.info("Member created successfully with ID: {}", savedMember.getId());
-            return ResponseEntity.ok(memberMapper.toDto(savedMember));
+            
+            // Create response DTO and ensure userId and associationId are properly set
+            MemberResponseDTO responseDTO = memberMapper.toResponseDto(savedMember);
+            responseDTO.setUserId(payload.getUserId());
+            responseDTO.setAssociationId(payload.getAssociationId());
+            
+            return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
             logger.error("Error creating member from payload: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

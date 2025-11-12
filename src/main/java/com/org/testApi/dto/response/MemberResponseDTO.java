@@ -24,4 +24,10 @@ public class MemberResponseDTO extends BaseEntityDTO {
     private boolean isAdmin;
     private String memberCode;
     private String photo;
+    
+    // Added fields for user information
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String phone;
 }
