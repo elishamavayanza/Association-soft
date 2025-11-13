@@ -40,6 +40,8 @@ public class SQLiteConfig {
         properties.put("hibernate.temp.use_jdbc_metadata_defaults", "false");
         // Fix for ToOne relationship issue
         properties.put("hibernate.jpa.compliance.proxy", "false");
+        // Enable schema validation
+        properties.put("hibernate.hbm2ddl.auto", "update");
         
         return builder
                 .dataSource(dataSource)
@@ -54,6 +56,7 @@ public class SQLiteConfig {
     }
     
     @Bean
+    @Primary
     public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
         JpaTransactionManager transactionManager = new JpaTransactionManager();
         transactionManager.setEntityManagerFactory(entityManagerFactory);

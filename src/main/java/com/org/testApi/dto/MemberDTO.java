@@ -17,6 +17,12 @@ public class MemberDTO extends BaseEntityDTO {
 
     private Long userId;
     private Long associationId;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String phone;
+    private String address;
+    private String photo;
     private LocalDate joinDate;
     private LocalDate leaveDate;
     private MemberType type;

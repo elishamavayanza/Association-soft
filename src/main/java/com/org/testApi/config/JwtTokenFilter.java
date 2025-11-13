@@ -28,11 +28,10 @@ public class JwtTokenFilter extends OncePerRequestFilter implements ApplicationC
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenFilter.class);
 
     private AuthService authService;
-    private UserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
     private ApplicationContext applicationContext;
 
-    @Autowired
-    public void setUserDetailsService(UserDetailsService userDetailsService) {
+    public JwtTokenFilter(UserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
 

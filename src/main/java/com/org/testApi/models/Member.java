@@ -24,6 +24,24 @@ public class Member extends BaseEntity {
     @Column(name = "member_code", unique = true)
     private String memberCode;
 
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "photo", length = 255)
+    private String photo;
+
     @Column(name = "join_date")
     private LocalDate joinDate;
 

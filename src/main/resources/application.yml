@@ -20,6 +20,12 @@ spring:
         id:
           new_generator_mappings: false
   
+  # Configuration Flyway
+  flyway:
+    baseline-on-migrate: true
+    enabled: true
+    mixed: true
+  
   # CONFIGURATION POUR AUTORISER L'OVERRIDE DES BEANS
   main:
     allow-bean-definition-overriding: true  # ← BON EMPLACEMENT !
@@ -58,10 +64,6 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-
-  mvc:
-    async:
-      request-timeout: 30s
 
 # ==============================================
 # CONFIGURATION DU STOCKAGE DE FICHIERS
