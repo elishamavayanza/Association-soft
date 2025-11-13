@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
@@ -58,7 +59,9 @@ public class MemberController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<List<MemberDTO>> getAllMembers() {
-        List<Member> members = memberService.getAllMembers();
+        List<Member> members = memberService.getAllMembers().stream()
+                .filter(Member::isActive) // Only return active members
+                .collect(Collectors.toList());
         List<MemberDTO> memberDTOs = members.stream()
                 .map(memberMapper::toDto)
                 .collect(Collectors.toList());
@@ -76,9 +79,20 @@ public class MemberController {
     })
     public ResponseEntity<MemberDTO> getMemberById(
             @Parameter(description = "ID du membre à récupérer") @PathVariable Long id) {
-        return memberService.getMemberById(id)
-                .map(member -> ResponseEntity.ok(memberMapper.toDto(member)))
-                .orElse(ResponseEntity.notFound().build());
+        Optional<Member> memberOpt = memberService.getMemberById(id);
+        if (memberOpt.isPresent()) {
+            Member member = memberOpt.get();
+            logger.info("Retrieved member with id {}: active={}", id, member.isActive());
+            if (member.isActive()) {
+                return ResponseEntity.ok(memberMapper.toDto(member));
+            } else {
+                logger.info("Member with id {} is inactive, returning 404", id);
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            logger.info("Member with id {} not found", id);
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // New endpoint to find member by memberCode
@@ -94,6 +108,7 @@ public class MemberController {
     public ResponseEntity<MemberDTO> getMemberByMemberCode(
             @Parameter(description = "Code du membre à récupérer") @PathVariable String memberCode) {
         return memberService.findByMemberCode(memberCode)
+                .filter(member -> member.isActive()) // Only return active members
                 .map(member -> ResponseEntity.ok(memberMapper.toDto(member)))
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -447,7 +462,9 @@ logger.error("Association not found with id: {}", payload.getAssociationId());
             @Parameter(description = "ID de l'association (optionnel)") @RequestParam(required = false) Long associationId,
             @Parameter(description = "Statut d'activité (optionnel)") @RequestParam(required = false) Boolean isActive) {
         // Note: Pour une implémentation complète, vous devriez ajouter cette méthode au service
-        List<Member> members = memberService.getAllMembers();
+        List<Member> members = memberService.getAllMembers().stream()
+                .filter(member -> isActive == null || member.isActive() == isActive) // Filter by active status if provided
+                .collect(Collectors.toList());
         List<MemberDTO> memberDTOs = members.stream()
                 .map(memberMapper::toDto)
                 .collect(Collectors.toList());
@@ -470,7 +487,7 @@ logger.error("Association not found with id: {}", payload.getAssociationId());
             @Parameter(description = "ID du membre") @PathVariable Long id) {
         // Note: Vous devriez ajouter cette méthode au MemberService
         Member member = memberService.getMemberById(id).orElse(null);
-        if (member != null) {
+        if (member != null && member.isActive()) { // Only check eligibility for active members
            boolean eligible = member.isEligibleForLoan();
             return ResponseEntity.ok(eligible);
         }

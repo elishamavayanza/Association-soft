@@ -76,5 +76,5 @@ public abstract class BaseEntity {
      * Utile pour la suppression logique (soft delete).
      */
     @Column(name = "is_active")
-    private boolean active;
+    private boolean active = true;
 }
