@@ -256,10 +256,35 @@ logger.error("Association not found with id: {}", payload.getAssociationId());
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<MemberDTO> updateMember(
+    public ResponseEntity<?> updateMember(
             @Parameter(description = "ID du membre à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données de mise à jour du membre") @RequestBody Member member) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données de mise à jour du membre",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Member.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de mise à jour de membre avec entité complète",
+                                    summary = "Exemple de mise à jour de membre avec entité complète",
+                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Asifiwe\",\n  \"lastName\": \"Muhongo\",\n  \"email\": \"asifiwe@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 1,\n  \"photo\": \"/media/elishama/New Volume/Asifwe/Photo/PHOTOS/eefcfd51bc47d544b69b682238c3f934.jpg\"\n}"
+                            )
+                    )
+            ) @RequestBody Member member) {
         try {
+            // Check if user exists when user ID is provided directly in the member entity
+            if (member.getUser() != null && member.getUser().getId() != null) {
+                User user = userService.getUserById(member.getUser().getId())
+                        .orElseThrow(() -> new RuntimeException("User not found with id: " + member.getUser().getId()));
+                member.setUser(user);
+            }
+
+            //Check if association exists when association ID is provided directly in the member entity
+            if (member.getAssociation() != null && member.getAssociation().getId() != null) {
+                Association association = associationService.getAssociationById(member.getAssociation().getId())
+                        .orElseThrow(() -> new RuntimeException("Association not found with id:" + member.getAssociation().getId()));
+                member.setAssociation(association);
+            }
+
             Member updatedMember = memberService.updateMember(id, member);
             return ResponseEntity.ok(memberMapper.toDto(updatedMember));
         } catch (RuntimeException e) {
@@ -277,7 +302,7 @@ logger.error("Association not found with id: {}", payload.getAssociationId());
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<MemberDTO> updateMemberWithPayload(
+    public ResponseEntity<?> updateMemberWithPayload(
             @Parameter(description = "ID du membre à mettre à jour") @PathVariable Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Données du payload pour mettre à jour le membre",
@@ -287,67 +312,83 @@ logger.error("Association not found with id: {}", payload.getAssociationId());
                             examples = @ExampleObject(
                                     name = "Exemple de mise à jour de membre",
                                     summary = "Exemple de mise à jour de membre",
-                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2\n}"
+                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Asifiwe\",\n  \"lastName\": \"Muhongo\",\n  \"email\": \"asifiwe@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 1,\n  \"photo\": \"/media/elishama/New Volume/Asifwe/Photo/PHOTOS/eefcfd51bc47d544b69b682238c3f934.jpg\"\n}"
                             )
                     )
             ) @RequestBody MemberPayload payload) {
         try {
-            return memberService.getMemberById(id)
-                    .map(member -> {
-                        try {
-                            // Update user and association if IDs are provided in payload
-                            if (payload.getUserId() != null) {
-                                User user = userService.getUserById(payload.getUserId())
-                                        .orElseThrow(() -> new RuntimeException("User not found with id: "+ payload.getUserId()));
-                                member.setUser(user);
+            logger.info("Starting member update from payload: {}", payload);
 
-                                // Mettre à jour les informations personnelles de l'utilisateur
-                                try {
-                                    // Fetch the current user from database to ensure we have all properties
-                                    User currentUser = userService.getUserById(user.getId())
-                                            .orElseThrow(() -> new RuntimeException("User not found with id: " + user.getId()));
+            // Check if member exists
+            Member existingMember = memberService.getMemberById(id)
+                    .orElseThrow(() -> {
+                        logger.error("Member not found with id: {}", id);
+                        return new RuntimeException("Member not found with id: " + id);
+                    });
 
-                                    // Update only the fields provided in the payload
-                                    if (payload.getFirstName() != null) {
-                                        currentUser.setFirstName(payload.getFirstName());
-                                    }
+            // Check if user exists
+            logger.info("Checking if user exists with ID: {}", payload.getUserId());
+            User user = userService.getUserById(payload.getUserId())
+                    .orElseThrow(() -> {
+                        logger.error("User not found with id: {}", payload.getUserId());
+                        return new RuntimeException("User not found with id: " + payload.getUserId());
+                    });
 
-                                    if (payload.getLastName() != null) {
-                                        currentUser.setLastName(payload.getLastName());
-                                    }
+            // Update user information from payload if provided
+            if (payload.getFirstName() != null) {
+                user.setFirstName(payload.getFirstName());
+            }
+            if (payload.getLastName() != null) {
+                user.setLastName(payload.getLastName());
+            }
+            if (payload.getEmail() != null) {
+                user.setEmail(payload.getEmail());
+            }
+            if (payload.getPhone() != null) {
+                user.setPhoneNumber(payload.getPhone());
+            }
+            if (payload.getPhoto() != null) {
+                user.setPhoto(payload.getPhoto());
+            }
+            
+            // Save updated user information
+            userService.updateUser(user.getId(), user);
 
-                                    if (payload.getEmail()!= null) {
-                                        currentUser.setEmail(payload.getEmail());
-                                    }
+            // Check if association exists
+            logger.info("Checking if association exists with ID: {}", payload.getAssociationId());
+            Association association = associationService.getAssociationById(payload.getAssociationId())
+                    .orElseThrow(() -> {
+                        logger.error("Association not found with id: {}", payload.getAssociationId());
+                        return new RuntimeException("Association not found with id: " + payload.getAssociationId());
+                    });
 
-                                    if (payload.getPhone() != null) {
-                                        currentUser.setPhoneNumber(payload.getPhone());
-                                    }
+            logger.info("Updating member entity from payload");
+            memberMapper.updateEntityFromPayload(payload, existingMember);
+            existingMember.setUser(user);
+            existingMember.setAssociation(association);
 
-                                    userService.updateUser(currentUser.getId(), currentUser);
-                                } catch (Exception e) {
-                                    logger.error("Error updating user information: ", e);
-                                    // Continue with member update even if user update fails
-                                }
-                            }
-                            if (payload.getAssociationId() != null) {
-                                Association association = associationService.getAssociationById(payload.getAssociationId())
-                                        .orElseThrow(() -> new RuntimeException("Association not found with id: " + payload.getAssociationId()));
-                                member.setAssociation(association);
-                            }
-                            memberMapper.updateEntityFromPayload(payload, member);
-                            Member updatedMember = memberService.updateMember(id, member);
-                            return ResponseEntity.ok(memberMapper.toDto(updatedMember));
-                        } catch (Exception e) {
-                            logger.error("Error updating member with id: " + id, e);
-                           throw new RuntimeException("Error updating member", e);
-                        }
-                    })
-                    .orElse(ResponseEntity.notFound().build());
+            logger.debug("Mapped member entity: {}", existingMember);
+
+            // Set member code if provided
+            logger.info("Setting member code if provided");
+            if (payload.getMemberCode() != null) {
+                existingMember.setMemberCode(payload.getMemberCode());
+            }
+
+            logger.info("Updating member with code: {}", existingMember.getMemberCode());
+            Member updatedMember = memberService.updateMember(id, existingMember);
+            logger.info("Member updated successfully with ID: {}", updatedMember.getId());
+            
+            // Create response DTO and ensure userId and associationId are properly set
+            MemberResponseDTO responseDTO = memberMapper.toResponseDto(updatedMember);
+            responseDTO.setUserId(payload.getUserId());
+            responseDTO.setAssociationId(payload.getAssociationId());
+            
+            return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
-            // Log the exception for debugging purposes
-            logger.error("Error updating member with id: " + id, e);
-            return ResponseEntity.status(500).build();
+            logger.error("Error updating member from payload: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating member: " + e.getMessage());
         }
     }
 
