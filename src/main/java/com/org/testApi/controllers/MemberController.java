@@ -285,6 +285,17 @@ logger.error("Association not found with id: {}", payload.getAssociationId());
                 member.setAssociation(association);
             }
 
+            // Preserve the existing member code - don't allow changing it through direct entity update
+            Member existingMember = memberService.getMemberById(id).orElse(null);
+            if (existingMember != null) {
+                if (member.getMemberCode() == null) {
+                    member.setMemberCode(existingMember.getMemberCode());
+                } else if (!member.getMemberCode().equals(existingMember.getMemberCode())) {
+                    // If memberCode is provided but different from existing, preserve the existing one
+                    member.setMemberCode(existingMember.getMemberCode());
+                }
+            }
+
             Member updatedMember = memberService.updateMember(id, member);
             return ResponseEntity.ok(memberMapper.toDto(updatedMember));
         } catch (RuntimeException e) {
@@ -363,17 +374,17 @@ logger.error("Association not found with id: {}", payload.getAssociationId());
                     });
 
             logger.info("Updating member entity from payload");
+            // Save the existing member code before updating from payload
+            String existingMemberCode = existingMember.getMemberCode();
             memberMapper.updateEntityFromPayload(payload, existingMember);
             existingMember.setUser(user);
             existingMember.setAssociation(association);
+            // Restore the existing member code to prevent it from being overwritten
+            existingMember.setMemberCode(existingMemberCode);
 
             logger.debug("Mapped member entity: {}", existingMember);
 
-            // Set member code if provided
-            logger.info("Setting member code if provided");
-            if (payload.getMemberCode() != null) {
-                existingMember.setMemberCode(payload.getMemberCode());
-            }
+            logger.info("Preserving existing member code: {}", existingMember.getMemberCode());
 
             logger.info("Updating member with code: {}", existingMember.getMemberCode());
             Member updatedMember = memberService.updateMember(id, existingMember);
