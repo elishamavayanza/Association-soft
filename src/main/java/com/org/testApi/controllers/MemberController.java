@@ -160,6 +160,109 @@ value = "{\n  \"user\": {\n    \"id\": 6\n  },\n  \"association\": {\n    \"id\"
         return ResponseEntity.ok(memberMapper.toDto(savedMember));
     }
 
+    @PostMapping("/bulk")
+    @Operation(summary = "Créer plusieurs membres", description = "Crée plusieurs membres en une seule requête")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Membres créés avec succès",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = MemberDTO.class))}),
+        @ApiResponse(responseCode = "400", description= "Données de requête invalides"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<MemberResponseDTO>> createMembersBulk(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Liste des données des membres à créer",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MemberPayload.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de création de membres multiples",
+                                    summary = "Exemple de création de membres multiples",
+                                    value = "[\n  {\n    \"userId\": 2,\n    \"firstName\": \"Papa\",\n    \"lastName\": \"Jean\",\n    \"email\": \"gae.leroy@exa.com\",\n    \"phone\": \"+33198765432\",\n    \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n    \"associationId\": 1,\n    \"photo\": \"/path/to/photo.jpg\"\n  },\n  {\n    \"userId\": 2,\n    \"firstName\": \"Marie\",\n    \"lastName\": \"Dupont\",\n    \"email\": \"marie.dupont@exa.com\",\n    \"phone\": \"+33678901234\",\n    \"address\": \"12 Rue de Rivoli, 75001 Paris, France\",\n    \"associationId\": 1,\n    \"photo\": \"/images/marie.jpg\"\n  }\n]"
+                            )
+                    )
+            ) @RequestBody List<MemberPayload> payloads) {
+        try {
+            logger.info("Starting bulk member creation for {} members", payloads.size());
+
+            List<MemberResponseDTO> createdMembers = payloads.stream().map(payload -> {
+                logger.info("Processing member creation from payload: {}", payload);
+
+                // Check if user exists
+                logger.info("Checking if user exists with ID: {}", payload.getUserId());
+                User user = userService.getUserById(payload.getUserId())
+                        .orElseThrow(() -> {
+                            logger.error("User not found with id: {}", payload.getUserId());
+                            return new RuntimeException("User not found with id: " + payload.getUserId());
+                        });
+
+                // Update user information from payload if provided
+                if (payload.getFirstName() != null) {
+                    user.setFirstName(payload.getFirstName());
+                }
+                if (payload.getLastName() != null) {
+                    user.setLastName(payload.getLastName());
+                }
+                if (payload.getEmail() != null) {
+                    user.setEmail(payload.getEmail());
+                }
+                if (payload.getPhone() != null) {
+                    user.setPhoneNumber(payload.getPhone());
+                }
+                if (payload.getPhoto() != null) {
+                    user.setPhoto(payload.getPhoto());
+                }
+
+                // Save updated user information
+                userService.updateUser(user.getId(), user);
+
+                // Check if association exists
+                logger.info("Checking if association exists with ID: {}", payload.getAssociationId());
+                Association association = associationService.getAssociationById(payload.getAssociationId())
+                        .orElseThrow(() -> {
+                            logger.error("Association not found with id: {}", payload.getAssociationId());
+                            return new RuntimeException("Association not found with id: " + payload.getAssociationId());
+                        });
+
+                logger.info("Creating member entity from payload");
+                Member member = memberMapper.toEntityFromPayload(payload);
+                if (member == null) {
+                    logger.error("Failed to map payload to Member entity");
+                    throw new RuntimeException("Failed to map payload to Member entity");
+                }
+                member.setUser(user);
+                member.setAssociation(association);
+
+                // Set member code if not provided
+                logger.info("Setting member code");
+                if (member.getMemberCode() == null) {
+                    if (payload.getMemberCode() != null) {
+                        member.setMemberCode(payload.getMemberCode());
+                    } else {
+                        member.setMemberCode(generateUniqueMemberCode());
+                    }
+                }
+
+                logger.info("Saving member with code: {}", member.getMemberCode());
+                Member savedMember = memberService.saveMember(member);
+                logger.info("Member created successfully with ID: {}", savedMember.getId());
+
+                // Create response DTO and ensure userId and associationId are properly set
+                MemberResponseDTO responseDTO = memberMapper.toResponseDto(savedMember);
+                responseDTO.setUserId(payload.getUserId());
+                responseDTO.setAssociationId(payload.getAssociationId());
+                
+                return responseDTO;
+            }).collect(Collectors.toList());
+
+            logger.info("Bulk member creation completed successfully. Created {} members", createdMembers.size());
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdMembers);
+        } catch (Exception e) {
+            logger.error("Error during bulk member creation: ", e);
+            throw new RuntimeException("Error during bulk member creation: " + e.getMessage(), e);
+        }
+    }
+
     @PostMapping("/payload")
     @Operation(summary = "Créer un membre à partir d'un payload", description = "Crée un nouveau membre en utilisant un objet payload contenant les informations du membre")
     @ApiResponses(value = {
