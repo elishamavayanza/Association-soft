@@ -145,7 +145,17 @@ public class ActivityController {
                 activity.setAssociation(association);
             }
             
-                        Activity savedActivity = activityService.saveActivity(activity);
+            // Add member participants if provided
+            if (payload.getMemberParticipantIds() != null && payload.getMemberParticipantIds().length > 0) {
+                // We'll add participants after saving the activity
+            }
+            
+            // Add user participants if provided
+            if (payload.getUserParticipantIds() != null && payload.getUserParticipantIds().length > 0) {
+                // We'll add participants after saving the activity
+            }
+            
+            Activity savedActivity = activityService.saveActivity(activity);
             return ResponseEntity.ok(savedActivity);
         } catch (Exception e) {
             e.printStackTrace();
@@ -213,8 +223,12 @@ Association association = associationService.getAssociationById(activity.getAsso
             }
             
             // Preserve other fields that might not be provided in the update
-            if (activity.getParticipants() == null) {
-                activity.setParticipants(existingActivity.getParticipants());
+            if (activity.getMemberParticipants() == null) {
+                activity.setMemberParticipants(existingActivity.getMemberParticipants());
+            }
+            
+            if (activity.getUserParticipants() == null) {
+                activity.setUserParticipants(existingActivity.getUserParticipants());
             }
             
             if (activity.getTransactions() ==null) {
@@ -421,76 +435,155 @@ schema= @Schema(implementation = Activity.class))}),
         return ResponseEntity.ok(activities);
     }
 
-    @PostMapping("/{id}/participants")
-    @Operation(summary = "Ajouter des participants à une activité", description = "Ajoute un ou plusieurs participants à une activité")
+    @GetMapping("/member/{memberId}")
+    @Operation(summary = "Lister les activités d'un membre", description = "Récupère la liste des activités auxquelles un membre participe")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Participants ajoutés avec succès",
+            @ApiResponse(responseCode = "200", description = "Liste des activités du membre récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Activity.class))}),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<Activity>> getActivitiesByMember(
+            @Parameter(description = "ID du membre") @PathVariable Long memberId) {
+        List<Activity> activities = activityService.getActivitiesByMemberId(memberId);
+        return ResponseEntity.ok(activities);
+    }
+
+    // Member participant endpoints
+    @PostMapping("/{id}/member-participants")
+    @Operation(summary = "Ajouter des membres participants à une activité", description = "Ajoute un ou plusieurs membres comme participants à une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Membres participants ajoutés avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = ActivityResponseDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<?> addParticipants(
+    public ResponseEntity<?> addMemberParticipants(
+            @Parameter(description = "ID de l'activité") @PathVariable Long id,
+            @Parameter(description = "Liste des IDs des membres à ajouter comme participants") @RequestBody List<Long> memberIds) {
+       try {
+            Activity updatedActivity = activityService.addMemberParticipants(id, memberIds);
+            // Convert to DTO to avoid serialization issues with Hibernate lazy loading
+            ActivityResponseDTO responseDTO = activityMapper.toResponseDto(updatedActivity);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error adding member participants: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/member-participants")
+    @Operation(summary = "Supprimer des membres participants d'une activité", description = "Supprime un ou plusieurs membres participants d'une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Membres participants supprimés avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ActivityResponseDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> removeMemberParticipants(
+            @Parameter(description = "ID de l'activité") @PathVariable Long id,
+            @Parameter(description = "Liste des IDs des membres à supprimer des participants") @RequestBody List<Long> memberIds) {
+        try {
+            Activity updatedActivity = activityService.removeMemberParticipants(id, memberIds);
+            // Convert to DTO to avoid serialization issues with Hibernate lazy loading
+            ActivityResponseDTO responseDTO = activityMapper.toResponseDto(updatedActivity);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error removing member participants: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/member-participants")
+    @Operation(summary = "Lister les membres participants d'une activité", description = "Récupère la liste des membres participants d'une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des membres participants récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Member.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> getMemberParticipants(
+            @Parameter(description = "ID de l'activité") @PathVariable Long id) {
+        try {
+            List<Member> participants = activityService.getMemberParticipantsByActivityId(id);
+            return ResponseEntity.ok(participants);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error retrieving member participants: " + e.getMessage());
+        }
+    }
+
+    // User participant endpoints
+    @PostMapping("/{id}/user-participants")
+    @Operation(summary = "Ajouter des utilisateurs participants à une activité", description = "Ajoute un ou plusieurs utilisateurs comme participants à une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateurs participants ajoutés avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ActivityResponseDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> addUserParticipants(
             @Parameter(description = "ID de l'activité") @PathVariable Long id,
             @Parameter(description = "Liste des IDs des utilisateurs à ajouter comme participants") @RequestBody List<Long> userIds) {
        try {
-                        Activity updatedActivity = activityService.addParticipants(id, userIds);
+            Activity updatedActivity = activityService.addUserParticipants(id, userIds);
             // Convert to DTO to avoid serialization issues with Hibernate lazy loading
             ActivityResponseDTO responseDTO = activityMapper.toResponseDto(updatedActivity);
             return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Error adding participants: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error adding user participants: " + e.getMessage());
         }
     }
 
-       @DeleteMapping("/{id}/participants")
-    @Operation(summary = "Supprimer des participants d'une activité", description = "Supprime un ou plusieurs participants d'une activité")
+    @DeleteMapping("/{id}/user-participants")
+    @Operation(summary = "Supprimer des utilisateurs participants d'une activité", description = "Supprime un ou plusieurs utilisateurs participants d'une activité")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Participants supprimés avec succès",
+            @ApiResponse(responseCode = "200", description = "Utilisateurs participants supprimés avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = ActivityResponseDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<?> removeParticipants(
+    public ResponseEntity<?> removeUserParticipants(
             @Parameter(description = "ID de l'activité") @PathVariable Long id,
             @Parameter(description = "Liste des IDs des utilisateurs à supprimer des participants") @RequestBody List<Long> userIds) {
         try {
-            Activity updatedActivity = activityService.removeParticipants(id, userIds);
+            Activity updatedActivity = activityService.removeUserParticipants(id, userIds);
             // Convert to DTO to avoid serialization issues with Hibernate lazy loading
             ActivityResponseDTO responseDTO = activityMapper.toResponseDto(updatedActivity);
             return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Error removing participants: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error removing user participants: " + e.getMessage());
         }
     }
 
-    @GetMapping("/{id}/participants")
-    @Operation(summary = "Lister les participants d'une activité", description = "Récupère la liste des participants d'une activité")
+    @GetMapping("/{id}/user-participants")
+    @Operation(summary = "Lister les utilisateurs participants d'une activité", description = "Récupère la liste des utilisateurs participants d'une activité")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Liste des participants récupérée avec succès",
+            @ApiResponse(responseCode = "200", description = "Liste des utilisateurs participants récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = User.class))}),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<?> getParticipants(
+    public ResponseEntity<?> getUserParticipants(
             @Parameter(description = "ID de l'activité") @PathVariable Long id) {
         try {
-            Optional<Activity> activityOpt = activityService.getActivityById(id);
-            if (activityOpt.isPresent()) {
-                List<User> participants = activityOpt.get().getParticipants();
-                return ResponseEntity.ok(participants);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+            List<User> participants = activityService.getUserParticipantsByActivityId(id);
+            return ResponseEntity.ok(participants);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Error retrieving participants: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error retrieving user participants: " + e.getMessage());
         }
     }
 }

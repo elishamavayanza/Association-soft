@@ -17,7 +17,8 @@ public interface ActivityMapper extends BaseMapper<Activity, ActivityDTO> {
 
     @Mapping(target = "association", ignore = true)
     @Mapping(target = "project", ignore = true)
-    @Mapping(target = "participants", ignore = true)
+    @Mapping(target = "memberParticipants", ignore = true)
+    @Mapping(target = "userParticipants", ignore = true)
     Activity toEntity(ActivityDTO dto);
 
     @Mapping(target = "associationId", source = "association.id")
@@ -26,13 +27,15 @@ public interface ActivityMapper extends BaseMapper<Activity, ActivityDTO> {
 
     @Mapping(target = "association", ignore = true)
     @Mapping(target = "project", ignore = true)
-    @Mapping(target = "participants", ignore = true)
+    @Mapping(target = "memberParticipants", ignore = true)
+    @Mapping(target = "userParticipants", ignore = true)
     Activity toEntityFromRequest(ActivityRequestDTO requestDTO);
 
     // Payload mappings
     @Mapping(target = "association", ignore = true)
     @Mapping(target = "project", ignore = true)
-    @Mapping(target = "participants", ignore = true)
+    @Mapping(target = "memberParticipants", ignore = true)
+    @Mapping(target = "userParticipants", ignore = true)
     @Mapping(target = "creator", ignore = true)
     Activity toEntityFromPayload(ActivityPayload payload);
 
@@ -44,7 +47,8 @@ public interface ActivityMapper extends BaseMapper<Activity, ActivityDTO> {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "association", ignore = true)
     @Mapping(target = "project", ignore = true)
-    @Mapping(target = "participants", ignore = true)
+    @Mapping(target = "memberParticipants", ignore = true)
+    @Mapping(target = "userParticipants", ignore = true)
     @Mapping(target = "creator", ignore = true)
     @Mapping(target = "transactions", ignore = true)
     void updateEntityFromPayload(ActivityPayload payload, @MappingTarget Activity entity);

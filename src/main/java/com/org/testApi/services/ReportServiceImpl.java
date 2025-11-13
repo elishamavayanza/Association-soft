@@ -36,7 +36,7 @@ public class ReportServiceImpl implements ReportService {
         List<Object> reportData = new ArrayList<>();
 
         // Obtenir les activités dans la période
-        List<Activity> activities = activityRepository.findByStartDateTimeBetween(startDate, endDate);
+        List<Activity> activities = activityRepository.findActivitiesInDateRange(startDate, endDate);
 
         // Compter le nombre d'activités par type
         Map<String, Long> activitiesByType = activities
@@ -49,7 +49,8 @@ public class ReportServiceImpl implements ReportService {
         // Compter le nombre total de participants
         long totalParticipants = activities
                 .stream()
-                .mapToLong(activity -> activity.getParticipants() != null ? activity.getParticipants().size() : 0)
+                .mapToLong(activity -> (activity.getMemberParticipants() != null ? activity.getMemberParticipants().size() : 0) +
+                                      (activity.getUserParticipants() != null ? activity.getUserParticipants().size() : 0))
                 .sum();
 
         // Créer un objet de rapport

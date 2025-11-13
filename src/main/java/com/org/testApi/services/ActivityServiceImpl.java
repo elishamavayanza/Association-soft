@@ -1,24 +1,31 @@
 package com.org.testApi.services;
 
 import com.org.testApi.models.Activity;
+import com.org.testApi.models.Member;
 import com.org.testApi.models.User;
 import com.org.testApi.repository.ActivityRepository;
+import com.org.testApi.repository.MemberRepository;
 import com.org.testApi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 @Service
 public class ActivityServiceImpl implements ActivityService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ActivityServiceImpl.class);
+
     @Autowired
     private ActivityRepository activityRepository;
-
+    
+    @Autowired
+    private MemberRepository memberRepository;
+    
     @Autowired
     private UserRepository userRepository;
 
@@ -35,7 +42,6 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
-    @Transactional
     public Activity saveActivity(Activity activity) {
         Activity savedActivity = activityRepository.save(activity);
         notifyObservers("SAVE", savedActivity);
@@ -43,7 +49,6 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
-    @Transactional
     public Activity updateActivity(Long id, Activity activity) {
         if (activityRepository.existsById(id)) {
             activity.setId(id);
@@ -55,7 +60,6 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
-    @Transactional
     public void deleteActivity(Long id) {
         Activity activity = activityRepository.findById(id).orElse(null);
         activityRepository.deleteById(id);
@@ -65,7 +69,6 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
-    @Transactional
     public void softDeleteActivity(Long id) {
         Activity activity = activityRepository.findById(id).orElse(null);
         if (activity != null) {
@@ -90,12 +93,51 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public List<Activity> getActivitiesByUserId(Long userId) {
-       return activityRepository.findByParticipantsId(userId);
+       return activityRepository.findByUserParticipantsId(userId);
     }
 
     @Override
-    @Transactional
-    public Activity addParticipants(Long activityId, List<Long> userIds) {
+    public List<Activity> getActivitiesByMemberId(Long memberId) {
+       return activityRepository.findByMemberParticipantsId(memberId);
+    }
+
+    @Override
+    public Activity addMemberParticipants(Long activityId, List<Long> memberIds) {
+        Optional<Activity> activityOpt = activityRepository.findById(activityId);
+        if (activityOpt.isPresent()) {
+            Activity activity = activityOpt.get();
+            
+            // Fetch members from repository
+            List<Member> membersToAdd = memberRepository.findAllById(memberIds);
+            
+            // Add members to participants (avoiding duplicates)
+            for (Member member : membersToAdd) {
+                if (!activity.getMemberParticipants().contains(member)) {
+                    activity.getMemberParticipants().add(member);
+                }
+            }
+            
+            return activityRepository.save(activity);
+        }
+        throw new RuntimeException("Activity not found with id: " + activityId);
+    }
+
+    @Override
+    public Activity removeMemberParticipants(Long activityId, List<Long> memberIds) {
+        Optional<Activity> activityOpt = activityRepository.findById(activityId);
+        if (activityOpt.isPresent()) {
+            Activity activity = activityOpt.get();
+            
+            // Remove members from participants
+            activity.getMemberParticipants().removeIf(member -> memberIds.contains(member.getId()));
+            
+            return activityRepository.save(activity);
+        }
+        throw new RuntimeException("Activity not found with id: " + activityId);
+    }
+    
+    @Override
+    public Activity addUserParticipants(Long activityId, List<Long> userIds) {
         Optional<Activity> activityOpt = activityRepository.findById(activityId);
         if (activityOpt.isPresent()) {
             Activity activity = activityOpt.get();
@@ -105,26 +147,44 @@ public class ActivityServiceImpl implements ActivityService {
             
             // Add users to participants (avoiding duplicates)
             for (User user : usersToAdd) {
-                if (!activity.getParticipants().contains(user)) {
-                    activity.getParticipants().add(user);
+                if (!activity.getUserParticipants().contains(user)) {
+                    activity.getUserParticipants().add(user);
                 }
             }
+            
             return activityRepository.save(activity);
         }
         throw new RuntimeException("Activity not found with id: " + activityId);
     }
 
     @Override
-    @Transactional
-    public Activity removeParticipants(Long activityId, List<Long> userIds) {
+    public Activity removeUserParticipants(Long activityId, List<Long> userIds) {
         Optional<Activity> activityOpt = activityRepository.findById(activityId);
         if (activityOpt.isPresent()) {
             Activity activity = activityOpt.get();
             
             // Remove users from participants
-            activity.getParticipants().removeIf(user -> userIds.contains(user.getId()));
+            activity.getUserParticipants().removeIf(user -> userIds.contains(user.getId()));
             
             return activityRepository.save(activity);
+        }
+        throw new RuntimeException("Activity not found with id: " + activityId);
+    }
+    
+    @Override
+    public List<Member> getMemberParticipantsByActivityId(Long activityId) {
+        Optional<Activity> activityOpt = activityRepository.findById(activityId);
+        if (activityOpt.isPresent()) {
+            return activityOpt.get().getMemberParticipants();
+        }
+        throw new RuntimeException("Activity not found with id: " + activityId);
+    }
+    
+    @Override
+    public List<User> getUserParticipantsByActivityId(Long activityId) {
+        Optional<Activity> activityOpt = activityRepository.findById(activityId);
+        if (activityOpt.isPresent()) {
+            return activityOpt.get().getUserParticipants();
         }
         throw new RuntimeException("Activity not found with id: " + activityId);
     }

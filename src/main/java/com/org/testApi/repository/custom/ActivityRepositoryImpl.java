@@ -1,9 +1,10 @@
 package com.org.testApi.repository.custom;
 
 import com.org.testApi.models.Activity;
+import com.org.testApi.models.Member;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,10 +18,10 @@ public class ActivityRepositoryImpl implements ActivityRepositoryCustom {
     @Override
     public List<Activity> findActiveActivitiesWithParticipantsCount() {
         String jpql = """
-            SELECT a FROM Activity a 
-            WHERE a.status = 'ONGOING' OR a.status = 'PLANNED'
-            ORDER BY a.startDateTime ASC
-            """;
+        SELECT a FROM Activity a 
+        WHERE a.status IN (com.org.testApi.models.Activity$ActivityStatus.PLANNED, 
+                          com.org.testApi.models.Activity$ActivityStatus.ONGOING)
+        """;
         return entityManager.createQuery(jpql, Activity.class).getResultList();
     }
 
@@ -66,5 +67,21 @@ public class ActivityRepositoryImpl implements ActivityRepositoryCustom {
         } catch (Exception e) {
             throw new RuntimeException("Error soft deleting activity with id: " + activity.getId(), e);
         }
+    }
+    
+    @Override
+    public List<Activity> findByMemberParticipantsId(Long memberId) {
+        String jpql = "SELECT a FROM Activity a JOIN a.memberParticipants m WHERE m.id = :memberId";
+        return entityManager.createQuery(jpql, Activity.class)
+                .setParameter("memberId", memberId)
+                .getResultList();
+    }
+    
+    @Override
+    public List<Activity> findByUserParticipantsId(Long userId) {
+        String jpql = "SELECT a FROM Activity a JOIN a.userParticipants u WHERE u.id = :userId";
+        return entityManager.createQuery(jpql, Activity.class)
+                .setParameter("userId", userId)
+                .getResultList();
     }
 }

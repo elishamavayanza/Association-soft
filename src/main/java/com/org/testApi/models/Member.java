@@ -109,6 +109,12 @@ public class Member extends BaseEntity {
     @ToString.Exclude
     @JsonIgnore
     private List<Round> roundsAsBeneficiary = new ArrayList<>();
+    
+    @ManyToMany(mappedBy = "memberParticipants", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Activity> attendedActivities = new ArrayList<>();
 
     /**
      * Checks if the member is eligible for a loan.

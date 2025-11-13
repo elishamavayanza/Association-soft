@@ -32,6 +32,6 @@ public interface UserRepository extends BaseRepository<User, Long>, UserReposito
     
     boolean existsByUsername(String username);
 
-    @Query("SELECT u FROM User u JOIN u.attendedEvents a WHERE a.id = :activityId")
+    @Query("SELECT u FROM User u JOIN u.attendedActivities a WHERE a.id = :activityId")
     List<User> findParticipantsByActivityId(Long activityId);
 }

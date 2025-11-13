@@ -19,7 +19,8 @@ public class ActivityPayload extends BasePayload {
     private Long associationId;
     private Long projectId;
     private Long creatorId;
-    private Long[] participantIds;
+    private Long[] memberParticipantIds;
+    private Long[] userParticipantIds;
     private String status;
     
     // Manually adding missing getter methods to fix compilation errors
@@ -67,8 +68,12 @@ public class ActivityPayload extends BasePayload {
         return this.creatorId;
     }
     
-    public Long[] getParticipantIds() {
-        return this.participantIds;
+    public Long[] getMemberParticipantIds() {
+        return this.memberParticipantIds;
+    }
+    
+    public Long[] getUserParticipantIds() {
+        return this.userParticipantIds;
     }
     
     public String getStatus() {
@@ -120,8 +125,12 @@ public class ActivityPayload extends BasePayload {
         this.creatorId = creatorId;
     }
     
-    public void setParticipantIds(Long[] participantIds) {
-        this.participantIds = participantIds;
+    public void setMemberParticipantIds(Long[] memberParticipantIds) {
+        this.memberParticipantIds = memberParticipantIds;
+    }
+    
+    public void setUserParticipantIds(Long[] userParticipantIds) {
+        this.userParticipantIds = userParticipantIds;
     }
     
     public void setStatus(String status) {

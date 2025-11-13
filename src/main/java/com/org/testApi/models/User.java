@@ -70,13 +70,10 @@ public class User extends BaseEntity implements UserDetails {
     @ToString.Exclude
     @JsonIgnore private Set<Role> roles = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(name ="activity_participants",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "activity_id"))
+    @ManyToMany(mappedBy = "userParticipants", fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
-    private List<Activity> attendedEvents = new ArrayList<>();
+    private List<Activity> attendedActivities = new ArrayList<>();
     
     @Override
     @JsonIgnore
