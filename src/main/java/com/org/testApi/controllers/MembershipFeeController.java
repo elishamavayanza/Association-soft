@@ -1,6 +1,7 @@
 package com.org.testApi.controllers;
 
 import com.org.testApi.models.MembershipFee;
+import com.org.testApi.models.MembershipFeeType;
 import com.org.testApi.payload.MembershipFeePayload;
 import com.org.testApi.services.MembershipFeeService;
 import com.org.testApi.mapper.MembershipFeeMapper;
@@ -51,6 +52,52 @@ public class MembershipFeeController {
         return ResponseEntity.ok(membershipFees);
     }
 
+    @GetMapping("/type/{feeType}")
+    @Operation(summary = "Récupérer les cotisations par type", description = "Retourne une liste de cotisations filtrées par type")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des cotisations récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = MembershipFee.class))}),
+            @ApiResponse(responseCode = "400", description = "Type de cotisation invalide"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<MembershipFee>> getMembershipFeesByType(
+            @Parameter(description = "Type de cotisation (WEEKLY, MONTHLY, YEARLY, INSTALLMENT)") 
+            @PathVariable String feeType) {
+        logger.info("Fetching membership fees by type: {}", feeType);
+        try {
+            MembershipFeeType type = MembershipFeeType.valueOf(feeType.toUpperCase());
+            List<MembershipFee> membershipFees = membershipFeeService.getMembershipFeesByType(type);
+            return ResponseEntity.ok(membershipFees);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid membership fee type: {}", feeType);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/member/{memberId}/type/{feeType}")
+    @Operation(summary = "Récupérer les cotisations d'un membre par type", description = "Retourne une liste de cotisations d'un membre filtrées par type")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des cotisations récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = MembershipFee.class))}),
+            @ApiResponse(responseCode = "400", description = "Type de cotisation invalide"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<MembershipFee>> getMembershipFeesByMemberIdAndType(
+            @Parameter(description = "ID du membre") @PathVariable Long memberId,
+            @Parameter(description = "Type de cotisation (WEEKLY, MONTHLY, YEARLY, INSTALLMENT)") @PathVariable String feeType) {
+        logger.info("Fetching membership fees by member id: {} and type: {}", memberId, feeType);
+        try {
+            MembershipFeeType type = MembershipFeeType.valueOf(feeType.toUpperCase());
+            List<MembershipFee> membershipFees = membershipFeeService.getMembershipFeesByMemberIdAndType(memberId, type);
+            return ResponseEntity.ok(membershipFees);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid membership fee type: {}", feeType);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer une cotisation par ID", description = "Retourne une cotisation spécifique en fonction de son ID")
     @ApiResponses(value = {
@@ -93,7 +140,7 @@ public class MembershipFeeController {
                     examples = @ExampleObject(
                         name = "Exemple de cotisation",
                         summary = "Exemple de création de cotisation",
-                        value = "{\n  \"amount\": 50.00,\n  \"currency\": \"CDF\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"COT-2025-001\",\n  \"member\": {\n    \"id\": 1\n  }\n}"
+                        value = "{\n  \"amount\": 50.00,\n  \"currency\": \"CDF\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"feeType\": \"MONTHLY\",\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"COT-2025-001\",\n  \"member\": {\n    \"id\": 1\n  }\n}"
                     )
                 )
             ) @RequestBody MembershipFee membershipFee) {
@@ -159,7 +206,7 @@ public class MembershipFeeController {
                     examples = @ExampleObject(
                         name = "Exemple de cotisation avec payload",
                         summary = "Exemple de création de cotisation avec payload",
-                        value = "{\n  \"memberId\": 1,\n  \"amount\": 50.00,\n  \"currency\": \"CDF\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"COT-2025-001\"\n}"
+                        value = "{\n  \"memberId\": 1,\n  \"amount\": 50.00,\n  \"currency\": \"CDF\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"feeType\": \"MONTHLY\",\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"COT-2025-001\"\n}"
                     )
                 )
             ) @RequestBody MembershipFeePayload payload) {
@@ -197,7 +244,7 @@ public class MembershipFeeController {
                     examples = @ExampleObject(
                         name = "Exemple de mise à jour de cotisation",
                         summary = "Exemple de mise à jour de cotisation",
-                        value = "{\n  \"amount\": 75.00,\n  \"currency\": \"USD\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"reference\": \"COT-2025-002\",\n  \"member\": {\n    \"id\": 1\n  }\n}"
+                        value = "{\n  \"amount\": 75.00,\n  \"currency\": \"USD\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"feeType\": \"YEARLY\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"reference\": \"COT-2025-002\",\n  \"member\": {\n    \"id\": 1\n  }\n}"
                     )
                 )
             ) @RequestBody MembershipFee membershipFeeDetails) {
@@ -226,6 +273,9 @@ public class MembershipFeeController {
                 }
                 if (membershipFeeDetails.getEndDate() != null) {
                     existingFee.setEndDate(membershipFeeDetails.getEndDate());
+                }
+                if (membershipFeeDetails.getFeeType() != null) {
+                    existingFee.setFeeType(membershipFeeDetails.getFeeType());
                 }
                 if (membershipFeeDetails.getMember() != null && membershipFeeDetails.getMember().getId() != null) {
                     Long memberId = membershipFeeDetails.getMember().getId();
@@ -270,7 +320,7 @@ public class MembershipFeeController {
                     examples = @ExampleObject(
                         name = "Exemple de mise à jour de cotisation avec payload",
                         summary = "Exemple de mise à jour de cotisation avec payload",
-                        value = "{\n  \"memberId\": 1,\n  \"amount\": 75.00,\n  \"currency\": \"USD\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"reference\": \"COT-2025-002\"\n}"
+                        value = "{\n  \"memberId\": 1,\n  \"amount\": 75.00,\n  \"currency\": \"USD\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"feeType\": \"YEARLY\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"reference\": \"COT-2025-002\"\n}"
                     )
                 )
             ) @RequestBody MembershipFeePayload payload) {
@@ -315,6 +365,27 @@ public class MembershipFeeController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/member/{memberId}/type/{feeType}")
+    @Operation(summary = "Supprimer les cotisations d'un membre par type", description = "Supprime définitivement les cotisations d'un membre filtrées par type")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Cotisations supprimées avec succès"),
+            @ApiResponse(responseCode = "400", description = "Type de cotisation invalide"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<Void> deleteMembershipFeesByMemberIdAndType(
+            @Parameter(description = "ID du membre") @PathVariable Long memberId,
+            @Parameter(description = "Type de cotisation (WEEKLY, MONTHLY, YEARLY, INSTALLMENT)") @PathVariable String feeType) {
+        logger.info("Deleting membership fees by member id: {} and type: {}", memberId, feeType);
+        try {
+            MembershipFeeType type = MembershipFeeType.valueOf(feeType.toUpperCase());
+            membershipFeeService.deleteMembershipFeesByMemberIdAndType(memberId, type);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid membership fee type: {}", feeType);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @DeleteMapping("/{id}/soft")
     @Operation(summary = "Supprimer logiquement une cotisation", description = "Marque une cotisation comme supprimée sans la retirer de la base de données")
     @ApiResponses(value = {
@@ -327,5 +398,26 @@ public class MembershipFeeController {
         logger.info("Soft deleting membership fee with id: {}", id);
         membershipFeeService.softDeleteMembershipFee(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/member/{memberId}/type/{feeType}/soft")
+    @Operation(summary = "Supprimer logiquement les cotisations d'un membre par type", description = "Marque les cotisations d'un membre comme supprimées sans les retirer de la base de données")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Cotisations supprimées logiquement avec succès"),
+            @ApiResponse(responseCode = "400", description = "Type de cotisation invalide"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<Void> softDeleteMembershipFeesByMemberIdAndType(
+            @Parameter(description = "ID du membre") @PathVariable Long memberId,
+            @Parameter(description = "Type de cotisation (WEEKLY, MONTHLY, YEARLY, INSTALLMENT)") @PathVariable String feeType) {
+        logger.info("Soft deleting membership fees by member id: {} and type: {}", memberId, feeType);
+        try {
+            MembershipFeeType type = MembershipFeeType.valueOf(feeType.toUpperCase());
+            membershipFeeService.softDeleteMembershipFeesByMemberIdAndType(memberId, type);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid membership fee type: {}", feeType);
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

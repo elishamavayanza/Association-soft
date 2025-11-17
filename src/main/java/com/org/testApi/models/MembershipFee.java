@@ -1,21 +1,10 @@
 package com.org.testApi.models;
 
-import com.org.testApi.models.Member;
-import com.org.testApi.models.FinancialTransaction;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * Représente une cotisation payée par un membre d'une association.
- * <p>
- * Chaque cotisation est associée à un membre et peut être liée à une transaction financière.
- * Elle contient les informations sur le montant, la date de paiement, la période couverte,
- * le mode de paiement, et une référence éventuelle.
- * </p>
- */
 @Entity
 @Table(name = "membership_fees")
 @Data
@@ -67,6 +56,13 @@ public class MembershipFee extends BaseEntity {
      * Date de fin de la période couverte par cette cotisation (optionnelle).
      */
     private LocalDate endDate;
+
+    /**
+     * Type de cotisation (par semaine, par mois, par an, par dose).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "fee_type")
+    private MembershipFeeType feeType;
 
     /**
      * Transaction financière associée à ce paiement (optionnelle).

@@ -22,4 +22,5 @@ public class MembershipFeeDTO extends BaseEntityDTO {
     private LocalDate periodStart;
     private LocalDate periodEnd;
     private String paymentMethod;
+    private String feeType;
 }

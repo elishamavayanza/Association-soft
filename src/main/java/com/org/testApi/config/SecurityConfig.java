@@ -73,6 +73,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/members/**").authenticated()
                         .requestMatchers("/api/members/payload", "/api/members/payload/**").authenticated()
 
+                        // Project endpoints
+                        .requestMatchers("/api/projects/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

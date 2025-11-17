@@ -28,23 +28,28 @@ public abstract class MembershipFeeMapper implements BaseMapper<MembershipFee, M
 
     @Mapping(target = "member", ignore = true)
     @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract MembershipFee toEntity(MembershipFeeDTO dto);
 
     @Mapping(target = "memberId", source = "member.id")
     @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract MembershipFeeDTO toDto(MembershipFee entity);
 
     // Payload mappings
     @Mapping(target = "member", ignore = true)
     @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract MembershipFee toEntityFromPayload(MembershipFeePayload payload);
 
     @Mapping(target = "memberId", source = "member.id")
     @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract MembershipFeePayload toPayload(MembershipFee entity);
 
     @Mapping(target = "member", ignore = true)
     @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract void updateEntityFromPayload(MembershipFeePayload payload, @MappingTarget MembershipFee entity);
 
     /**

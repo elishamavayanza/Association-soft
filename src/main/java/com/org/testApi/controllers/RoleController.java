@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +23,7 @@ import jakarta.validation.ConstraintViolationException;
 
 @RestController
 @RequestMapping("/api/roles")
-@Tag(name = "Rôle", description = "Gestion des rôles")
+@Tag(name = "Rôles", description = "Gestion des rôles")
 public class RoleController {
 
     @Autowired
@@ -32,11 +33,13 @@ public class RoleController {
     private RoleMapper roleMapper;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Récupérer tous les rôles", description = "Retourne une liste de tous les rôles")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des rôles récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Role.class))}),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - autorisation insuffisante"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<List<Role>> getAllRoles() {
@@ -45,11 +48,13 @@ public class RoleController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Récupérer un rôle par ID", description = "Retourne un rôle spécifique en fonction de son ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Rôle trouvé",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Role.class))}),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - autorisation insuffisante"),
             @ApiResponse(responseCode = "404", description = "Rôle non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
@@ -61,12 +66,14 @@ public class RoleController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Créer un nouveau rôle", description = "Crée un nouveau rôle avec les données fournies")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Rôle créé avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Role.class))}),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - autorisation insuffisante"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<?> createRole(
@@ -91,12 +98,14 @@ public class RoleController {
     }
 
     @PostMapping("/payload")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Créer un rôle à partir d'un payload", description = "Crée un rôle en utilisant un objet payload")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Rôle créé avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Role.class))}),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - autorisation insuffisante"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<?> createRoleFromPayload(
@@ -125,11 +134,13 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Mettre à jour un rôle", description = "Met à jour un rôle existant avec les données fournies")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Rôle mis à jour avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Role.class))}),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - autorisation insuffisante"),
             @ApiResponse(responseCode = "404", description = "Rôle non trouvé"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
@@ -159,11 +170,13 @@ public class RoleController {
     }
 
     @PutMapping("/{id}/payload")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Mettre à jour un rôle avec payload", description = "Met à jour un rôle existant en utilisant un objet payload")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Rôle mis à jour avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Role.class))}),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - autorisation insuffisante"),
             @ApiResponse(responseCode = "404", description = "Rôle non trouvé"),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
@@ -204,9 +217,11 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Supprimer un rôle", description = "Supprime définitivement un rôle")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Rôle supprimé avec succès"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - autorisation insuffisante"),
             @ApiResponse(responseCode = "404", description = "Rôle non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
@@ -217,9 +232,11 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}/soft")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Supprimer logiquement un rôle", description = "Marque un rôle comme supprimé sans le retirer de la base de données")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Rôle supprimé logiquement avec succès"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - autorisation insuffisante"),
             @ApiResponse(responseCode = "404", description = "Rôle non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })

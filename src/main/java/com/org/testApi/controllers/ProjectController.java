@@ -33,13 +33,13 @@ public class ProjectController {
     @Operation(summary = "Récupérer tous les projets", description = "Retourne une liste de tous les projets")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des projets récupérée avec succès",
-content ={@Content(mediaType = "application/json",
+                    content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<List<Project>> getAllProjects() {
         List<Project> projects = projectService.getAllProjects();
-return ResponseEntity.ok(projects);
+        return ResponseEntity.ok(projects);
     }
 
     @GetMapping("/{id}")
@@ -59,13 +59,13 @@ return ResponseEntity.ok(projects);
     }
 
     @PostMapping
-    @Operation(summary = "Créer unnouveau projet", description = "Crée un nouveau projet avec les données fournies")
+    @Operation(summary = "Créer un nouveau projet", description = "Crée un nouveau projet avec les données fournies")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Projet créé avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
-            @ApiResponse(responseCode = "500", description = "Erreur interneduserveur")
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Project> createProject(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -88,7 +88,7 @@ return ResponseEntity.ok(projects);
             @ApiResponse(responseCode = "200", description = "Projet créé avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
-            @ApiResponse(responseCode = "400", description = "Données de payloadinvalides"),
+            @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Project> createProjectFromPayload(
@@ -97,7 +97,7 @@ return ResponseEntity.ok(projects);
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"name\": \"Projet de développementcommunautaire\",\n  \"description\": \"Développement d'une application pour gérer les projets communautaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-04-30\",\n  \"associationId\": 1,\n  \"managerId\": 2,\n  \"activityIds\": [1, 2, 3],\n  \"memberIds\": [10, 15, 20],\n  \"transactionIds\": [100, 101],\n  \"status\": \"PLANNING\"\n}"
+                                    value = "{\n  \"name\": \"Projet de développement communautaire\",\n  \"description\": \"Développement d'une application pour gérer les projets communautaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-04-30\",\n  \"associationId\": 1,\n  \"managerId\": 2,\n  \"activityIds\": [1, 2, 3],\n  \"memberIds\": [10, 15, 20],\n  \"transactionIds\": [100, 101],\n  \"status\": \"PLANNING\"\n}"
                            )
                     )
             )
@@ -108,23 +108,23 @@ return ResponseEntity.ok(projects);
     }
 
 @PutMapping("/{id}")
-    @Operation(summary = "Mettre à jour un projet", description ="Met à jour un projet existant avec les donnéesfournies")
-   @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Projet mis àjour avec succès",
-content= {@Content(mediaType = "application/json",
+    @Operation(summary = "Mettre à jour un projet", description = "Met à jour un projet existant avec les données fournies")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Projet mis à jour avec succès",
+                    content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "404", description = "Projet non trouvé"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
-           @ApiResponse(responseCode= "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Project> updateProject(
             @Parameter(description = "ID du projet à mettre à jour") @PathVariable Long id,
-@io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Exemple de projet àmettre à jour",
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Exemple de projet à mettre à jour",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"name\": \"Projet de développement misà jour\",\n\"description\": \"Développement d'une nouvelle application avec des fonctionnalités supplémentaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-06-30\",\n  \"status\": \"IN_PROGRESS\"\n}"
+                                    value = "{\n  \"name\": \"Projet de développement mis à jour\",\n  \"description\": \"Développement d'une nouvelle application avec des fonctionnalités supplémentaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-06-30\",\n  \"status\": \"IN_PROGRESS\"\n}"
 )
 )
             )
@@ -134,7 +134,7 @@ content= {@Content(mediaType = "application/json",
             return ResponseEntity.ok(updatedProject);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
-}
+        }
     }
 
     @PutMapping("/{id}/payload")

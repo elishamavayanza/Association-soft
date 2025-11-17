@@ -128,3 +128,42 @@ Once compiled successfully, the following functionality should work:
 2. Currency conversion for all financial components
 3. Multi-currency support in Membership Fees, Contributions, Rotating Groups, and Rounds
 4. Default currency (CDF) applied correctly to all new entities
+
+# Fix for Membership Fee Compilation Issue
+
+## Problem
+The project was failing to compile with the following error:
+```
+ERROR] /media/elishama/New Volume/project/Test/testApi/src/main/java/com/org/testApi/models/MembershipFee.java:[9,8] duplicate class: MembershipFee
+```
+
+## Root Cause
+The MembershipFee.java file was missing the package declaration and import statements, which caused the Java compiler to not recognize it as part of the correct package and led to compilation errors.
+
+## Solution
+I've added the missing package declaration and import statements to the MembershipFee.java file:
+
+1. Added package declaration: `package com.org.testApi.models;`
+
+2. Added required import statements:
+   - `import jakarta.persistence.*;`
+   - `import lombok.*;`
+   - `import java.math.BigDecimal;`
+   - `import java.time.LocalDate;`
+
+3. Ensured the class properly extends BaseEntity
+
+4. Verified all other related files (DTO, Payload, Mapper, Controller, Service, Repository) were correctly referencing the MembershipFee class
+
+## Files Modified
+- `/media/elishama/New Volume/project/Test/testApi/src/main/java/com/org/testApi/models/MembershipFee.java` - Added package and import statements
+
+## Additional Implementation
+As part of the original task, we also implemented the membership fee type feature:
+1. Created MembershipFeeType enum with values: WEEKLY, MONTHLY, YEARLY, INSTALLMENT
+2. Added feeType field to MembershipFee entity
+3. Updated DTO and Payload classes to include feeType
+4. Updated mapper to handle feeType mapping
+5. Created database migration script to add fee_type column
+
+The project should now compile successfully with the membership fee type feature fully implemented.
