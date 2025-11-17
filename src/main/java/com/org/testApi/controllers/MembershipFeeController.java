@@ -343,10 +343,15 @@ public class MembershipFeeController {
                 return ResponseEntity.notFound().build();
             }
         } catch (RuntimeException e) {
-            logger.error("Membership fee not found with id: " + id, e);
-            return ResponseEntity.notFound().build();
+            if (e.getMessage().contains("MembershipFee not found")) {
+                logger.warn("Membership fee not found with id: {}", id);
+                return ResponseEntity.notFound().build();
+            } else {
+                logger.error("Error updating membership fee with id: " + id, e);
+                return ResponseEntity.status(500).build();
+            }
         } catch (Exception e) {
-            logger.error("Error updating membership fee with id: " + id, e);
+            logger.error("Unexpected error updating membership fee with id: " + id, e);
             return ResponseEntity.status(500).build();
         }
     }
