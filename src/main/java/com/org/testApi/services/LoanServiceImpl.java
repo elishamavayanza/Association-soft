@@ -1,5 +1,6 @@
 package com.org.testApi.services;
 
+import com.org.testApi.dto.LoanEligibilityResult;
 import com.org.testApi.models.Document;
 import com.org.testApi.models.Loan;
 import com.org.testApi.models.Member;
@@ -18,7 +19,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-@Service@Transactional
+@Service
+@Transactional
 public class LoanServiceImpl implements LoanService {
 
     @Autowired
@@ -36,7 +38,7 @@ public class LoanServiceImpl implements LoanService {
         Member member = memberRepository.findWithLoansById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
 
-        // Vérifier l'éligibilitédu membre
+        // Vérifier l'éligibilité du membre
         if (!member.isEligibleForLoan()) {
             // Fournir des détails sur pourquoi le membre n'est pas éligible
             StringBuilder ineligibilityReason = new StringBuilder("Le membre n'est pas éligible pour emprunter. ");
@@ -48,7 +50,7 @@ public class LoanServiceImpl implements LoanService {
             if (member.getFees() == null || member.getFees().isEmpty()) {
                 ineligibilityReason.append("Le membre n'a payé aucune cotisation. ");
             }
-boolean hasOverdueLoans = member.getLoans().stream()
+            boolean hasOverdueLoans = member.getLoans().stream()
                     .filter(loan -> loan != null)
                     .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
             if (hasOverdueLoans) {
@@ -60,7 +62,7 @@ boolean hasOverdueLoans = member.getLoans().stream()
 
         // Vérifier que le montant ne dépasse pas le maximum autorisé
         BigDecimal maxLoanAmount = calculateMaxLoanAmount(memberId);
-        if (amount.compareTo(maxLoanAmount)> 0) {
+        if (amount.compareTo(maxLoanAmount) > 0) {
             throw new RuntimeException("Le montant demandé (" + amount + ") dépasse le maximum autorisé de " + maxLoanAmount);
         }
 
@@ -89,7 +91,7 @@ boolean hasOverdueLoans = member.getLoans().stream()
     @Override
     public Loan repayLoan(Long loanId, BigDecimal amount) {
         Loan loan = loanRepository.findById(loanId)
-               .orElseThrow(() -> new RuntimeException("Prêt non trouvé avec l'ID: " + loanId));
+                .orElseThrow(() -> new RuntimeException("Prêt non trouvé avec l'ID: " + loanId));
 
         // Vérifier que le prêt n'est pas déjà remboursé
         if (loan.getStatus() == Loan.LoanStatus.REPAID) {
@@ -146,7 +148,7 @@ boolean hasOverdueLoans = member.getLoans().stream()
         return loanRepository.searchLoansComplexQuery(memberId, minAmount, maxAmount, status, startDate, endDate);
     }
 
-   @Override
+    @Override
     public BigDecimal calculateTotalLoansForMember(Long memberId) {
         return loanRepository.calculateTotalLoansForMember(memberId);
     }
@@ -156,7 +158,7 @@ boolean hasOverdueLoans = member.getLoans().stream()
         return loanRepository.findOverdueLoansWithDaysOverdue();
     }
 
-@Override
+    @Override
     public boolean isMemberEligibleForLoan(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
@@ -164,7 +166,16 @@ boolean hasOverdueLoans = member.getLoans().stream()
         return member.isEligibleForLoan();
     }
 
-    @Override public BigDecimal calculateMaxLoanAmount(Long memberId) {
+    @Override
+    public LoanEligibilityResult getMemberLoanEligibilityDetails(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
+
+        return member.checkLoanEligibility();
+    }
+
+    @Override 
+    public BigDecimal calculateMaxLoanAmount(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
 
@@ -189,7 +200,7 @@ boolean hasOverdueLoans = member.getLoans().stream()
         Loan existingLoan = loanRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Prêt non trouvé avec l'ID: " + id));
 
-        // Mettre à jour toutesles propriétés du prêt
+        // Mettre à jour toutes les propriétés du prêt
         existingLoan.setAmount(loan.getAmount());
         existingLoan.setInterestRate(loan.getInterestRate());
         existingLoan.setPenaltyRate(loan.getPenaltyRate());
@@ -211,7 +222,27 @@ boolean hasOverdueLoans = member.getLoans().stream()
         if (loan.getDocument() != null) {
             existingLoan.setDocument(loan.getDocument());
         }
+        
+        if (loan.getLoanType() != null) {
+            existingLoan.setLoanType(loan.getLoanType());
+        }
+        
+        if (loan.getLoanApplication() != null) {
+            existingLoan.setLoanApplication(loan.getLoanApplication());
+        }
 
         return loanRepository.save(existingLoan);
+    }
+    
+    @Override
+    public Loan createLoanFromApplication(Long loanApplicationId) {
+        // Cette méthode nécessiterait une implémentation complète avec le repository de LoanApplication
+        // Pour l'instant, nous lançons une exception
+        throw new UnsupportedOperationException("Méthode non implémentée");
+    }
+    
+    @Override
+    public List<Loan> findLoansByLoanTypeId(Long loanTypeId) {
+        return loanRepository.findByLoanTypeId(loanTypeId);
     }
 }

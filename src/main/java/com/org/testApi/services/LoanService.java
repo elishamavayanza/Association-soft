@@ -1,5 +1,6 @@
 package com.org.testApi.services;
 
+import com.org.testApi.dto.LoanEligibilityResult;
 import com.org.testApi.models.Loan;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -114,6 +115,14 @@ public interface LoanService {
     boolean isMemberEligibleForLoan(Long memberId);
 
     /**
+     * Vérifie si un membre est éligible pour emprunter avec des détails.
+     *
+     * @param memberId ID du membre
+     * @return LoanEligibilityResult avec détails
+     */
+    LoanEligibilityResult getMemberLoanEligibilityDetails(Long memberId);
+
+    /**
      * Calcule le montant maximum qu'un membre peut emprunter.
      * Basé sur les cotisations payées par le membre.
      *
@@ -130,4 +139,20 @@ public interface LoanService {
      * @return le prêt mis à jour
      */
     Loan updateLoan(Long id, Loan loan);
+    
+    /**
+     * Crée un prêt à partir d'une demande de prêt.
+     *
+     * @param loanApplicationId l'identifiant de la demande de prêt
+     * @return le prêt créé
+     */
+    Loan createLoanFromApplication(Long loanApplicationId);
+    
+    /**
+     * Trouve tous les prêts d'un type spécifique.
+     *
+     * @param loanTypeId l'identifiant du type de prêt
+     * @return la liste des prêts de ce type
+     */
+    List<Loan> findLoansByLoanTypeId(Long loanTypeId);
 }

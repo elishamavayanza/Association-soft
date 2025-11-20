@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Remove @Repository annotation to let Spring Data JPA handle it properly
+@Repository
 public class UserRepositoryImpl implements UserRepositoryCustom {
     
     @PersistenceContext

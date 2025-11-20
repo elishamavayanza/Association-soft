@@ -37,4 +37,13 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, LoanRepositor
      */
     @Query("SELECT l FROM Loan l WHERE l.status != 'REPAID'")
     List<Loan> findActiveLoans();
+    
+    /**
+     * Trouve tous les prêts d'un type spécifique.
+     *
+     * @param loanTypeId l'identifiant du type de prêt
+     * @return la liste des prêts de ce type
+     */
+    @Query("SELECT l FROM Loan l WHERE l.loanType.id = :loanTypeId")
+    List<Loan> findByLoanTypeId(@Param("loanTypeId") Long loanTypeId);
 }

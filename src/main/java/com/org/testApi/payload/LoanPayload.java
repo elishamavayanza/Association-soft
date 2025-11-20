@@ -11,6 +11,7 @@ public class LoanPayload extends BasePayload {
     private Long id;
     private Long memberId;
     private Long documentId;
+    private Long loanTypeId;
     private BigDecimal amount;
     private BigDecimal interestRate;
     private BigDecimal penaltyRate;

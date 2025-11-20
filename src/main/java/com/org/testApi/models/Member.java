@@ -1,9 +1,13 @@
 package com.org.testApi.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.org.testApi.dto.LoanEligibilityResult;
+import com.org.testApi.models.Currency;
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,5 +148,73 @@ public class Member extends BaseEntity {
         }
 
         return true;
+    }
+    
+    /**
+     * Performs a detailed loan eligibility check with reasons for ineligibility.
+     *
+     * @return LoanEligibilityResult with detailed information
+     */
+    public LoanEligibilityResult checkLoanEligibility() {
+        LoanEligibilityResult result = new LoanEligibilityResult();
+        
+        // Check if member is active (has not left the association)
+        if (this.leaveDate != null) {
+            result.addReason("Le membre a quitté l'association");
+        }
+
+        // Check if member has paid any fees
+        if (this.fees == null || this.fees.isEmpty()) {
+            result.addReason("Le membre n'a payé aucune cotisation");
+        }
+        
+        // Check membership duration (minimum 3 months)
+        if (this.joinDate != null) {
+            LocalDate minimumJoinDate = LocalDate.now().minusMonths(3);
+            if (this.joinDate.isAfter(minimumJoinDate)) {
+                result.addReason("Le membre n'est pas dans l'association depuis assez longtemps (minimum 3 mois)");
+            }
+        }
+        
+        // Check for recent payments (within last 3 months)
+        LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
+        boolean recentPayments = this.fees.stream()
+                .filter(fee -> fee != null && fee.getPaymentDate() != null)
+                .anyMatch(fee -> !fee.getPaymentDate().isBefore(threeMonthsAgo));
+        
+        if (!recentPayments) {
+            result.addReason("Le membre n'a pas payé de cotisation récemment (derniers 3 mois)");
+        }
+
+        // Check if member has any overdue loans
+        if (this.loans != null) {
+            boolean hasOverdueLoans = this.loans.stream()
+                    .filter(loan -> loan != null)
+                    .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
+            if (hasOverdueLoans) {
+                result.addReason("Le membre a des prêts en retard");
+            }
+        }
+        
+        boolean isEligible = result.getReasons().isEmpty();
+        result.setEligible(isEligible);
+        
+        // Calculate maximum loan amount if eligible
+        if (isEligible) {
+            BigDecimal totalFees = this.fees.stream()
+                    .filter(fee -> fee != null && fee.getAmount() != null)
+                    .map(MembershipFee::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            result.setMaxLoanAmount(totalFees.multiply(BigDecimal.valueOf(3)));
+            
+            // Set currency based on member's fees (use the currency of the first fee, or default to CDF)
+            if (!this.fees.isEmpty() && this.fees.get(0) != null && this.fees.get(0).getCurrency() != null) {
+                result.setCurrency(this.fees.get(0).getCurrency());
+            } else {
+                result.setCurrency(Currency.CDF); // Default to Congolese Franc
+            }
+        }
+        
+        return result;
     }
 }
