@@ -107,22 +107,8 @@ public class LoanController {
                             mediaType = "application/json",
                             examples = {
                                 @ExampleObject(
-                                    name = "Prêt standard",
-                                    summary = "Exemple de prêt standard",
-                                    value = "{\n" +
-                                            "  \"memberId\": 1,\n" +
-                                            "  \"amount\": 1000,\n" +
-                                            "  \"interestRate\": 0.05,\n" +
-                                            "  \"penaltyRate\": 0.1,\n" +
-                                            "  \"dueDate\": \"2025-12-31\",\n" +
-                                            "  \"repaymentDate\": \"2025-12-31\",\n" +
-                                            "  \"amountRepaid\": 0,\n" +
-                                            "  \"status\": \"ACTIVE\"\n" +
-                                            "}"
-                                ),
-                                @ExampleObject(
-                                    name = "Prêt avec type (Prêt personnel)",
-                                    summary = "Exemple de prêt personnel avec taux prédéfinis",
+                                    name = "Prêt avec type de prêt",
+                                    summary = "Exemple de prêt avec type de prêt (les taux sont automatiquement appliqués)",
                                     value = "{\n" +
                                             "  \"memberId\": 1,\n" +
                                             "  \"loanTypeId\": 1,\n" +
