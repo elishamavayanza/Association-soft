@@ -46,4 +46,13 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, LoanRepositor
      */
     @Query("SELECT l FROM Loan l WHERE l.loanType.id = :loanTypeId")
     List<Loan> findByLoanTypeId(@Param("loanTypeId") Long loanTypeId);
+    
+    /**
+     * Trouve tous les prêts dont la date d'échéance est dans un certain nombre de jours.
+     *
+     * @param targetDate la date cible
+     * @return la liste des prêts dont la date d'échéance est égale à la date cible
+     */
+    @Query("SELECT l FROM Loan l WHERE l.dueDate = :targetDate AND l.status != 'REPAID'")
+    List<Loan> findLoansDueOn(@Param("targetDate") LocalDate targetDate);
 }
