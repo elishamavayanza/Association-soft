@@ -4,6 +4,7 @@ import com.org.testApi.models.Document;
 import com.org.testApi.models.Loan;
 import com.org.testApi.models.LoanType;
 import com.org.testApi.models.Member;
+import com.org.testApi.models.Currency;
 import com.org.testApi.payload.LoanPayload;
 import com.org.testApi.services.LoanService;
 import com.org.testApi.services.AutomaticPenaltyService;
@@ -113,6 +114,7 @@ public class LoanController {
                                             "  \"memberId\": 1,\n" +
                                             "  \"loanTypeId\": 1,\n" +
                                             "  \"amount\": 5000,\n" +
+                                            "  \"currency\": \"CDF\",\n" +
                                             "  \"dueDate\": \"2026-06-30\",\n" +
                                             "  \"status\": \"ACTIVE\"\n" +
                                             "}"
@@ -124,6 +126,7 @@ public class LoanController {
                                             "  \"memberId\": 2,\n" +
                                             "  \"loanTypeId\": 2,\n" +
                                             "  \"amount\": 1000,\n" +
+                                            "  \"currency\": \"USD\",\n" +
                                             "  \"dueDate\": \"2025-12-15\",\n" +
                                             "  \"status\": \"ACTIVE\"\n" +
                                             "}"
@@ -135,6 +138,7 @@ public class LoanController {
                                             "  \"memberId\": 3,\n" +
                                             "  \"loanTypeId\": 3,\n" +
                                             "  \"amount\": 50000,\n" +
+                                            "  \"currency\": \"EUR\",\n" +
                                             "  \"dueDate\": \"2028-12-31\",\n" +
                                             "  \"status\": \"ACTIVE\"\n" +
                                             "}"
@@ -146,6 +150,7 @@ public class LoanController {
                                             "  \"memberId\": 4,\n" +
                                             "  \"loanTypeId\": 4,\n" +
                                             "  \"amount\": 10000,\n" +
+                                            "  \"currency\": \"CDF\",\n" +
                                             "  \"dueDate\": \"2026-12-31\",\n" +
                                             "  \"status\": \"ACTIVE\"\n" +
                                             "}"
@@ -164,6 +169,7 @@ public class LoanController {
 
             // Set the properties from the payload
             loan.setAmount(payload.getAmount());
+            loan.setCurrency(payload.getCurrency() != null ? payload.getCurrency() : Currency.CDF);
             loan.setInterestRate(payload.getInterestRate());
             loan.setPenaltyRate(payload.getPenaltyRate());
             loan.setDueDate(payload.getDueDate());

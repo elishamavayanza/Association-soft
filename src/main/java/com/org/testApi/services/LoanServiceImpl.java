@@ -160,7 +160,7 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public boolean isMemberEligibleForLoan(Long memberId) {
-        Member member = memberRepository.findById(memberId)
+        Member member = memberRepository.findWithLoansById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
 
         return member.isEligibleForLoan();
@@ -168,7 +168,7 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public LoanEligibilityResult getMemberLoanEligibilityDetails(Long memberId) {
-        Member member = memberRepository.findById(memberId)
+        Member member = memberRepository.findWithLoansById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
 
         return member.checkLoanEligibility();
@@ -176,7 +176,7 @@ public class LoanServiceImpl implements LoanService {
 
     @Override 
     public BigDecimal calculateMaxLoanAmount(Long memberId) {
-        Member member = memberRepository.findById(memberId)
+        Member member = memberRepository.findWithLoansById(memberId)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + memberId));
 
         // Vérifier l'éligibilité

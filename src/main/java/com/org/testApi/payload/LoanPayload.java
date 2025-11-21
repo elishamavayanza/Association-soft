@@ -13,6 +13,12 @@ public class LoanPayload extends BasePayload {
     private Long documentId;
     private Long loanTypeId;
     private BigDecimal amount;
+    /**
+     * Devise du montant du prêt.
+     * Par défaut, CDF (Franc congolais) si non spécifiée.
+     * Valeurs possibles : CDF, USD, EUR
+     */
+    private com.org.testApi.models.Currency currency;
     private BigDecimal interestRate;
     private BigDecimal penaltyRate;
     private LocalDate dueDate;

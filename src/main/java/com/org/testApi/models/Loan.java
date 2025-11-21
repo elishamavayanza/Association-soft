@@ -66,6 +66,15 @@ public class Loan extends BaseEntity {
     private BigDecimal amount;
 
     /**
+     * Devise du montant du prêt.
+     * Par défaut, CDF (Franc congolais).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency", nullable = false)
+    @Builder.Default
+    private Currency currency = Currency.CDF;
+
+    /**
      * Taux d'intérêt appliqué au prêt.
      */
     private BigDecimal interestRate;
