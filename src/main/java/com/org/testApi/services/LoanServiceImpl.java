@@ -9,6 +9,7 @@ import com.org.testApi.repository.DocumentRepository;
 import com.org.testApi.repository.LoanRepository;
 import com.org.testApi.repository.MemberRepository;
 import com.org.testApi.models.MembershipFee;
+import com.org.testApi.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,9 @@ public class LoanServiceImpl implements LoanService {
     
     @Autowired
     private DocumentRepository documentRepository;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     public Loan createLoan(Long memberId, BigDecimal amount, BigDecimal interestRate, BigDecimal penaltyRate, LocalDate dueDate) {
@@ -75,7 +79,12 @@ public class LoanServiceImpl implements LoanService {
         loan.setLoanDate(LocalDate.now());
         loan.setDueDate(dueDate);
 
-        return loanRepository.save(loan);
+        Loan savedLoan = loanRepository.save(loan);
+        
+        // Envoyer une notification SMS au membre
+        sendLoanCreationNotification(member, savedLoan);
+        
+        return savedLoan;
     }
 
     @Override
@@ -98,22 +107,40 @@ public class LoanServiceImpl implements LoanService {
             throw new RuntimeException("Ce prêt est déjà remboursé");
         }
 
-        // Vérifier que le montant remboursé n'est pas supérieur au montant dû
-        BigDecimal totalAmountDue = loan.getTotalAmountDue();
-        if (amount.compareTo(totalAmountDue) > 0) {
-            throw new RuntimeException("Le montant remboursé ne peut pas être supérieur au montant dû");
+        // Vérifier que le montant remboursé est positif
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Le montant remboursé doit être supérieur à zéro");
         }
 
-        // Mettre à jour le prêt
-        loan.setAmountRepaid(amount);
+        // Calculer le montant total dû
+        BigDecimal totalAmountDue = loan.getTotalAmountDue();
+        
+        // Calculer le montant déjà remboursé (ou 0 si null)
+        BigDecimal amountAlreadyRepaid = loan.getAmountRepaid() != null ? loan.getAmountRepaid() : BigDecimal.ZERO;
+        
+        // Vérifier que le montant remboursé n'est pas supérieur au montant restant dû
+        BigDecimal amountRemaining = totalAmountDue.subtract(amountAlreadyRepaid);
+        if (amount.compareTo(amountRemaining) > 0) {
+            throw new RuntimeException("Le montant remboursé ne peut pas être supérieur au montant restant dû (" + amountRemaining + ")");
+        }
+
+        // Mettre à jour le montant remboursé
+        BigDecimal newAmountRepaid = amountAlreadyRepaid.add(amount);
+        loan.setAmountRepaid(newAmountRepaid);
         loan.setRepaymentDate(LocalDate.now());
 
-        // Si le montant remboursé est égal au montant dû, marquer comme remboursé
-        if (amount.compareTo(totalAmountDue) == 0) {
+        // Si le montant remboursé est égal ou supérieur au montant dû, marquer comme remboursé
+        if (newAmountRepaid.compareTo(totalAmountDue) >= 0) {
             loan.setStatus(Loan.LoanStatus.REPAID);
         }
-
-        return loanRepository.save(loan);
+        
+        // Sauvegarder le prêt - cela déclenchera automatiquement updateStatus() via les callbacks JPA
+        Loan repaidLoan = loanRepository.save(loan);
+        
+        // Envoyer une notification SMS au membre
+        sendLoanRepaymentNotification(loan.getMember(), repaidLoan, amount);
+        
+        return repaidLoan;
     }
 
     @Override
@@ -244,5 +271,80 @@ public class LoanServiceImpl implements LoanService {
     @Override
     public List<Loan> findLoansByLoanTypeId(Long loanTypeId) {
         return loanRepository.findByLoanTypeId(loanTypeId);
+    }
+    
+    /**
+     * Envoie une notification de création de prêt par SMS au membre
+     * @param member Le membre qui reçoit le prêt
+     * @param loan Le prêt créé
+     */
+    private void sendLoanCreationNotification(Member member, Loan loan) {
+        try {
+            // Vérifier si le membre a un numéro de téléphone
+            if (member.getPhone() != null && !member.getPhone().isEmpty()) {
+                String message = String.format(
+                    "Bonjour %s %s, votre prêt de %s %s a été approuvé et est maintenant actif. " +
+                    "Date d'échéance: %s. Merci de votre confiance.",
+                    member.getFirstName(),
+                    member.getLastName(),
+                    loan.getAmount(),
+                    loan.getCurrency(),
+                    loan.getDueDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                );
+                
+                notificationService.sendSmsNotification(member.getPhone(), message);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send loan creation SMS notification to member " + member.getId() + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Envoie une notification de remboursement de prêt par SMS au membre
+     * @param member Le membre qui rembourse le prêt
+     * @param loan Le prêt remboursé
+     * @param amount Le montant remboursé
+     */
+    private void sendLoanRepaymentNotification(Member member, Loan loan, BigDecimal amount) {
+        try {
+            // Vérifier si le membre a un numéro de téléphone
+            if (member.getPhone() != null && !member.getPhone().isEmpty()) {
+                String message;
+                
+                // Vérifier si le prêt est entièrement remboursé
+                if (loan.getStatus() == Loan.LoanStatus.REPAID) {
+                    message = String.format(
+                        "Bonjour %s %s, votre remboursement de %s %s pour le prêt #%d a été enregistré avec succès. " +
+                        "Félicitations, vous n'avez plus de dette. Merci pour votre confiance.",
+                        member.getFirstName(),
+                        member.getLastName(),
+                        amount,
+                        loan.getCurrency(),
+                        loan.getId()
+                    );
+                } else {
+                    // Calculer le montant restant à rembourser
+                    BigDecimal totalAmountDue = loan.getTotalAmountDue();
+                    BigDecimal amountRepaid = loan.getAmountRepaid() != null ? loan.getAmountRepaid() : BigDecimal.ZERO;
+                    BigDecimal amountRemaining = totalAmountDue.subtract(amountRepaid);
+                    
+                    message = String.format(
+                        "Bonjour %s %s, votre remboursement de %s %s pour le prêt #%d a été enregistré avec succès. " +
+                        "Reste à rembourser: %s %s. Merci pour votre confiance.",
+                        member.getFirstName(),
+                        member.getLastName(),
+                        amount,
+                        loan.getCurrency(),
+                        loan.getId(),
+                        amountRemaining,
+                        loan.getCurrency()
+                    );
+                }
+                
+                notificationService.sendSmsNotification(member.getPhone(), message);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send loan repayment SMS notification to member " + member.getId() + ": " + e.getMessage());
+        }
     }
 }

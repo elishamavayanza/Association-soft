@@ -15,6 +15,7 @@ import com.org.testApi.repository.LoanTypeRepository;
 import com.org.testApi.repository.MemberRepository;
 import com.org.testApi.dto.LoanEligibilityResult;
 import com.org.testApi.dto.response.LoanResponseDTO;
+import com.org.testApi.services.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -61,6 +62,9 @@ public class LoanController {
     
     @Autowired
     private LoanTypeRepository loanTypeRepository;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     /**
      * Crée un nouveau prêt pour un membre.
@@ -218,6 +222,10 @@ public class LoanController {
 
             // Save the loan without cascading to the member's loans collection
             Loan savedLoan = loanRepository.saveAndFlush(loan);
+            
+            // Envoyer une notification SMS au membre
+            sendLoanCreationNotification(member, savedLoan);
+            
             return ResponseEntity.ok(savedLoan);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -276,8 +284,16 @@ public class LoanController {
     public ResponseEntity<Loan> repayLoan(
             @Parameter(description ="ID du prêt à rembourser") @PathVariable Long id,
             @Parameter(description = "Montant du remboursement") @RequestParam BigDecimal amount) {
-        Loan loan = loanService.repayLoan(id, amount);
-        return ResponseEntity.ok(loan);
+        try {
+            Loan loan = loanService.repayLoan(id, amount);
+            
+            // Envoyer une notification SMS au membre
+            sendLoanRepaymentNotification(loan.getMember(), loan, amount);
+            
+            return ResponseEntity.ok(loan);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**
@@ -609,5 +625,60 @@ public class LoanController {
     public ResponseEntity<Integer> applyAutomaticPenalties() {
         int count = automaticPenaltyService.applyAutomaticPenalties(LocalDate.now());
         return ResponseEntity.ok(count);
+    }
+    
+    /**
+     * Envoie une notification de création de prêt par SMS au membre
+     * @param member Le membre qui reçoit le prêt
+     * @param loan Le prêt créé
+     */
+    private void sendLoanCreationNotification(Member member, Loan loan) {
+        try {
+            // Vérifier si le membre a un numéro de téléphone
+            if (member.getPhone() != null && !member.getPhone().isEmpty()) {
+                String message = String.format(
+                    "Bonjour %s %s, votre prêt de %s %s a été approuvé et est maintenant actif. " +
+                    "Date d'échéance: %s. Merci de votre confiance.",
+                    member.getFirstName(),
+                    member.getLastName(),
+                    loan.getAmount(),
+                    loan.getCurrency(),
+                    loan.getDueDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                );
+                
+                notificationService.sendSmsNotification(member.getPhone(), message);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send loan creation SMS notification to member " + member.getId() + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Envoie une notification de remboursement de prêt par SMS au membre
+     * @param member Le membre qui rembourse le prêt
+     * @param loan Le prêt remboursé
+     * @param amount Le montant remboursé
+     */
+    private void sendLoanRepaymentNotification(Member member, Loan loan, BigDecimal amount) {
+        try {
+            // Vérifier si le membre a un numéro de téléphone
+            if (member.getPhone() != null && !member.getPhone().isEmpty()) {
+                String message = String.format(
+                    "Bonjour %s %s, votre remboursement de %s %s pour le prêt #%d a été enregistré avec succès. " +
+                    "Reste à rembourser: %s %s. Merci pour votre confiance.",
+                    member.getFirstName(),
+                    member.getLastName(),
+                    amount,
+                    loan.getCurrency(),
+                    loan.getId(),
+                    loan.getTotalAmountDue().subtract(amount),
+                    loan.getCurrency()
+                );
+                
+                notificationService.sendSmsNotification(member.getPhone(), message);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send loan repayment SMS notification to member " + member.getId() + ": " + e.getMessage());
+        }
     }
 }
