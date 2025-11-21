@@ -484,7 +484,18 @@ public class LoanController {
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"memberId\": 7,\n  \"documentId\":1,\n  \"amount\": 1500.00,\n  \"currency\": \"USD\",\n  \"interestRate\": 0.07,\n  \"penaltyRate\": 0.10,\n  \"dueDate\": \"2025-12-31\",\n  \"repaymentDate\": \"2025-12-30\",\n  \"amountRepaid\": 1600.00,\n  \"status\": \"REPAID\"\n}"
+                                    value = "{\n" +
+                                            "  \"memberId\": 7,\n" +
+                                            "  \"documentId\": 1,\n" +
+                                            "  \"loanTypeId\": 1,\n" +
+                                            "  \"amount\": 1500,\n" +
+                                            "  \"currency\": \"USD\",\n" +
+                                            "  \"dueDate\": \"2025-12-31\",\n" +
+                                            "  \"repaymentDate\": \"2025-12-30\",\n" +
+                                            "  \"amountRepaid\": 1600,\n" +
+                                            "  \"status\": \"REPAID\"\n" +
+                                            "}"
+
                             )
                     )
             )
@@ -511,11 +522,29 @@ public class LoanController {
                     loan.setDueDate(payload.getDueDate());
                     loan.setRepaymentDate(payload.getRepaymentDate());
                     loan.setAmountRepaid(payload.getAmountRepaid());
+                    loan.setCurrency(payload.getCurrency() != null ? payload.getCurrency() : Currency.CDF);
+                    
                     if (payload.getStatus() != null) {
                         try {
                             loan.setStatus(Loan.LoanStatus.valueOf(payload.getStatus().toUpperCase()));
                         } catch (IllegalArgumentException e) {
                             throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
+                        }
+                    }
+                    
+                    // Associer le type de prêt si fourni et utiliser ses taux
+                    if (payload.getLoanTypeId() != null) {
+                        LoanType loanType = loanTypeRepository.findById(payload.getLoanTypeId())
+                                .orElseThrow(() -> new RuntimeException("Type de prêt non trouvé avec l'ID: " + payload.getLoanTypeId()));
+                        loan.setLoanType(loanType);
+                        
+                        // Utiliser les taux du type de prêt si non spécifiés dans le payload
+                        if (payload.getInterestRate() == null && loanType.getMonthlyInterestRate() != null) {
+                            loan.setInterestRate(loanType.getMonthlyInterestRate());
+                        }
+                        
+                        if (payload.getPenaltyRate() == null && loanType.getMaxPenaltyRate() != null) {
+                            loan.setPenaltyRate(loanType.getMaxPenaltyRate());
                         }
                     }
 
@@ -559,6 +588,7 @@ public class LoanController {
                     responseDTO.setRepaymentDate(updatedLoan.getRepaymentDate());
                     responseDTO.setAmountRepaid(updatedLoan.getAmountRepaid());
                     responseDTO.setStatus(updatedLoan.getStatus() != null ? updatedLoan.getStatus().name() : null);
+                    responseDTO.setCurrency(updatedLoan.getCurrency());
 
                     return ResponseEntity.ok().body(responseDTO);
                 })

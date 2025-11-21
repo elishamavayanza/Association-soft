@@ -1,6 +1,7 @@
 package com.org.testApi.dto.response;
 
 import com.org.testApi.dto.BaseEntityDTO;
+import com.org.testApi.models.Currency;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,4 +29,5 @@ public class LoanResponseDTO extends BaseEntityDTO {
     private LocalDate repaymentDate;
     private BigDecimal amountRepaid;
     private String status;
+    private Currency currency;
 }
