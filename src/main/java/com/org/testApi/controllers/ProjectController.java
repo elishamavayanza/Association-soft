@@ -4,6 +4,10 @@ import com.org.testApi.models.Project;
 import com.org.testApi.payload.ProjectPayload;
 import com.org.testApi.services.ProjectService;
 import com.org.testApi.mapper.ProjectMapper;
+import com.org.testApi.services.MemberService;
+import com.org.testApi.models.ProjectMember;
+import com.org.testApi.models.Member;
+import com.org.testApi.repository.ProjectMemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,6 +32,12 @@ public class ProjectController {
 
     @Autowired
     private ProjectMapper projectMapper;
+    
+    @Autowired
+    private MemberService memberService;
+    
+    @Autowired
+    private ProjectMemberRepository projectMemberRepository;
 
 @GetMapping
     @Operation(summary = "Récupérer tous les projets", description = "Retourne une liste de tous les projets")
@@ -83,7 +93,7 @@ public class ProjectController {
     }
 
 @PostMapping("/payload")
-    @Operation(summary = "Créer un projet à partir d'un payload", description = "Crée un projet en utilisant un objet payload")
+    @Operation(summary = "Créer un projet à partir d'un payload", description = "Crée un projet en utilisant un objet payload. Note : Vous pouvez créer un projet indépendamment des transactions financières. Pour associer des transactions existantes à ce projet, incluez leurs IDs dans le tableau transactionIds.")
     @ApiResponses(value ={
             @ApiResponse(responseCode = "200", description = "Projet créé avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
@@ -93,7 +103,7 @@ public class ProjectController {
     })
     public ResponseEntity<Project> createProjectFromPayload(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Exemple de payload pour créer un projet",
+                    description = "Exemple de payload pour créer un projet. Pour associer ce projet à des transactions financières existantes, incluez leurs IDs dans le tableau transactionIds. Vous pouvez également créer des transactions séparément et les associer plus tard.",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
@@ -104,6 +114,22 @@ public class ProjectController {
             @Parameter(description = "Données du payload pour créer le projet") @RequestBody ProjectPayload payload) {
         Project project = projectMapper.toEntityFromPayload(payload);
         Project savedProject = projectService.saveProject(project);
+        
+        // Handle member associations if memberIds are provided
+        if (payload.getMemberIds() != null && !payload.getMemberIds().isEmpty()) {
+            final Project finalSavedProject = savedProject; // Create final reference for lambda
+            for (Long memberId : payload.getMemberIds()) {
+                memberService.getMemberById(memberId).ifPresent(member -> {
+                    ProjectMember projectMember = new ProjectMember();
+                    projectMember.setProject(finalSavedProject); // Use final reference
+                    projectMember.setMember(member);
+                    projectMemberRepository.save(projectMember);
+                });
+            }
+            // Refresh the project to include the newly added members
+            savedProject = projectService.getProjectById(savedProject.getId()).orElse(savedProject);
+        }
+        
         return ResponseEntity.ok(savedProject);
     }
 

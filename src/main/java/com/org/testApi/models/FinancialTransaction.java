@@ -5,6 +5,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.org.testApi.validation.ValidCurrency;
+
 /**
  * Représente une transaction financière liée à une association.
  * <p>
@@ -36,6 +38,7 @@ public class FinancialTransaction extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "currency", nullable = false)
     @Builder.Default
+    @ValidCurrency
     private Currency currency = Currency.CDF;
 
     /**
