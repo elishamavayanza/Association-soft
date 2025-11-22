@@ -11,7 +11,7 @@ import java.util.List;
 
 @Repository
 public class UserRepositoryImpl implements UserRepositoryCustom {
-
+    
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -63,11 +63,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     @Override
     public List<User> findUsersWithRoles(int limit) {
-        String jpql = """
-            SELECT DISTINCT u FROM User u 
-            LEFT JOIN FETCH u.roles 
-            ORDER BY u.username ASC
-            """;
+        String jpql = "SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles ORDER BY u.username ASC";
         return entityManager.createQuery(jpql, User.class)
                 .setMaxResults(limit)
                 .getResultList();
@@ -75,14 +71,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     @Override
     public List<Object[]> findInactiveUsersWithEventCount(LocalDateTime sinceDate) {
-        String jpql = """
-            SELECT u, COUNT(a) 
-            FROM User u 
-            LEFT JOIN u.attendedEvents a 
-            WHERE u.lastLogin < :sinceDate OR u.lastLogin IS NULL 
-            GROUP BY u.id 
-            ORDER BY u.lastLogin ASC
-            """;
+        String jpql = "SELECT u, COUNT(a) FROM User u LEFT JOIN u.attendedEvents a WHERE u.lastLogin < :sinceDate OR u.lastLogin IS NULL GROUP BY u.id ORDER BY u.lastLogin ASC";
         return entityManager.createQuery(jpql, Object[].class)
                 .setParameter("sinceDate", sinceDate)
                 .getResultList();

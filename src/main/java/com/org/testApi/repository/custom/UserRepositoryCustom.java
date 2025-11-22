@@ -1,9 +1,12 @@
 package com.org.testApi.repository.custom;
 
 import com.org.testApi.models.User;
+import org.springframework.stereotype.Repository;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Repository
 public interface UserRepositoryCustom {
 
     /**

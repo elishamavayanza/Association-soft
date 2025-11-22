@@ -16,7 +16,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        globally_quoted_identifiers: true
+        globally_quoted_identifiers: false
+        id:
+          new_generator_mappings: false
+  
+  # Configuration Flyway
+  flyway:
+    baseline-on-migrate: true
+    enabled: true
+    mixed: true
   
   # CONFIGURATION POUR AUTORISER L'OVERRIDE DES BEANS
   main:
@@ -26,14 +34,18 @@ spring:
     console:
       enabled: false
 
+  # Configuration du fuseau horaire
+  jackson:
+    time-zone: Africa/Lubumbashi
+
   # ==============================================
   # CONFIGURATION DES EMAILS (reste inchangé)
   # ==============================================
   mail:
     host: smtp.gmail.com
     port: 587
-    username: votre-email@gmail.com
-    password: votre-mot-de-passe-app
+    username: vayanzaelishama.com
+    password: El16.12.2003
     properties:
       mail:
         smtp:
@@ -52,10 +64,6 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-
-  mvc:
-    async:
-      request-timeout: 30s
 
 # ==============================================
 # CONFIGURATION DU STOCKAGE DE FICHIERS
@@ -84,11 +92,11 @@ aws:
 # ==============================================
 twilio:
   account:
-    sid: votre-account-sid
+    sid: vayanzaelishama@gmail.com
   auth:
-    token: votre-auth-token
+    token: El16.12.2004
   phone:
-    number: "+1234567890"
+    number: "+243991471988"
 
 # ==============================================
 # CONFIGURATION FIREBASE
@@ -115,7 +123,7 @@ apns:
 # CONFIGURATIONS DIVERSES
 # ==============================================
 server:
-  port: 8085
+  port: 8089
 
 # ====================================================
 # CONFIGURATION SPRINGDOC OPENAPI (SWAGGER)

@@ -3,6 +3,7 @@ package com.org.testApi.dto.request;
 import com.org.testApi.dto.BaseEntityDTO;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDate;
 
 /**
@@ -10,6 +11,7 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
+@SuperBuilder
 public class ProjectRequestDTO extends BaseEntityDTO {
 
     private String name;

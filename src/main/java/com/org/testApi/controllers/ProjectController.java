@@ -4,6 +4,10 @@ import com.org.testApi.models.Project;
 import com.org.testApi.payload.ProjectPayload;
 import com.org.testApi.services.ProjectService;
 import com.org.testApi.mapper.ProjectMapper;
+import com.org.testApi.services.MemberService;
+import com.org.testApi.models.ProjectMember;
+import com.org.testApi.models.Member;
+import com.org.testApi.repository.ProjectMemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,18 +32,24 @@ public class ProjectController {
 
     @Autowired
     private ProjectMapper projectMapper;
+    
+    @Autowired
+    private MemberService memberService;
+    
+    @Autowired
+    private ProjectMemberRepository projectMemberRepository;
 
 @GetMapping
     @Operation(summary = "Récupérer tous les projets", description = "Retourne une liste de tous les projets")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des projets récupérée avec succès",
-content ={@Content(mediaType = "application/json",
+                    content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<List<Project>> getAllProjects() {
         List<Project> projects = projectService.getAllProjects();
-return ResponseEntity.ok(projects);
+        return ResponseEntity.ok(projects);
     }
 
     @GetMapping("/{id}")
@@ -59,13 +69,13 @@ return ResponseEntity.ok(projects);
     }
 
     @PostMapping
-    @Operation(summary = "Créer unnouveau projet", description = "Crée un nouveau projet avec les données fournies")
+    @Operation(summary = "Créer un nouveau projet", description = "Crée un nouveau projet avec les données fournies")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Projet créé avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
-            @ApiResponse(responseCode = "500", description = "Erreur interneduserveur")
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Project> createProject(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -83,48 +93,64 @@ return ResponseEntity.ok(projects);
     }
 
 @PostMapping("/payload")
-    @Operation(summary = "Créer un projet à partir d'un payload", description = "Crée un projet en utilisant un objet payload")
+    @Operation(summary = "Créer un projet à partir d'un payload", description = "Crée un projet en utilisant un objet payload. Note : Vous pouvez créer un projet indépendamment des transactions financières. Pour associer des transactions existantes à ce projet, incluez leurs IDs dans le tableau transactionIds.")
     @ApiResponses(value ={
             @ApiResponse(responseCode = "200", description = "Projet créé avec succès à partir du payload",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
-            @ApiResponse(responseCode = "400", description = "Données de payloadinvalides"),
+            @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Project> createProjectFromPayload(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Exemple de payload pour créer un projet",
+                    description = "Exemple de payload pour créer un projet. Pour associer ce projet à des transactions financières existantes, incluez leurs IDs dans le tableau transactionIds. Vous pouvez également créer des transactions séparément et les associer plus tard.",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"name\": \"Projet de développementcommunautaire\",\n  \"description\": \"Développement d'une application pour gérer les projets communautaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-04-30\",\n  \"associationId\": 1,\n  \"managerId\": 2,\n  \"activityIds\": [1, 2, 3],\n  \"memberIds\": [10, 15, 20],\n  \"transactionIds\": [100, 101],\n  \"status\": \"PLANNING\"\n}"
+                                    value = "{\n  \"name\": \"Projet de développement communautaire\",\n  \"description\": \"Développement d'une application pour gérer les projets communautaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-04-30\",\n  \"associationId\": 1,\n  \"managerId\": 2,\n  \"activityIds\": [1, 2, 3],\n  \"memberIds\": [10, 15, 20],\n  \"transactionIds\": [100, 101],\n  \"status\": \"PLANNING\"\n}"
                            )
                     )
             )
             @Parameter(description = "Données du payload pour créer le projet") @RequestBody ProjectPayload payload) {
         Project project = projectMapper.toEntityFromPayload(payload);
         Project savedProject = projectService.saveProject(project);
+        
+        // Handle member associations if memberIds are provided
+        if (payload.getMemberIds() != null && !payload.getMemberIds().isEmpty()) {
+            final Project finalSavedProject = savedProject; // Create final reference for lambda
+            for (Long memberId : payload.getMemberIds()) {
+                memberService.getMemberById(memberId).ifPresent(member -> {
+                    ProjectMember projectMember = new ProjectMember();
+                    projectMember.setProject(finalSavedProject); // Use final reference
+                    projectMember.setMember(member);
+                    projectMemberRepository.save(projectMember);
+                });
+            }
+            // Refresh the project to include the newly added members
+            savedProject = projectService.getProjectById(savedProject.getId()).orElse(savedProject);
+        }
+        
         return ResponseEntity.ok(savedProject);
     }
 
 @PutMapping("/{id}")
-    @Operation(summary = "Mettre à jour un projet", description ="Met à jour un projet existant avec les donnéesfournies")
-   @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Projet mis àjour avec succès",
-content= {@Content(mediaType = "application/json",
+    @Operation(summary = "Mettre à jour un projet", description = "Met à jour un projet existant avec les données fournies")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Projet mis à jour avec succès",
+                    content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Project.class))}),
             @ApiResponse(responseCode = "404", description = "Projet non trouvé"),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
-           @ApiResponse(responseCode= "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Project> updateProject(
             @Parameter(description = "ID du projet à mettre à jour") @PathVariable Long id,
-@io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Exemple de projet àmettre à jour",
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Exemple de projet à mettre à jour",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"name\": \"Projet de développement misà jour\",\n\"description\": \"Développement d'une nouvelle application avec des fonctionnalités supplémentaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-06-30\",\n  \"status\": \"IN_PROGRESS\"\n}"
+                                    value = "{\n  \"name\": \"Projet de développement mis à jour\",\n  \"description\": \"Développement d'une nouvelle application avec des fonctionnalités supplémentaires\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-06-30\",\n  \"status\": \"IN_PROGRESS\"\n}"
 )
 )
             )
@@ -134,7 +160,7 @@ content= {@Content(mediaType = "application/json",
             return ResponseEntity.ok(updatedProject);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
-}
+        }
     }
 
     @PutMapping("/{id}/payload")

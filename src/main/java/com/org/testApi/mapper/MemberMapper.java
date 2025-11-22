@@ -13,7 +13,7 @@ import org.mapstruct.Named;
 /**
  * Mapper pour l'entité Member et ses DTOs associés.
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {MemberPhotoMapper.class})
 public interface MemberMapper extends BaseMapper<Member, MemberDTO> {
 
     @Mapping(target = "user", ignore = true)
@@ -27,6 +27,10 @@ public interface MemberMapper extends BaseMapper<Member, MemberDTO> {
     @Mapping(target = "associationId", source = "association.id")
     @Mapping(target = "memberCode", source = "memberCode")
     MemberResponseDTO toResponseDto(Member entity);
+
+    @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "associationId", source = "association.id")
+    MemberDTO toDto(Member entity);
 
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "association", ignore = true)

@@ -1,5 +1,6 @@
 package com.org.testApi.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.FutureOrPresent;
@@ -68,8 +69,7 @@ public class Activity extends BaseEntity {
     @Column(length = 100)
     private String location;
 
-    @Builder.Default
-    private Boolean deleted = false;
+    private Boolean deleted;
 
 
     /**
@@ -98,15 +98,28 @@ public class Activity extends BaseEntity {
     private User creator;
 
     /**
-     * Liste des participants à l'activité.
+     * Liste des membres participants à l'activité.
      */
     @ManyToMany
-    @JoinTable(name = "activity_participants",
+    @JoinTable(name = "activity_member_participants",
+            joinColumns = @JoinColumn(name = "activity_id"),
+            inverseJoinColumns = @JoinColumn(name = "member_id"))
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Member> memberParticipants = new ArrayList<>();
+
+    /**
+     * Liste des utilisateurs participants à l'activité.
+     */
+    @ManyToMany
+    @JoinTable(name = "activity_user_participants",
             joinColumns = @JoinColumn(name = "activity_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id"))
     @Builder.Default
     @ToString.Exclude
-    private List<User> participants = new ArrayList<>();
+    @JsonIgnore
+    private List<User> userParticipants = new ArrayList<>();
 
     /**
      * Liste des transactions financières associées à cette activité.
@@ -130,6 +143,7 @@ public class Activity extends BaseEntity {
      * Statut actuel de l'activité (par défaut : {@code PLANNED}).
      */
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private ActivityStatus status = ActivityStatus.PLANNED;
 
     /**

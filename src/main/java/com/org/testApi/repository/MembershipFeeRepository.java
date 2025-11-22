@@ -1,6 +1,7 @@
 package com.org.testApi.repository;
 
 import com.org.testApi.models.MembershipFee;
+import com.org.testApi.models.MembershipFeeType;
 import com.org.testApi.repository.base.BaseRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,10 @@ public interface MembershipFeeRepository extends BaseRepository<MembershipFee, L
     List<MembershipFee> findByMemberId(Long memberId);
 
     List<MembershipFee> findByPaymentMethod(MembershipFee.PaymentMethod paymentMethod);
+
+    List<MembershipFee> findByFeeType(MembershipFeeType feeType);
+
+    List<MembershipFee> findByMemberIdAndFeeType(Long memberId, MembershipFeeType feeType);
 
     List<MembershipFee> findByPaymentDateBetween(LocalDate startDate, LocalDate endDate);
 

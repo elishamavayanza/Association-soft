@@ -1,5 +1,7 @@
 package com.org.testApi.controllers;
 
+import com.org.testApi.dto.response.MemberResponseDTO;
+import com.org.testApi.models.MemberType;
 import com.org.testApi.models.Member;
 import com.org.testApi.payload.MemberPayload;
 import com.org.testApi.services.MemberService;
@@ -24,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
@@ -48,7 +51,7 @@ public class MemberController {
     private AssociationService associationService;
 
     @GetMapping
-    @Operation(summary = "Récupérer tous les membres", description = "Retourne une liste de tous les membres")
+    @Operation(summary = "Récupérer tous les membres", description ="Retourne une liste de tous les membres")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des membres récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
@@ -56,7 +59,9 @@ public class MemberController {
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<List<MemberDTO>> getAllMembers() {
-        List<Member> members = memberService.getAllMembers();
+        List<Member> members = memberService.getAllMembers().stream()
+                .filter(Member::isActive) // Only return active members
+                .collect(Collectors.toList());
         List<MemberDTO> memberDTOs = members.stream()
                 .map(memberMapper::toDto)
                 .collect(Collectors.toList());
@@ -66,7 +71,7 @@ public class MemberController {
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un membre par ID", description = "Retourne un membre spécifique en fonction de son ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Membre trouvé",
+           @ApiResponse(responseCode = "200", description = "Membre trouvé",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MemberDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
@@ -74,24 +79,36 @@ public class MemberController {
     })
     public ResponseEntity<MemberDTO> getMemberById(
             @Parameter(description = "ID du membre à récupérer") @PathVariable Long id) {
-        return memberService.getMemberById(id)
-                .map(member -> ResponseEntity.ok(memberMapper.toDto(member)))
-                .orElse(ResponseEntity.notFound().build());
+        Optional<Member> memberOpt = memberService.getMemberById(id);
+        if (memberOpt.isPresent()) {
+            Member member = memberOpt.get();
+            logger.info("Retrieved member with id {}: active={}", id, member.isActive());
+            if (member.isActive()) {
+                return ResponseEntity.ok(memberMapper.toDto(member));
+            } else {
+                logger.info("Member with id {} is inactive, returning 404", id);
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            logger.info("Member with id {} not found", id);
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // New endpoint to find member by memberCode
     @GetMapping("/code/{memberCode}")
-    @Operation(summary = "Récupérer un membre par code membre", description = "Retourne un membre spécifique en fonction de son code membre")
+    @Operation(summary = "Récupérer un membre par code membre", description = "Retourne un membrespécifique en fonction de son code membre")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Membre trouvé",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MemberDTO.class))}),
-            @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
+            @ApiResponse(responseCode ="404", description = "Membre non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<MemberDTO> getMemberByMemberCode(
             @Parameter(description = "Code du membre à récupérer") @PathVariable String memberCode) {
         return memberService.findByMemberCode(memberCode)
+                .filter(member -> member.isActive()) // Only return active members
                 .map(member -> ResponseEntity.ok(memberMapper.toDto(member)))
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -116,7 +133,7 @@ public class MemberController {
                             examples = @ExampleObject(
                                     name = "Exemple de création de membre avec entité complète",
                                     summary = "Exemple de création de membre avec entité complète",
-                                    value = "{\n  \"user\": {\n    \"id\": 6\n  },\n  \"association\": {\n    \"id\": 3\n  }\n}"
+value = "{\n  \"user\": {\n    \"id\": 6\n  },\n  \"association\": {\n    \"id\": 3\n  }\n}"
                             )
                     )
             ) @RequestBody Member member) {
@@ -127,10 +144,10 @@ public class MemberController {
             member.setUser(user);
         }
 
-        // Check if association exists when association ID is provided directly in the member entity
+        //Check if association exists when association ID is provided directly in the member entity
         if (member.getAssociation() != null && member.getAssociation().getId() != null) {
             Association association = associationService.getAssociationById(member.getAssociation().getId())
-                    .orElseThrow(() -> new RuntimeException("Association not found with id: " + member.getAssociation().getId()));
+                    .orElseThrow(() -> new RuntimeException("Association not found with id:" + member.getAssociation().getId()));
             member.setAssociation(association);
         }
 
@@ -143,30 +160,133 @@ public class MemberController {
         return ResponseEntity.ok(memberMapper.toDto(savedMember));
     }
 
+    @PostMapping("/bulk")
+    @Operation(summary = "Créer plusieurs membres", description = "Crée plusieurs membres en une seule requête")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Membres créés avec succès",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = MemberDTO.class))}),
+        @ApiResponse(responseCode = "400", description= "Données de requête invalides"),
+        @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<MemberResponseDTO>> createMembersBulk(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Liste des données des membres à créer",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MemberPayload.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de création de membres multiples",
+                                    summary = "Exemple de création de membres multiples",
+                                    value = "[\n  {\n    \"userId\": 2,\n    \"firstName\": \"Papa\",\n    \"lastName\": \"Jean\",\n    \"email\": \"gae.leroy@exa.com\",\n    \"phone\": \"+33198765432\",\n    \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n    \"associationId\": 1,\n    \"photo\": \"/path/to/photo.jpg\"\n  },\n  {\n    \"userId\": 2,\n    \"firstName\": \"Marie\",\n    \"lastName\": \"Dupont\",\n    \"email\": \"marie.dupont@exa.com\",\n    \"phone\": \"+33678901234\",\n    \"address\": \"12 Rue de Rivoli, 75001 Paris, France\",\n    \"associationId\": 1,\n    \"photo\": \"/images/marie.jpg\"\n  }\n]"
+                            )
+                    )
+            ) @RequestBody List<MemberPayload> payloads) {
+        try {
+            logger.info("Starting bulk member creation for {} members", payloads.size());
+
+            List<MemberResponseDTO> createdMembers = payloads.stream().map(payload -> {
+                logger.info("Processing member creation from payload: {}", payload);
+
+                // Check if user exists
+                logger.info("Checking if user exists with ID: {}", payload.getUserId());
+                User user = userService.getUserById(payload.getUserId())
+                        .orElseThrow(() -> {
+                            logger.error("User not found with id: {}", payload.getUserId());
+                            return new RuntimeException("User not found with id: " + payload.getUserId());
+                        });
+
+                // Update user information from payload if provided
+                if (payload.getFirstName() != null) {
+                    user.setFirstName(payload.getFirstName());
+                }
+                if (payload.getLastName() != null) {
+                    user.setLastName(payload.getLastName());
+                }
+                if (payload.getEmail() != null) {
+                    user.setEmail(payload.getEmail());
+                }
+                if (payload.getPhone() != null) {
+                    user.setPhoneNumber(payload.getPhone());
+                }
+                if (payload.getPhoto() != null) {
+                    user.setPhoto(payload.getPhoto());
+                }
+
+                // Save updated user information
+                userService.updateUser(user.getId(), user);
+
+                // Check if association exists
+                logger.info("Checking if association exists with ID: {}", payload.getAssociationId());
+                Association association = associationService.getAssociationById(payload.getAssociationId())
+                        .orElseThrow(() -> {
+                            logger.error("Association not found with id: {}", payload.getAssociationId());
+                            return new RuntimeException("Association not found with id: " + payload.getAssociationId());
+                        });
+
+                logger.info("Creating member entity from payload");
+                Member member = memberMapper.toEntityFromPayload(payload);
+                if (member == null) {
+                    logger.error("Failed to map payload to Member entity");
+                    throw new RuntimeException("Failed to map payload to Member entity");
+                }
+                member.setUser(user);
+                member.setAssociation(association);
+
+                // Set member code if not provided
+                logger.info("Setting member code");
+                if (member.getMemberCode() == null) {
+                    if (payload.getMemberCode() != null) {
+                        member.setMemberCode(payload.getMemberCode());
+                    } else {
+                        member.setMemberCode(generateUniqueMemberCode());
+                    }
+                }
+
+                logger.info("Saving member with code: {}", member.getMemberCode());
+                Member savedMember = memberService.saveMember(member);
+                logger.info("Member created successfully with ID: {}", savedMember.getId());
+
+                // Create response DTO and ensure userId and associationId are properly set
+                MemberResponseDTO responseDTO = memberMapper.toResponseDto(savedMember);
+                responseDTO.setUserId(payload.getUserId());
+                responseDTO.setAssociationId(payload.getAssociationId());
+                
+                return responseDTO;
+            }).collect(Collectors.toList());
+
+            logger.info("Bulk member creation completed successfully. Created {} members", createdMembers.size());
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdMembers);
+        } catch (Exception e) {
+            logger.error("Error during bulk member creation: ", e);
+            throw new RuntimeException("Error during bulk member creation: " + e.getMessage(), e);
+        }
+    }
+
     @PostMapping("/payload")
     @Operation(summary = "Créer un membre à partir d'un payload", description = "Crée un nouveau membre en utilisant un objet payload contenant les informations du membre")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Membre créé avec succès",
                 content = {@Content(mediaType = "application/json",
                         schema = @Schema(implementation = MemberDTO.class))}),
-        @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+        @ApiResponse(responseCode = "400", description= "Données de requête invalides"),
         @ApiResponse(responseCode = "404", description = "Utilisateur ou association non trouvé"),
         @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<?> createMemberFromPayload(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+           @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Données du membre à créer",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = MemberPayload.class),
                             examples = @ExampleObject(
                                     name = "Exemple de création de membre",
-                                    summary = "Exemple de création de membre",
-                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2\n}"
+summary = "Exemple de création de membre",
+                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2,\n  \"photo\": \"/path/to/photo.jpg\"\n}"
                             )
                     )
             ) @RequestBody MemberPayload payload) {
-        try {
+        try{
             logger.info("Starting member creation from payload: {}", payload);
 
             // Check if user exists
@@ -177,17 +297,37 @@ public class MemberController {
                         return new RuntimeException("User not found with id: " + payload.getUserId());
                     });
 
+            // Update user information from payload if provided
+            if (payload.getFirstName() != null) {
+                user.setFirstName(payload.getFirstName());
+            }
+            if (payload.getLastName() != null) {
+                user.setLastName(payload.getLastName());
+            }
+            if (payload.getEmail() != null) {
+                user.setEmail(payload.getEmail());
+            }
+            if (payload.getPhone() != null) {
+                user.setPhoneNumber(payload.getPhone());
+            }
+            if (payload.getPhoto() != null) {
+                user.setPhoto(payload.getPhoto());
+            }
+            
+            // Save updated user information
+            userService.updateUser(user.getId(), user);
+
             // Check if association exists
             logger.info("Checking if association exists with ID: {}", payload.getAssociationId());
             Association association = associationService.getAssociationById(payload.getAssociationId())
                     .orElseThrow(() -> {
-                        logger.error("Association not found with id: {}", payload.getAssociationId());
+logger.error("Association not found with id: {}", payload.getAssociationId());
                         return new RuntimeException("Association not found with id: " + payload.getAssociationId());
                     });
 
             logger.info("Creating member entity from payload");
             Member member = memberMapper.toEntityFromPayload(payload);
-            if (member == null) {
+            if (member == null){
                 logger.error("Failed to map payload to Member entity");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Failed to map payload to Member entity");
@@ -207,10 +347,16 @@ public class MemberController {
                 }
             }
 
-            logger.info("Saving member with code: {}", member.getMemberCode());
+           logger.info("Saving member with code: {}", member.getMemberCode());
             Member savedMember = memberService.saveMember(member);
             logger.info("Member created successfully with ID: {}", savedMember.getId());
-            return ResponseEntity.ok(memberMapper.toDto(savedMember));
+            
+            // Create response DTO and ensure userId and associationId are properly set
+            MemberResponseDTO responseDTO = memberMapper.toResponseDto(savedMember);
+            responseDTO.setUserId(payload.getUserId());
+            responseDTO.setAssociationId(payload.getAssociationId());
+            
+            return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
             logger.error("Error creating member from payload: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -228,10 +374,46 @@ public class MemberController {
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<MemberDTO> updateMember(
+    public ResponseEntity<?> updateMember(
             @Parameter(description = "ID du membre à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données de mise à jour du membre") @RequestBody Member member) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Données de mise à jour du membre",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Member.class),
+                            examples = @ExampleObject(
+                                    name = "Exemple de mise à jour de membre avec entité complète",
+                                    summary = "Exemple de mise à jour de membre avec entité complète",
+                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Asifiwe\",\n  \"lastName\": \"Muhongo\",\n  \"email\": \"asifiwe@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 1,\n  \"photo\": \"/media/elishama/New Volume/Asifwe/Photo/PHOTOS/eefcfd51bc47d544b69b682238c3f934.jpg\"\n}"
+                            )
+                    )
+            ) @RequestBody Member member) {
         try {
+            // Check if user exists when user ID is provided directly in the member entity
+            if (member.getUser() != null && member.getUser().getId() != null) {
+                User user = userService.getUserById(member.getUser().getId())
+                        .orElseThrow(() -> new RuntimeException("User not found with id: " + member.getUser().getId()));
+                member.setUser(user);
+            }
+
+            //Check if association exists when association ID is provided directly in the member entity
+            if (member.getAssociation() != null && member.getAssociation().getId() != null) {
+                Association association = associationService.getAssociationById(member.getAssociation().getId())
+                        .orElseThrow(() -> new RuntimeException("Association not found with id:" + member.getAssociation().getId()));
+                member.setAssociation(association);
+            }
+
+            // Preserve the existing member code - don't allow changing it through direct entity update
+            Member existingMember = memberService.getMemberById(id).orElse(null);
+            if (existingMember != null) {
+                if (member.getMemberCode() == null) {
+                    member.setMemberCode(existingMember.getMemberCode());
+                } else if (!member.getMemberCode().equals(existingMember.getMemberCode())) {
+                    // If memberCode is provided but different from existing, preserve the existing one
+                    member.setMemberCode(existingMember.getMemberCode());
+                }
+            }
+
             Member updatedMember = memberService.updateMember(id, member);
             return ResponseEntity.ok(memberMapper.toDto(updatedMember));
         } catch (RuntimeException e) {
@@ -249,7 +431,7 @@ public class MemberController {
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<MemberDTO> updateMemberWithPayload(
+    public ResponseEntity<?> updateMemberWithPayload(
             @Parameter(description = "ID du membre à mettre à jour") @PathVariable Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Données du payload pour mettre à jour le membre",
@@ -259,67 +441,83 @@ public class MemberController {
                             examples = @ExampleObject(
                                     name = "Exemple de mise à jour de membre",
                                     summary = "Exemple de mise à jour de membre",
-                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Leroy\",\n  \"email\": \"marie.leroy@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 2\n}"
+                                    value = "{\n  \"userId\": 2,\n  \"firstName\": \"Asifiwe\",\n  \"lastName\": \"Muhongo\",\n  \"email\": \"asifiwe@example.com\",\n  \"phone\": \"+33198765432\",\n  \"address\": \"456 Avenue des Champs-Élysées, 75008 Paris, France\",\n  \"associationId\": 1,\n  \"photo\": \"/media/elishama/New Volume/Asifwe/Photo/PHOTOS/eefcfd51bc47d544b69b682238c3f934.jpg\"\n}"
                             )
                     )
             ) @RequestBody MemberPayload payload) {
         try {
-            return memberService.getMemberById(id)
-                    .map(member -> {
-                        try {
-                            // Update user and association if IDs are provided in payload
-                            if (payload.getUserId() != null) {
-                                User user = userService.getUserById(payload.getUserId())
-                                        .orElseThrow(() -> new RuntimeException("User not found with id: " + payload.getUserId()));
-                                member.setUser(user);
+            logger.info("Starting member update from payload: {}", payload);
 
-                                // Mettre à jour les informations personnelles de l'utilisateur
-                                try {
-                                    // Fetch the current user from database to ensure we have all properties
-                                    User currentUser = userService.getUserById(user.getId())
-                                            .orElseThrow(() -> new RuntimeException("User not found with id: " + user.getId()));
+            // Check if member exists
+            Member existingMember = memberService.getMemberById(id)
+                    .orElseThrow(() -> {
+                        logger.error("Member not found with id: {}", id);
+                        return new RuntimeException("Member not found with id: " + id);
+                    });
 
-                                    // Update only the fields provided in the payload
-                                    if (payload.getFirstName() != null) {
-                                        currentUser.setFirstName(payload.getFirstName());
-                                    }
+            // Check if user exists
+            logger.info("Checking if user exists with ID: {}", payload.getUserId());
+            User user = userService.getUserById(payload.getUserId())
+                    .orElseThrow(() -> {
+                        logger.error("User not found with id: {}", payload.getUserId());
+                        return new RuntimeException("User not found with id: " + payload.getUserId());
+                    });
 
-                                    if (payload.getLastName() != null) {
-                                        currentUser.setLastName(payload.getLastName());
-                                    }
+            // Update user information from payload if provided
+            if (payload.getFirstName() != null) {
+                user.setFirstName(payload.getFirstName());
+            }
+            if (payload.getLastName() != null) {
+                user.setLastName(payload.getLastName());
+            }
+            if (payload.getEmail() != null) {
+                user.setEmail(payload.getEmail());
+            }
+            if (payload.getPhone() != null) {
+                user.setPhoneNumber(payload.getPhone());
+            }
+            if (payload.getPhoto() != null) {
+                user.setPhoto(payload.getPhoto());
+            }
+            
+            // Save updated user information
+            userService.updateUser(user.getId(), user);
 
-                                    if (payload.getEmail() != null) {
-                                        currentUser.setEmail(payload.getEmail());
-                                    }
+            // Check if association exists
+            logger.info("Checking if association exists with ID: {}", payload.getAssociationId());
+            Association association = associationService.getAssociationById(payload.getAssociationId())
+                    .orElseThrow(() -> {
+                        logger.error("Association not found with id: {}", payload.getAssociationId());
+                        return new RuntimeException("Association not found with id: " + payload.getAssociationId());
+                    });
 
-                                    if (payload.getPhone() != null) {
-                                        currentUser.setPhoneNumber(payload.getPhone());
-                                    }
+            logger.info("Updating member entity from payload");
+            // Save the existing member code before updating from payload
+            String existingMemberCode = existingMember.getMemberCode();
+            memberMapper.updateEntityFromPayload(payload, existingMember);
+            existingMember.setUser(user);
+            existingMember.setAssociation(association);
+            // Restore the existing member code to prevent it from being overwritten
+            existingMember.setMemberCode(existingMemberCode);
 
-                                    userService.updateUser(currentUser.getId(), currentUser);
-                                } catch (Exception e) {
-                                    logger.error("Error updating user information: ", e);
-                                    // Continue with member update even if user update fails
-                                }
-                            }
-                            if (payload.getAssociationId() != null) {
-                                Association association = associationService.getAssociationById(payload.getAssociationId())
-                                        .orElseThrow(() -> new RuntimeException("Association not found with id: " + payload.getAssociationId()));
-                                member.setAssociation(association);
-                            }
-                            memberMapper.updateEntityFromPayload(payload, member);
-                            Member updatedMember = memberService.updateMember(id, member);
-                            return ResponseEntity.ok(memberMapper.toDto(updatedMember));
-                        } catch (Exception e) {
-                            logger.error("Error updating member with id: " + id, e);
-                            throw new RuntimeException("Error updating member", e);
-                        }
-                    })
-                    .orElse(ResponseEntity.notFound().build());
+            logger.debug("Mapped member entity: {}", existingMember);
+
+            logger.info("Preserving existing member code: {}", existingMember.getMemberCode());
+
+            logger.info("Updating member with code: {}", existingMember.getMemberCode());
+            Member updatedMember = memberService.updateMember(id, existingMember);
+            logger.info("Member updated successfully with ID: {}", updatedMember.getId());
+            
+            // Create response DTO and ensure userId and associationId are properly set
+            MemberResponseDTO responseDTO = memberMapper.toResponseDto(updatedMember);
+            responseDTO.setUserId(payload.getUserId());
+            responseDTO.setAssociationId(payload.getAssociationId());
+            
+            return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
-            // Log the exception for debugging purposes
-            logger.error("Error updating member with id: " + id, e);
-            return ResponseEntity.status(500).build();
+            logger.error("Error updating member from payload: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating member: " + e.getMessage());
         }
     }
 
@@ -337,11 +535,11 @@ public class MemberController {
     }
 
     @DeleteMapping("/{id}/soft")
-    @Operation(summary = "Supprimer logiquement un membre", description = "Marque un membre comme supprimé sans le retirer de la base de données")
+    @Operation(summary = "Supprimer logiquement un membre", description = "Marque un membre comme supprimé sans le retirer de labase de données")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Membre supprimé logiquement avec succès"),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode = "500",description = "Erreur interne du serveur")
     })
     public ResponseEntity<Void> softDeleteMember(
             @Parameter(description = "ID du membre à supprimer logiquement") @PathVariable Long id) {
@@ -353,7 +551,7 @@ public class MemberController {
      * Recherche des membres avec des filtres complexes.
      */
     @GetMapping("/search")
-    @Operation(summary = "Rechercher des membres", description = "Recherche des membres avec des filtres complexes")
+@Operation(summary = "Rechercher des membres", description = "Recherche des membres avec des filtres complexes")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Résultats de recherche récupérés avec succès",
                     content = {@Content(mediaType = "application/json",
@@ -363,11 +561,13 @@ public class MemberController {
     public ResponseEntity<List<MemberDTO>> searchMembers(
             @Parameter(description = "Nom du membre (optionnel)") @RequestParam(required = false) String name,
             @Parameter(description = "Email du membre (optionnel)") @RequestParam(required = false) String email,
-            @Parameter(description = "Type de membre (optionnel)") @RequestParam(required = false) Member.MemberType memberType,
+            @Parameter(description = "Type de membre (optionnel)") @RequestParam(required = false) MemberType memberType,
             @Parameter(description = "ID de l'association (optionnel)") @RequestParam(required = false) Long associationId,
             @Parameter(description = "Statut d'activité (optionnel)") @RequestParam(required = false) Boolean isActive) {
         // Note: Pour une implémentation complète, vous devriez ajouter cette méthode au service
-        List<Member> members = memberService.getAllMembers();
+        List<Member> members = memberService.getAllMembers().stream()
+                .filter(member -> isActive == null || member.isActive() == isActive) // Filter by active status if provided
+                .collect(Collectors.toList());
         List<MemberDTO> memberDTOs = members.stream()
                 .map(memberMapper::toDto)
                 .collect(Collectors.toList());
@@ -380,7 +580,7 @@ public class MemberController {
     @GetMapping("/{id}/eligible")
     @Operation(summary = "Vérifier l'éligibilité d'un membre pour un prêt", description = "Indique si un membre est éligible pour emprunter")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Éligibilité du membre déterminée avec succès",
+@ApiResponse(responseCode = "200", description = "Éligibilité du membre déterminée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Boolean.class))}),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
@@ -390,8 +590,8 @@ public class MemberController {
             @Parameter(description = "ID du membre") @PathVariable Long id) {
         // Note: Vous devriez ajouter cette méthode au MemberService
         Member member = memberService.getMemberById(id).orElse(null);
-        if (member != null) {
-            boolean eligible = member.isEligibleForLoan();
+        if (member != null && member.isActive()) { // Only check eligibility for active members
+           boolean eligible = member.isEligibleForLoan();
             return ResponseEntity.ok(eligible);
         }
         return ResponseEntity.notFound().build();
@@ -402,6 +602,6 @@ public class MemberController {
      * @return Un code membre unique
      */
     private String generateUniqueMemberCode() {
-        return "MBR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+return "MBR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

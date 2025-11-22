@@ -1,8 +1,12 @@
 package com.org.testApi.dto.response;
 
 import com.org.testApi.dto.BaseEntityDTO;
+import com.org.testApi.models.Currency;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -11,6 +15,9 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoanResponseDTO extends BaseEntityDTO {
 
     private Long memberId;
@@ -22,4 +29,5 @@ public class LoanResponseDTO extends BaseEntityDTO {
     private LocalDate repaymentDate;
     private BigDecimal amountRepaid;
     private String status;
+    private Currency currency;
 }

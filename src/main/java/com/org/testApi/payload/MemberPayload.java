@@ -13,6 +13,9 @@ public class MemberPayload extends BasePayload {
     private String email;
     private String phone;
     private String address;
+
+    // Photo URL of the member
+    private String photo;
     private Long associationId;
     private String memberCode; // Ajout du code membre
 

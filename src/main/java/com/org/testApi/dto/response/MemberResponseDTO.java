@@ -1,8 +1,10 @@
 package com.org.testApi.dto.response;
 
 import com.org.testApi.dto.BaseEntityDTO;
+import com.org.testApi.models.MemberType;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
@@ -11,13 +13,21 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
+@SuperBuilder
 public class MemberResponseDTO extends BaseEntityDTO {
 
     private Long userId;
     private Long associationId;
     private LocalDate joinDate;
     private LocalDate leaveDate;
-    private String type;
+    private MemberType type;
     private boolean isAdmin;
     private String memberCode;
+    private String photo;
+    
+    // Added fields for user information
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String phone;
 }

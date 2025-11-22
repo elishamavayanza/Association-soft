@@ -37,4 +37,9 @@ public class UserPayload {
     
     @Size(max = 20, message = "Le numéro de téléphone ne doit pas dépasser 20 caractères")
     private String phoneNumber;
+
+    // Photo URL of the user
+    private String photo;
+
+
 }

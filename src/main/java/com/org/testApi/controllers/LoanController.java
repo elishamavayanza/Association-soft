@@ -2,14 +2,20 @@ package com.org.testApi.controllers;
 
 import com.org.testApi.models.Document;
 import com.org.testApi.models.Loan;
+import com.org.testApi.models.LoanType;
 import com.org.testApi.models.Member;
+import com.org.testApi.models.Currency;
 import com.org.testApi.payload.LoanPayload;
 import com.org.testApi.services.LoanService;
+import com.org.testApi.services.AutomaticPenaltyService;
 import com.org.testApi.mapper.LoanMapper;
 import com.org.testApi.repository.DocumentRepository;
 import com.org.testApi.repository.LoanRepository;
+import com.org.testApi.repository.LoanTypeRepository;
 import com.org.testApi.repository.MemberRepository;
+import com.org.testApi.dto.LoanEligibilityResult;
 import com.org.testApi.dto.response.LoanResponseDTO;
+import com.org.testApi.services.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,13 +37,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/loans")
-@Tag(name ="Prêt", description = "Gestion des prêts")
+@Tag(name = "Prêt", description = "Gestion des prêts")
 public class LoanController {
 
     private static final Logger logger = LoggerFactory.getLogger(LoanController.class);
 
     @Autowired
     private LoanService loanService;
+
+    @Autowired
+    private AutomaticPenaltyService automaticPenaltyService;
 
     @Autowired
     private LoanMapper loanMapper;
@@ -50,12 +59,18 @@ public class LoanController {
 
     @Autowired
     private LoanRepository loanRepository;
+    
+    @Autowired
+    private LoanTypeRepository loanTypeRepository;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     /**
      * Crée un nouveau prêt pour un membre.
      */
     @PostMapping
-    @Operation(summary = "Créer un prêt", description = "Crée un nouveau prêt pour unmembre")
+    @Operation(summary = "Créer un prêt", description = "Crée un nouveau prêt pour un membre")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Prêt créé avec succès",
                     content = {@Content(mediaType = "application/json",
@@ -78,7 +93,7 @@ public class LoanController {
     }
 
     /**
-     * Crée un prêtà partir d'un payload.
+     * Crée un prêt à partir d'un payload.
      */
     @PostMapping("/payload")
     @Operation(summary = "Créer un prêt à partir d'un payload", description = "Crée un prêt en utilisant un objet payload")
@@ -95,36 +110,75 @@ public class LoanController {
                     description = "Exemple de payload pour créer un prêt",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                   value = "{\n" +
-                                            "\"memberId\": 1,\n" +
-                                            "\"amount\": 10,\n" +
-                                            "\"interestRate\": 0.05,\n" +
-                                            "\"penaltyRate\": 0.1,\n" +
-                                            "\"dueDate\": \"2025-12-31\",\n" +
-                                            "\"repaymentDate\": \"2025-12-31\",\n" +
-                                            "\"amountRepaid\": 0,\n" +
-                                            "\"status\": \"ACTIVE\"\n" +
+                            examples = {
+                                @ExampleObject(
+                                    name = "Prêt avec type de prêt",
+                                    summary = "Exemple de prêt avec type de prêt (les taux sont automatiquement appliqués)",
+                                    value = "{\n" +
+                                            "  \"memberId\": 1,\n" +
+                                            "  \"loanTypeId\": 1,\n" +
+                                            "  \"amount\": 5000,\n" +
+                                            "  \"currency\": \"CDF\",\n" +
+                                            "  \"dueDate\": \"2026-06-30\",\n" +
+                                            "  \"status\": \"ACTIVE\"\n" +
                                             "}"
-                            )
+                                ),
+                                @ExampleObject(
+                                    name = "Prêt avec type (Prêt à court terme)",
+                                    summary = "Exemple de prêt à court terme (moins d'un mois)",
+                                    value = "{\n" +
+                                            "  \"memberId\": 2,\n" +
+                                            "  \"loanTypeId\": 2,\n" +
+                                            "  \"amount\": 1000,\n" +
+                                            "  \"currency\": \"USD\",\n" +
+                                            "  \"dueDate\": \"2025-12-15\",\n" +
+                                            "  \"status\": \"ACTIVE\"\n" +
+                                            "}"
+                                ),
+                                @ExampleObject(
+                                    name = "Prêt avec type (Prêt à long terme)",
+                                    summary = "Exemple de prêt à long terme (plusieurs années)",
+                                    value = "{\n" +
+                                            "  \"memberId\": 3,\n" +
+                                            "  \"loanTypeId\": 3,\n" +
+                                            "  \"amount\": 50000,\n" +
+                                            "  \"currency\": \"EUR\",\n" +
+                                            "  \"dueDate\": \"2028-12-31\",\n" +
+                                            "  \"status\": \"ACTIVE\"\n" +
+                                            "}"
+                                ),
+                                @ExampleObject(
+                                    name = "Prêt avec type (Prêt agricole)",
+                                    summary = "Exemple de prêt agricole avec saison spécifiée",
+                                    value = "{\n" +
+                                            "  \"memberId\": 4,\n" +
+                                            "  \"loanTypeId\": 4,\n" +
+                                            "  \"amount\": 10000,\n" +
+                                            "  \"currency\": \"CDF\",\n" +
+                                            "  \"dueDate\": \"2026-12-31\",\n" +
+                                            "  \"status\": \"ACTIVE\"\n" +
+                                            "}"
+                                )
+                            }
                     )
             )
-           @org.springframework.web.bind.annotation.RequestBody LoanPayload payload) {
+            @org.springframework.web.bind.annotation.RequestBody LoanPayload payload) {
         try {
             // Create a new Loan entity
             Loan loan = new Loan();
 
             // Explicitly set ID to null to ensure it's not causing issues
             // This is a new entity, so ID should be null to allow auto-generation
-           loan.setId(null);
+            loan.setId(null);
 
             // Set the properties from the payload
             loan.setAmount(payload.getAmount());
+            loan.setCurrency(payload.getCurrency() != null ? payload.getCurrency() : Currency.CDF);
             loan.setInterestRate(payload.getInterestRate());
             loan.setPenaltyRate(payload.getPenaltyRate());
             loan.setDueDate(payload.getDueDate());
             loan.setRepaymentDate(payload.getRepaymentDate());
-           loan.setAmountRepaid(payload.getAmountRepaid());
+            loan.setAmountRepaid(payload.getAmountRepaid());
             // Set the loan date to today if not provided
             loan.setLoanDate(LocalDate.now());
 
@@ -132,7 +186,7 @@ public class LoanController {
                 try {
                     loan.setStatus(Loan.LoanStatus.valueOf(payload.getStatus().toUpperCase()));
                 } catch (IllegalArgumentException e) {
-throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
+                    throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
                 }
             }
 
@@ -149,9 +203,29 @@ throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
                         .orElseThrow(() -> new RuntimeException("Document non trouvé avec l'ID: " + payload.getDocumentId()));
                 loan.setDocument(document);
             }
+            
+            // Associer le type de prêt si fourni
+            if (payload.getLoanTypeId() != null) {
+                LoanType loanType = loanTypeRepository.findById(payload.getLoanTypeId())
+                        .orElseThrow(() -> new RuntimeException("Type de prêt non trouvé avec l'ID: " + payload.getLoanTypeId()));
+                loan.setLoanType(loanType);
+                
+                // Utiliser les taux du type de prêt si non spécifiés dans le payload
+                if (payload.getInterestRate() == null && loanType.getMonthlyInterestRate() != null) {
+                    loan.setInterestRate(loanType.getMonthlyInterestRate());
+                }
+                
+                if (payload.getPenaltyRate() == null && loanType.getMaxPenaltyRate() != null) {
+                    loan.setPenaltyRate(loanType.getMaxPenaltyRate());
+                }
+            }
 
             // Save the loan without cascading to the member's loans collection
             Loan savedLoan = loanRepository.saveAndFlush(loan);
+            
+            // Envoyer une notification SMS au membre
+            sendLoanCreationNotification(member, savedLoan);
+            
             return ResponseEntity.ok(savedLoan);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -168,7 +242,7 @@ throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Loan.class))}),
             @ApiResponse(responseCode = "404", description = "Prêt non trouvé"),
-@ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Loan> getLoan(
             @Parameter(description = "ID du prêt à récupérer") @PathVariable Long id) {
@@ -210,12 +284,20 @@ throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
     public ResponseEntity<Loan> repayLoan(
             @Parameter(description ="ID du prêt à rembourser") @PathVariable Long id,
             @Parameter(description = "Montant du remboursement") @RequestParam BigDecimal amount) {
-        Loan loan = loanService.repayLoan(id, amount);
-        return ResponseEntity.ok(loan);
+        try {
+            Loan loan = loanService.repayLoan(id, amount);
+            
+            // Envoyer une notification SMS au membre
+            sendLoanRepaymentNotification(loan.getMember(), loan, amount);
+            
+            return ResponseEntity.ok(loan);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**
-     * Calcule le montanttotal dû pour un prêt.
+     * Calcule le montant total dû pour un prêt.
      */
     @GetMapping("/{id}/amount-due")
     @Operation(summary = "Calculer le montant dû", description = "Calcule le montant total dû pour un prêt spécifique")
@@ -242,7 +324,7 @@ throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Boolean.class))}),
             @ApiResponse(responseCode = "404", description = "Prêt non trouvé"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne duserveur")
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<Boolean> isLoanOverdue(
             @Parameter(description = "ID du prêt") @PathVariable Long id) {
@@ -256,7 +338,7 @@ throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
     @GetMapping("/overdue")
     @Operation(summary = "Récupérer les prêts en retard", description = "Retourne une liste de tous les prêts en retard")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Liste des prêtsenretard récupérée avec succès",
+            @ApiResponse(responseCode = "200", description = "Liste des prêts en retard récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Loan.class))}),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
@@ -286,7 +368,7 @@ throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
      * Recherche des prêts avec des filtres complexes.
      */
     @GetMapping("/search")
-    @Operation(summary = "Rechercher des prêts", description = "Recherche des prêts avec desfiltres complexes")
+    @Operation(summary = "Rechercher des prêts", description = "Recherche des prêts avec des filtres complexes")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Résultats de recherche récupérés avec succès",
                     content = {@Content(mediaType = "application/json",
@@ -305,7 +387,7 @@ throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
     }
 
     /**
-     * Calcule le montant total des prêtspour un membre.
+     * Calcule le montant total des prêts pour un membre.
      */
     @GetMapping("/member/{memberId}/total")
     @Operation(summary = "Calculer le total des prêts d'un membre", description = "Calcule le montant total des prêts pour un membre spécifique")
@@ -313,7 +395,7 @@ throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
             @ApiResponse(responseCode = "200", description = "Montant total des prêts calculé avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = BigDecimal.class))}),
-            @ApiResponse(responseCode = "404", description = "Membre nontrouvé"),
+            @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<BigDecimal> getTotalLoansForMember(
@@ -345,7 +427,7 @@ throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Éligibilité du membre déterminée avec succès",
                     content = {@Content(mediaType = "application/json",
-schema = @Schema(implementation = Boolean.class))}),
+                            schema = @Schema(implementation = Boolean.class))}),
             @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
@@ -356,12 +438,31 @@ schema = @Schema(implementation = Boolean.class))}),
     }
 
     /**
+     * Vérifie l'éligibilité détaillée d'un membre pour emprunter.
+     */
+    @GetMapping("/member/{memberId}/eligibility-details")
+    @Operation(summary = "Vérifier l'éligibilité détaillée d'un membre", 
+              description = "Indique si un membre est éligible pour emprunter avec des détails et raisons")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Détails d'éligibilité récupérés avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = LoanEligibilityResult.class))}),
+            @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<LoanEligibilityResult> getMemberLoanEligibilityDetails(
+            @Parameter(description = "ID du membre") @PathVariable Long memberId) {
+        LoanEligibilityResult result = loanService.getMemberLoanEligibilityDetails(memberId);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
      * Calcule le montant maximum qu'un membre peut emprunter.
-    */
+     */
     @GetMapping("/member/{memberId}/max-amount")
     @Operation(summary = "Calculer le montant maximum d'emprunt", description = "Calcule le montant maximum qu'un membre peut emprunter")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Montant maximumcalculé avec succès",
+            @ApiResponse(responseCode = "200", description = "Montant maximum calculé avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = BigDecimal.class))}),
             @ApiResponse(responseCode = "400", description = "Impossible de calculer le montant maximum"),
@@ -371,7 +472,7 @@ schema = @Schema(implementation = Boolean.class))}),
     public ResponseEntity<BigDecimal> getMaxLoanAmountForMember(
             @Parameter(description = "ID du membre") @PathVariable Long memberId) {
         try {
-            BigDecimal maxAmount =loanService.calculateMaxLoanAmount(memberId);
+            BigDecimal maxAmount = loanService.calculateMaxLoanAmount(memberId);
             return ResponseEntity.ok(maxAmount);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
@@ -399,8 +500,19 @@ schema = @Schema(implementation = Boolean.class))}),
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n  \"memberId\": 7,\n  \"documentId\":1,\n  \"amount\": 1500.00,\n  \"interestRate\": 0.07,\n  \"penaltyRate\": 0.10,\n  \"dueDate\": \"2025-12-31\",\n  \"repaymentDate\": \"2025-12-30\",\n  \"amountRepaid\": 1600.00,\n  \"status\": \"REPAID\"\n}"
-                           )
+                                    value = "{\n" +
+                                            "  \"memberId\": 7,\n" +
+                                            "  \"documentId\": 1,\n" +
+                                            "  \"loanTypeId\": 1,\n" +
+                                            "  \"amount\": 1500,\n" +
+                                            "  \"currency\": \"USD\",\n" +
+                                            "  \"dueDate\": \"2025-12-31\",\n" +
+                                            "  \"repaymentDate\": \"2025-12-30\",\n" +
+                                            "  \"amountRepaid\": 1600,\n" +
+                                            "  \"status\": \"REPAID\"\n" +
+                                            "}"
+
+                            )
                     )
             )
             @org.springframework.web.bind.annotation.RequestBody LoanPayload payload) {
@@ -409,14 +521,14 @@ schema = @Schema(implementation = Boolean.class))}),
                     // Mettre à jour les associations en fonction des IDs
                     if (payload.getMemberId() != null) {
                         Member member = memberRepository.findById(payload.getMemberId())
-                                .orElseThrow(() -> new RuntimeException("Membre non trouvé avecl'ID: " + payload.getMemberId()));
+                                .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID: " + payload.getMemberId()));
                         loan.setMember(member);
                     }
 
                     if (payload.getDocumentId() != null) {
                         Document document = documentRepository.findById(payload.getDocumentId())
                                 .orElseThrow(() -> new RuntimeException("Document non trouvé avec l'ID: " + payload.getDocumentId()));
-                       loan.setDocument(document);
+                        loan.setDocument(document);
                     }
 
                     // Mettre à jour toutes les propriétés à partir du payload
@@ -426,6 +538,8 @@ schema = @Schema(implementation = Boolean.class))}),
                     loan.setDueDate(payload.getDueDate());
                     loan.setRepaymentDate(payload.getRepaymentDate());
                     loan.setAmountRepaid(payload.getAmountRepaid());
+                    loan.setCurrency(payload.getCurrency() != null ? payload.getCurrency() : Currency.CDF);
+                    
                     if (payload.getStatus() != null) {
                         try {
                             loan.setStatus(Loan.LoanStatus.valueOf(payload.getStatus().toUpperCase()));
@@ -433,12 +547,28 @@ schema = @Schema(implementation = Boolean.class))}),
                             throw new RuntimeException("Statut de prêt invalide: " + payload.getStatus());
                         }
                     }
+                    
+                    // Associer le type de prêt si fourni et utiliser ses taux
+                    if (payload.getLoanTypeId() != null) {
+                        LoanType loanType = loanTypeRepository.findById(payload.getLoanTypeId())
+                                .orElseThrow(() -> new RuntimeException("Type de prêt non trouvé avec l'ID: " + payload.getLoanTypeId()));
+                        loan.setLoanType(loanType);
+                        
+                        // Utiliser les taux du type de prêt si non spécifiés dans le payload
+                        if (payload.getInterestRate() == null && loanType.getMonthlyInterestRate() != null) {
+                            loan.setInterestRate(loanType.getMonthlyInterestRate());
+                        }
+                        
+                        if (payload.getPenaltyRate() == null && loanType.getMaxPenaltyRate() != null) {
+                            loan.setPenaltyRate(loanType.getMaxPenaltyRate());
+                        }
+                    }
 
                     // Sauvegarder directement l'entité mise à jour
                     Loan updatedLoan = loanRepository.saveAndFlush(loan);
 
                     // Make sure the status is updated correctly based on the amount repaid
-                    if (payload.getAmountRepaid() !=null && payload.getAmountRepaid().compareTo(BigDecimal.ZERO) > 0) {
+                    if (payload.getAmountRepaid() != null && payload.getAmountRepaid().compareTo(BigDecimal.ZERO) > 0) {
                         BigDecimal totalAmountDue = updatedLoan.getTotalAmountDue();
                         if (payload.getAmountRepaid().compareTo(totalAmountDue) >= 0) {
                             updatedLoan.setStatus(Loan.LoanStatus.REPAID);
@@ -449,14 +579,15 @@ schema = @Schema(implementation = Boolean.class))}),
                         updatedLoan = loanRepository.saveAndFlush(updatedLoan);
                     }
 
-                    // Créer un DTO de réponsepour éviter les problèmes de sérialisation des entités lazy
-                    LoanResponseDTO responseDTO = new LoanResponseDTO();
-                    responseDTO.setId(updatedLoan.getId());
-                    responseDTO.setCreatedDate(updatedLoan.getCreatedDate());
-                    responseDTO.setLastModifiedDate(updatedLoan.getLastModifiedDate());
-                    responseDTO.setCreatedBy(updatedLoan.getCreatedBy());
-                    responseDTO.setLastModifiedBy(updatedLoan.getLastModifiedBy());
-                    responseDTO.setActive(updatedLoan.isActive());
+                    // Créer un DTO de réponse pour éviter les problèmes de sérialisation des entités lazy
+                    LoanResponseDTO responseDTO = LoanResponseDTO.builder()
+                            .id(updatedLoan.getId())
+                            .createdDate(updatedLoan.getCreatedDate())
+                            .lastModifiedDate(updatedLoan.getLastModifiedDate())
+                            .createdBy(updatedLoan.getCreatedBy())
+                            .lastModifiedBy(updatedLoan.getLastModifiedBy())
+                            .active(updatedLoan.isActive())
+                            .build();
 
                     if (updatedLoan.getMember() != null) {
                         responseDTO.setMemberId(updatedLoan.getMember().getId());
@@ -473,9 +604,81 @@ schema = @Schema(implementation = Boolean.class))}),
                     responseDTO.setRepaymentDate(updatedLoan.getRepaymentDate());
                     responseDTO.setAmountRepaid(updatedLoan.getAmountRepaid());
                     responseDTO.setStatus(updatedLoan.getStatus() != null ? updatedLoan.getStatus().name() : null);
+                    responseDTO.setCurrency(updatedLoan.getCurrency());
 
                     return ResponseEntity.ok().body(responseDTO);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Applique automatiquement les pénalités aux prêts en retard.
+     */
+    @PostMapping("/apply-penalties")
+    @Operation(summary = "Appliquer automatiquement les pénalités", description = "Applique automatiquement les pénalités aux prêts en retard selon leur type")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pénalités appliquées avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Integer.class))}),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<Integer> applyAutomaticPenalties() {
+        int count = automaticPenaltyService.applyAutomaticPenalties(LocalDate.now());
+        return ResponseEntity.ok(count);
+    }
+    
+    /**
+     * Envoie une notification de création de prêt par SMS au membre
+     * @param member Le membre qui reçoit le prêt
+     * @param loan Le prêt créé
+     */
+    private void sendLoanCreationNotification(Member member, Loan loan) {
+        try {
+            // Vérifier si le membre a un numéro de téléphone
+            if (member.getPhone() != null && !member.getPhone().isEmpty()) {
+                String message = String.format(
+                    "Bonjour %s %s, votre prêt de %s %s a été approuvé et est maintenant actif. " +
+                    "Date d'échéance: %s. Merci de votre confiance.",
+                    member.getFirstName(),
+                    member.getLastName(),
+                    loan.getAmount(),
+                    loan.getCurrency(),
+                    loan.getDueDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                );
+                
+                notificationService.sendSmsNotification(member.getPhone(), message);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send loan creation SMS notification to member " + member.getId() + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Envoie une notification de remboursement de prêt par SMS au membre
+     * @param member Le membre qui rembourse le prêt
+     * @param loan Le prêt remboursé
+     * @param amount Le montant remboursé
+     */
+    private void sendLoanRepaymentNotification(Member member, Loan loan, BigDecimal amount) {
+        try {
+            // Vérifier si le membre a un numéro de téléphone
+            if (member.getPhone() != null && !member.getPhone().isEmpty()) {
+                String message = String.format(
+                    "Bonjour %s %s, votre remboursement de %s %s pour le prêt #%d a été enregistré avec succès. " +
+                    "Reste à rembourser: %s %s. Merci pour votre confiance.",
+                    member.getFirstName(),
+                    member.getLastName(),
+                    amount,
+                    loan.getCurrency(),
+                    loan.getId(),
+                    loan.getTotalAmountDue().subtract(amount),
+                    loan.getCurrency()
+                );
+                
+                notificationService.sendSmsNotification(member.getPhone(), message);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send loan repayment SMS notification to member " + member.getId() + ": " + e.getMessage());
+        }
     }
 }

@@ -2,142 +2,102 @@ package com.org.testApi.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.*;
-
-import java.time.LocalDateTime;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
-/**
- * Représente un utilisateur du système.
- * <p>
- * Un utilisateur possède un nom d'utilisateur unique, une adresse email,
- * un mot de passe, ainsi que des rôles d'accès.
- * Il peut créer et participer à des activités.
- * </p>
- */
 @Entity
-@Table(name = "users",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = "username"),
-                @UniqueConstraint(columnNames = "email")
-        })
+@Table(name = "users")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class User extends BaseEntity {
+public class User extends BaseEntity implements UserDetails {
 
-    /**
-     * Nom d'utilisateur unique.
-     */
-    @Column(nullable = false, length = 50)
-    @NotBlank(message = "Le nom d'utilisateur ne peut pas être vide")
-    @Size(min = 3, max = 50, message = "Le nom d'utilisateur doit contenir entre 3 et 50 caractères")
+    @Column(name = "username", unique = true, nullable = false)
     private String username;
 
-    /**
-     * Adresse email unique, validée comme adresse correcte.
-     * Limité à 100 caractères.
-     */
-    @Column(nullable = false, length = 100)
-    @NotBlank(message = "L'email ne peut pas être vide")
-    @Email(message = "L'email doit être une adresse valide")
-    @Size(max = 100, message = "L'email ne doit pas dépasser 100 caractères")
+    @Column(name = "email", unique = true)
     private String email;
 
-    /**
-     * Mot de passe hashé de l'utilisateur.
-     */
-    @Column(nullable = false)
-    @NotBlank(message = "Le mot de passe ne peut pas être vide")
-    @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
+    @Column(name = "password", nullable = false)
     private String password;
 
-    /**
-     * Ensemble des rôles attribués à l'utilisateur.
-     */
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"))
-    @Builder.Default
-    @JsonIgnore
-    private Set<Role> roles = new HashSet<>();
-
-    /**
-     * Liste des activités créées par cet utilisateur.
-     */
-    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonIgnore
-    private List<Activity> createdEvents = new ArrayList<>();
-
-    /**
-     * Liste des activités auxquelles cet utilisateur participe.
-     */
-    @ManyToMany(mappedBy = "participants")
-    @Builder.Default
-    @ToString.Exclude
-    @JsonIgnore
-    private List<Activity> attendedEvents = new ArrayList<>();
-
-    /**
-     * Prénom de l'utilisateur.
-     */
-    @Size(max = 50, message = "Le prénom ne doit pas dépasser 50 caractères")
+    @Column(name = "first_name")
     private String firstName;
 
-    /**
-     * Nom de famille de l'utilisateur.
-     */
-    @Size(max = 50, message = "Le nom de famille ne doit pas dépasser 50 caractères")
+    @Column(name = "last_name")
     private String lastName;
 
-    /**
-     * Numéro de téléphone de l'utilisateur.
-     */
-    @Size(max = 20, message = "Le numéro de téléphone ne doit pas dépasser 20 caractères")
+    @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "photo", length = 255)
+    private String photo;
+
     /**
-     * Date et heure de la dernière connexion.
+     * Chemin vers la photo de profil du membre.
+     * Ce champ peut être null si aucune photo n'est disponible.
      */
+    @Column(name = "profile_photo_path", nullable = true)
+    private String profilePhotoPath;
+    
+    @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    /**
-     * Nombre de tentatives de connexion échouées.
-     */
-    private int loginAttempts = 0;
+   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Member> members = new ArrayList<>();
+    
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name ="user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore private Set<Role> roles = new HashSet<>();
 
-    /**
-     * Chemin vers la photo de profil dans le système de fichiers.
-     * Ex: "/uploads/profiles/user123.jpg"
-     */
-    private String profilePhotoPath;
+    @ManyToMany(mappedBy = "userParticipants", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    private List<Activity> attendedActivities = new ArrayList<>();
+    
+    @Override
+    @JsonIgnore
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("USER"));
+    }
 
-    /**
-     * Type MIME de la photo de profil.
-     * Ex: "image/jpeg", "image/png"
-     */
-    private String profilePhotoMimeType;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
-    /**
-     * Taille de la photo de profil en octets.
-     */
-    private Long profilePhotoSize;
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
-    /**
-     * Token de l'appareil pour les notifications push.
-     */
-    private String deviceToken;
+    @Override
+   public boolean isCredentialsNonExpired() {
+        return true;
+    }
 
+    @Override
+    public boolean isEnabled() {
+        return this.isActive();
+    }
 }

@@ -3,6 +3,7 @@ package com.org.testApi.dto.response;
 import com.org.testApi.dto.BaseEntityDTO;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 /**
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @Setter
+@SuperBuilder
 public class ActivityResponseDTO extends BaseEntityDTO {
 
     private String title;

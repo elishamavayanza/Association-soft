@@ -2,6 +2,7 @@ package com.org.testApi.dto;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDate;
 
 /**
@@ -9,6 +10,7 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
+@SuperBuilder
 public class ProjectMemberDTO extends BaseEntityDTO {
 
     private Long projectId;

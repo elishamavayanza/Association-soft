@@ -1,4 +1,5 @@
 package com.org.testApi.repository;
+
 import com.org.testApi.models.User;
 import com.org.testApi.repository.base.BaseRepository;
 import com.org.testApi.repository.custom.UserRepositoryCustom;
@@ -31,6 +32,6 @@ public interface UserRepository extends BaseRepository<User, Long>, UserReposito
     
     boolean existsByUsername(String username);
 
-    @Query("SELECT u FROM User u JOIN u.attendedEvents a WHERE a.id = :activityId")
+    @Query("SELECT u FROM User u JOIN u.attendedActivities a WHERE a.id = :activityId")
     List<User> findParticipantsByActivityId(Long activityId);
 }

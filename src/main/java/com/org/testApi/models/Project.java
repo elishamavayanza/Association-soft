@@ -97,6 +97,7 @@ public class Project extends BaseEntity {
      *Valeur pardéfaut : PLANNING.
      */
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private ProjectStatus status = ProjectStatus.PLANNING;
 
 /**

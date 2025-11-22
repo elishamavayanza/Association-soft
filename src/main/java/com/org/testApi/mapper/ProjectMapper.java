@@ -8,8 +8,10 @@ import com.org.testApi.models.Activity;
 import com.org.testApi.models.ProjectMember;
 import com.org.testApi.models.FinancialTransaction;
 import com.org.testApi.models.Association;
+import com.org.testApi.models.Member;
 import com.org.testApi.payload.ProjectPayload;
 import com.org.testApi.repository.AssociationRepository;
+import com.org.testApi.repository.MemberRepository;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -25,6 +27,9 @@ public abstract class ProjectMapper implements BaseMapper<Project, ProjectDTO> {
 
     @Autowired
     protected AssociationRepository associationRepository;
+    
+    @Autowired
+    protected MemberRepository memberRepository;
 
     @Mapping(target = "manager", ignore = true)
     @Mapping(target = "association", ignore = true)

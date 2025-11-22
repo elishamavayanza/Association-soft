@@ -23,7 +23,7 @@ public class Role {
      * Identifiant unique du rôle.
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.TABLE)
     private Integer id;
 
 
@@ -36,9 +36,9 @@ public class Role {
 
     /**
      * Description optionnelle du rôle.
-     * Limité à 20 caractères.
+     * Limité à 50 caractères.
      */
-    @Size(max = 20)
+    @Size(max = 50)
     private String description;
 
 
@@ -51,5 +51,14 @@ public class Role {
         ROLE_MEMBER,     // Membre standard
         ROLE_GUEST       // Invité avec accès limité
     }
-
+    
+    // Manually adding the setter method to fix compilation error
+    public void setName(ERole name) {
+        this.name = name;
+    }
+    
+    // Manually adding the getter method to fix compilation error
+    public ERole getName() {
+        return this.name;
+    }
 }

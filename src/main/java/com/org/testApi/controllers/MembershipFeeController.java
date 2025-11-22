@@ -1,6 +1,7 @@
 package com.org.testApi.controllers;
 
 import com.org.testApi.models.MembershipFee;
+import com.org.testApi.models.MembershipFeeType;
 import com.org.testApi.payload.MembershipFeePayload;
 import com.org.testApi.services.MembershipFeeService;
 import com.org.testApi.mapper.MembershipFeeMapper;
@@ -41,7 +42,7 @@ public class MembershipFeeController {
     @GetMapping
     @Operation(summary = "Récupérer toutes les cotisations", description = "Retourne une liste de toutes les cotisations")
     @ApiResponses(value = {
-@ApiResponse(responseCode = "200", description = "Liste des cotisations récupérée avec succès",
+            @ApiResponse(responseCode = "200", description = "Liste des cotisations récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MembershipFee.class))}),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
@@ -51,16 +52,62 @@ public class MembershipFeeController {
         return ResponseEntity.ok(membershipFees);
     }
 
+    @GetMapping("/type/{feeType}")
+    @Operation(summary = "Récupérer les cotisations par type", description = "Retourne une liste de cotisations filtrées par type")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des cotisations récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = MembershipFee.class))}),
+            @ApiResponse(responseCode = "400", description = "Type de cotisation invalide"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<MembershipFee>> getMembershipFeesByType(
+            @Parameter(description = "Type de cotisation (WEEKLY, MONTHLY, YEARLY, INSTALLMENT)") 
+            @PathVariable String feeType) {
+        logger.info("Fetching membership fees by type: {}", feeType);
+        try {
+            MembershipFeeType type = MembershipFeeType.valueOf(feeType.toUpperCase());
+            List<MembershipFee> membershipFees = membershipFeeService.getMembershipFeesByType(type);
+            return ResponseEntity.ok(membershipFees);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid membership fee type: {}", feeType);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/member/{memberId}/type/{feeType}")
+    @Operation(summary = "Récupérer les cotisations d'un membre par type", description = "Retourne une liste de cotisations d'un membre filtrées par type")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des cotisations récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = MembershipFee.class))}),
+            @ApiResponse(responseCode = "400", description = "Type de cotisation invalide"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<MembershipFee>> getMembershipFeesByMemberIdAndType(
+            @Parameter(description = "ID du membre") @PathVariable Long memberId,
+            @Parameter(description = "Type de cotisation (WEEKLY, MONTHLY, YEARLY, INSTALLMENT)") @PathVariable String feeType) {
+        logger.info("Fetching membership fees by member id: {} and type: {}", memberId, feeType);
+        try {
+            MembershipFeeType type = MembershipFeeType.valueOf(feeType.toUpperCase());
+            List<MembershipFee> membershipFees = membershipFeeService.getMembershipFeesByMemberIdAndType(memberId, type);
+            return ResponseEntity.ok(membershipFees);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid membership fee type: {}", feeType);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer une cotisation par ID", description = "Retourne une cotisation spécifique en fonction de son ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Cotisation trouvée",
                     content = {@Content(mediaType = "application/json",
-schema = @Schema(implementation = MembershipFee.class))}),
+                            schema = @Schema(implementation = MembershipFee.class))}),
             @ApiResponse(responseCode = "404", description = "Cotisation non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<MembershipFee>getMembershipFeeById(
+    public ResponseEntity<MembershipFee> getMembershipFeeById(
             @Parameter(description = "ID de la cotisation à récupérer") @PathVariable Long id) {
         logger.info("Fetching membership fee with id: {}", id);
         Optional<MembershipFee> membershipFee = membershipFeeService.getMembershipFeeById(id);
@@ -78,13 +125,14 @@ schema = @Schema(implementation = MembershipFee.class))}),
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Cotisation créée avec succès",
                     content = {@Content(mediaType = "application/json",
-                            schema =@Schema(implementation =MembershipFee.class))}),
+                            schema = @Schema(implementation = MembershipFee.class))}),
             @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "404", description = "Membre non trouvé"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<MembershipFee> createMembershipFee(
             @Parameter(description = "Données de la cotisation à créer") 
-           @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Données de la cotisation à créer",
                 content = @Content(
                     mediaType = "application/json",
@@ -92,17 +140,49 @@ schema = @Schema(implementation = MembershipFee.class))}),
                     examples = @ExampleObject(
                         name = "Exemple de cotisation",
                         summary = "Exemple de création de cotisation",
-                        value = "{\n  \"amount\": 50.00,\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"COT-2025-001\",\n  \"member\": {\n    \"id\": 1\n  }\n}"
-)
+                        value = "{\n  \"amount\": 50.00,\n  \"currency\": \"CDF\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"feeType\": \"MONTHLY\",\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"COT-2025-001\",\n  \"member\": {\n    \"id\": 1\n  }\n}"
+                    )
                 )
             ) @RequestBody MembershipFee membershipFee) {
         logger.info("Creating membership fee: {}", membershipFee);
         try {
+            // Validate required fields
+            if (membershipFee.getAmount() == null) {
+                logger.warn("Amount is required but was null");
+                return ResponseEntity.badRequest().build();
+            }
+            
+            if (membershipFee.getPaymentDate() == null) {
+                logger.warn("Payment date is required but was null");
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // Ensure the member relationship is properly resolved
+            if (membershipFee.getMember() != null && membershipFee.getMember().getId() != null) {
+                Long memberId = membershipFee.getMember().getId();
+                logger.info("Looking up member with id: {}", memberId);
+                membershipFee.setMember(memberRepository.findById(memberId)
+                    .orElseThrow(() -> {
+                        logger.warn("Member not found with id: {}", memberId);
+                        return new RuntimeException("Member not found with id: " + memberId);
+                    }));
+            } else if (membershipFee.getMember() == null || membershipFee.getMember().getId() == null) {
+                logger.warn("Member is required but was not provided or had no ID");
+                return ResponseEntity.badRequest().build();
+            }
+            
             MembershipFee savedMembershipFee = membershipFeeService.saveMembershipFee(membershipFee);
-             logger.info("Successfully created membership fee with id: {}", savedMembershipFee.getId());
+            logger.info("Successfully created membership fee with id: {}", savedMembershipFee.getId());
             return ResponseEntity.ok(savedMembershipFee);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Member not found")) {
+                logger.error("Member not found: {}", e.getMessage());
+                return ResponseEntity.notFound().build();
+            }
             logger.error("Error creating membership fee: ", e);
+            return ResponseEntity.status(500).build();
+        } catch (Exception e) {
+            logger.error("Unexpected error creating membership fee: ", e);
             return ResponseEntity.status(500).build();
         }
     }
@@ -111,7 +191,7 @@ schema = @Schema(implementation = MembershipFee.class))}),
     @Operation(summary = "Créer une cotisation à partir d'un payload", description = "Crée une cotisation en utilisant un objet payload")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Cotisation créée avec succès à partir du payload",
-                    content= {@Content(mediaType = "application/json",
+                    content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MembershipFee.class))}),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
@@ -126,7 +206,7 @@ schema = @Schema(implementation = MembershipFee.class))}),
                     examples = @ExampleObject(
                         name = "Exemple de cotisation avec payload",
                         summary = "Exemple de création de cotisation avec payload",
-                        value = "{\n  \"memberId\": 1,\n  \"amount\": 50.00,\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"COT-2025-001\"\n}"
+                        value = "{\n  \"memberId\": 1,\n  \"amount\": 50.00,\n  \"currency\": \"CDF\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"feeType\": \"MONTHLY\",\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"COT-2025-001\"\n}"
                     )
                 )
             ) @RequestBody MembershipFeePayload payload) {
@@ -164,7 +244,7 @@ schema = @Schema(implementation = MembershipFee.class))}),
                     examples = @ExampleObject(
                         name = "Exemple de mise à jour de cotisation",
                         summary = "Exemple de mise à jour de cotisation",
-                        value = "{\n  \"amount\": 75.00,\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"reference\": \"COT-2025-002\",\n  \"member\": {\n    \"id\": 1\n  }\n}"
+                        value = "{\n  \"amount\": 75.00,\n  \"currency\": \"USD\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"feeType\": \"YEARLY\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"reference\": \"COT-2025-002\",\n  \"member\": {\n    \"id\": 1\n  }\n}"
                     )
                 )
             ) @RequestBody MembershipFee membershipFeeDetails) {
@@ -175,7 +255,7 @@ schema = @Schema(implementation = MembershipFee.class))}),
                 MembershipFee existingFee = existingFeeOpt.get();
                 logger.info("Found existing membership fee: {}", existingFee);
                 
-// Update only the fields that are provided in the request
+                // Update only the fields that are provided in the request
                 if (membershipFeeDetails.getAmount() != null) {
                     existingFee.setAmount(membershipFeeDetails.getAmount());
                 }
@@ -194,14 +274,18 @@ schema = @Schema(implementation = MembershipFee.class))}),
                 if (membershipFeeDetails.getEndDate() != null) {
                     existingFee.setEndDate(membershipFeeDetails.getEndDate());
                 }
-                if (membershipFeeDetails.getMember() != null) {
-                    existingFee.setMember(membershipFeeDetails.getMember());
+                if (membershipFeeDetails.getFeeType() != null) {
+                    existingFee.setFeeType(membershipFeeDetails.getFeeType());
+                }
+                if (membershipFeeDetails.getMember() != null && membershipFeeDetails.getMember().getId() != null) {
+                    Long memberId = membershipFeeDetails.getMember().getId();
+                    memberRepository.findById(memberId).ifPresent(existingFee::setMember);
                 }
                 
                 logger.info("Updated membership fee to save: {}", existingFee);
                 MembershipFee updatedMembershipFee = membershipFeeService.updateMembershipFee(id, existingFee);
                 logger.info("Successfully updated membership fee with id: {}", id);
-            return ResponseEntity.ok(updatedMembershipFee);
+                return ResponseEntity.ok(updatedMembershipFee);
             } else {
                 logger.warn("Membership fee not found with id: {}", id);
                 return ResponseEntity.notFound().build();
@@ -216,10 +300,10 @@ schema = @Schema(implementation = MembershipFee.class))}),
     }
 
     @PutMapping("/{id}/payload")
-    @Operation(summary = "Mettre à jour unecotisation avec payload", description = "Met à jour une cotisation existante en utilisant un objet payload")
+    @Operation(summary = "Mettre à jour une cotisation avec payload", description = "Met à jour une cotisation existante en utilisant un objet payload")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Cotisation mise à jour avec succès à partir du payload",
-                    content = {@Content(mediaType ="application/json",
+                    content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MembershipFee.class))}),
             @ApiResponse(responseCode = "404", description = "Cotisation non trouvée"),
             @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
@@ -227,24 +311,24 @@ schema = @Schema(implementation = MembershipFee.class))}),
     })
     public ResponseEntity<MembershipFee> updateMembershipFeeWithPayload(
             @Parameter(description = "ID de la cotisation à mettre à jour") @PathVariable Long id,
-            @Parameter(description = "Données du payload pourmettre à jour la cotisation") 
+            @Parameter(description = "Données du payload pour mettre à jour la cotisation") 
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                description = "Données du payload pour mettreà jour la cotisation",
+                description = "Données du payload pour mettre à jour la cotisation",
                 content = @Content(
                     mediaType = "application/json",
                     schema = @Schema(implementation = MembershipFeePayload.class),
                     examples = @ExampleObject(
                         name = "Exemple de mise à jour de cotisation avec payload",
-                        summary = "Exemple de mise àjourde cotisation avec payload",
-                        value = "{\n  \"memberId\": 1,\n  \"amount\": 75.00,\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"reference\": \"COT-2025-002\"\n}"
+                        summary = "Exemple de mise à jour de cotisation avec payload",
+                        value = "{\n  \"memberId\": 1,\n  \"amount\": 75.00,\n  \"currency\": \"USD\",\n  \"paymentDate\": \"2025-09-27\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2026-09-30\",\n  \"feeType\": \"YEARLY\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"reference\": \"COT-2025-002\"\n}"
                     )
                 )
             ) @RequestBody MembershipFeePayload payload) {
         logger.info("Updating membership fee with id: {} using payload: {}", id, payload);
         try {
             Optional<MembershipFee> existingFeeOpt = membershipFeeService.getMembershipFeeById(id);
-            if (existingFeeOpt.isPresent()){
-MembershipFee existingFee = existingFeeOpt.get();
+            if (existingFeeOpt.isPresent()) {
+                MembershipFee existingFee = existingFeeOpt.get();
                 logger.info("Found existing membership fee: {}", existingFee);
                 
                 // Use the mapper method that properly handles field preservation
@@ -259,15 +343,20 @@ MembershipFee existingFee = existingFeeOpt.get();
                 return ResponseEntity.notFound().build();
             }
         } catch (RuntimeException e) {
-            logger.error("Membership fee not found with id: " + id, e);
-            return ResponseEntity.notFound().build();
+            if (e.getMessage().contains("MembershipFee not found")) {
+                logger.warn("Membership fee not found with id: {}", id);
+                return ResponseEntity.notFound().build();
+            } else {
+                logger.error("Error updating membership fee with id: " + id, e);
+                return ResponseEntity.status(500).build();
+            }
         } catch (Exception e) {
-            logger.error("Errorupdating membership fee with id: " + id, e);
+            logger.error("Unexpected error updating membership fee with id: " + id, e);
             return ResponseEntity.status(500).build();
         }
     }
 
-@DeleteMapping("/{id}")
+    @DeleteMapping("/{id}")
     @Operation(summary = "Supprimer une cotisation", description = "Supprime définitivement une cotisation")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Cotisation supprimée avec succès"),
@@ -279,6 +368,27 @@ MembershipFee existingFee = existingFeeOpt.get();
         logger.info("Deleting membership fee with id: {}", id);
         membershipFeeService.deleteMembershipFee(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/member/{memberId}/type/{feeType}")
+    @Operation(summary = "Supprimer les cotisations d'un membre par type", description = "Supprime définitivement les cotisations d'un membre filtrées par type")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Cotisations supprimées avec succès"),
+            @ApiResponse(responseCode = "400", description = "Type de cotisation invalide"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<Void> deleteMembershipFeesByMemberIdAndType(
+            @Parameter(description = "ID du membre") @PathVariable Long memberId,
+            @Parameter(description = "Type de cotisation (WEEKLY, MONTHLY, YEARLY, INSTALLMENT)") @PathVariable String feeType) {
+        logger.info("Deleting membership fees by member id: {} and type: {}", memberId, feeType);
+        try {
+            MembershipFeeType type = MembershipFeeType.valueOf(feeType.toUpperCase());
+            membershipFeeService.deleteMembershipFeesByMemberIdAndType(memberId, type);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid membership fee type: {}", feeType);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @DeleteMapping("/{id}/soft")
@@ -293,5 +403,26 @@ MembershipFee existingFee = existingFeeOpt.get();
         logger.info("Soft deleting membership fee with id: {}", id);
         membershipFeeService.softDeleteMembershipFee(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/member/{memberId}/type/{feeType}/soft")
+    @Operation(summary = "Supprimer logiquement les cotisations d'un membre par type", description = "Marque les cotisations d'un membre comme supprimées sans les retirer de la base de données")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Cotisations supprimées logiquement avec succès"),
+            @ApiResponse(responseCode = "400", description = "Type de cotisation invalide"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<Void> softDeleteMembershipFeesByMemberIdAndType(
+            @Parameter(description = "ID du membre") @PathVariable Long memberId,
+            @Parameter(description = "Type de cotisation (WEEKLY, MONTHLY, YEARLY, INSTALLMENT)") @PathVariable String feeType) {
+        logger.info("Soft deleting membership fees by member id: {} and type: {}", memberId, feeType);
+        try {
+            MembershipFeeType type = MembershipFeeType.valueOf(feeType.toUpperCase());
+            membershipFeeService.softDeleteMembershipFeesByMemberIdAndType(memberId, type);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid membership fee type: {}", feeType);
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

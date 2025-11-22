@@ -14,22 +14,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
+    private final JwtTokenFilter jwtTokenFilter;
 
-    private JwtTokenFilter jwtTokenFilter;
-
-    public SecurityConfig(UserDetailsService userDetailsService) {
+    public SecurityConfig(UserDetailsService userDetailsService, JwtTokenFilter jwtTokenFilter) {
         this.userDetailsService = userDetailsService;
-    }
-
-    @Autowired
-    public void setJwtTokenFilter(JwtTokenFilter jwtTokenFilter) {
         this.jwtTokenFilter = jwtTokenFilter;
     }
 
@@ -78,6 +72,9 @@ public class SecurityConfig {
                         // Member endpoints
                         .requestMatchers("/api/members/**").authenticated()
                         .requestMatchers("/api/members/payload", "/api/members/payload/**").authenticated()
+
+                        // Project endpoints
+                        .requestMatchers("/api/projects/**").authenticated()
 
                         .anyRequest().authenticated()
                 )

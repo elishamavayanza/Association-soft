@@ -1,14 +1,10 @@
 package com.org.testApi.controllers;
 
+import com.org.testApi.models.*;
+import com.org.testApi.payload.*;
+import com.org.testApi.services.*;
+import com.org.testApi.mapper.*;
 import com.org.testApi.dto.response.ActivityResponseDTO;
-import com.org.testApi.models.Activity;
-import com.org.testApi.models.Association;
-import com.org.testApi.models.Project;
-import com.org.testApi.payload.ActivityPayload;
-import com.org.testApi.services.ActivityService;
-import com.org.testApi.services.AssociationService;
-import com.org.testApi.services.ProjectService;
-import com.org.testApi.mapper.ActivityMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,148 +23,112 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/activities")
-@Tag(name = "Activity", description = "Gestion des activités")
+@Tag(name = "Activités", description = "Gestion des activités de l'association")
 public class ActivityController {
 
     @Autowired
     private ActivityService activityService;
 
     @Autowired
-private ActivityMapper activityMapper;
-    
-    @Autowired
     private AssociationService associationService;
-    
+
     @Autowired
     private ProjectService projectService;
 
+    @Autowired
+    private ActivityMapper activityMapper;
+
     @GetMapping
-    @Operation(summary = "Récupérer toutes les activités", description = "Retourne une liste de toutes les activités")
+    @Operation(summary = "Lister toutes les activités", description = "Récupère la liste de toutes les activités")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des activités récupérée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Activity.class))}),
-            @ApiResponse(responseCode = "500", description ="Erreur interne du serveur")
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
- public ResponseEntity<List<Activity>> getAllActivities() {
+    public ResponseEntity<List<Activity>> getAllActivities() {
         List<Activity> activities = activityService.getAllActivities();
         return ResponseEntity.ok(activities);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Récupérer une activité par ID", description ="Retourne une activité spécifique en fonctionde sonID")
+ @GetMapping("/{id}")
+    @Operation(summary = "Récupérer une activité par ID", description = "Récupère une activité spécifique par son identifiant")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Activité trouvée",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Activity.class))}),
-@ApiResponse(responseCode = "404", description="Activité non trouvée"),
+                 content= {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ActivityResponseDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<Activity> getActivityById(
+    public ResponseEntity<?> getActivityById(
             @Parameter(description = "ID de l'activité à récupérer") @PathVariable Long id) {
-return activityService.getActivityById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Optional<Activity> activity = activityService.getActivityById(id);
+        if (activity.isPresent()) {
+            // Convert to DTO to avoid serialization issues with Hibernate lazy loading
+            ActivityResponseDTO responseDTO = activityMapper.toResponseDto(activity.get());
+            return ResponseEntity.ok(responseDTO);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping
     @Operation(summary = "Créer une nouvelle activité", description = "Crée une nouvelle activité avec les données fournies")
-    @ApiResponses(value= {
-@ApiResponse(responseCode = "200", description = "Activité créée avec succès",
+@ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Activité créée avec succès",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Activity.class))}),
-            @ApiResponse(responseCode = "400", description = "Données derequêteinvalides"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
-    })
-    public ResponseEntity<Activity> createActivity(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Données de l'activité à créer",
-                    content=@Content(
-                           mediaType = "application/json",
-                            schema = @Schema(implementation = Activity.class),
-                            examples = {
-                                    @ExampleObject(
-                                            name = "Exemple d'activité complète",
-                                            description = "Exemple d'une activité avec une association",
-                                            value = """
-                                                    {
-                                                      "title":"Conférencesur l'environnement",
-                                                      "description": "Une conférence annuelle sur la protection de l'environnement",
-                                                      "type": "CONFERENCE",
-                                                      "startDateTime": "2025-11-20T09:00:00",
-"endDateTime":"2025-11-20T17:00:00",
-                                                      "location": "Centre de conférences de Marseille",
-                                                      "association": {
-                                                        "id": 1
-                                                      },
-                                                      "status": "PLANNED"
-                                                   }
-                                                 """
-)
-                            }
-)
-            ) @RequestBody Activity activity) {
-        Activity savedActivity = activityService.saveActivity(activity);
-        return ResponseEntity.ok(savedActivity);
-    }
-
-    @PostMapping("/payload")
-    @Operation(summary = "Créer une activité à partir d'un payload", description = "Crée uneactivitéenutilisant unobjet payload")
-    @ApiResponses(value = {
-           @ApiResponse(responseCode = "200", description = "Activité créée avec succès à partir du payload",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Activity.class))}),
-@ApiResponse(responseCode = "400", description = "Données depayload invalides"),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
             @ApiResponse(responseCode = "404", description = "Association non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<?>createActivityFromPayload(
+    public ResponseEntity<?> createActivity(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Données du payload pour créer l'activité",
+                    description = "Données de la nouvelle activité",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ActivityPayload.class),
                             examples = {
-                                   @ExampleObject(
-                                           name = "Exemple de payload d'activité",
-                                            description = "Exemple d'un payload d'activité avec associationId",
+                                    @ExampleObject(
+                                            name = "Exemple d'activité",
+                                           description = "Exemple de création d'une activité avec une association",
                                             value = """
-                                                    {
-                                                      "title": "Nettoyage de la plage",
-                                                      "description": "Activité de nettoyage de la plage organisée parl'association pourprotéger l'environnement côtier",
-                                                      "type": "SOCIAL_EVENT",
-                                                      "startDateTime": "2025-10-15T09:00:00",
-                                                      "endDateTime": "2025-10-15T12:00:00",
-                                                      "location": "Plage du Port de Plaisance",
-                                                      "associationId": 1,
+                                                  {
+                                                      "title": "Conférence sur l'environnement",
+                                                      "description": "Une conférence annuelle sur la protection de l'environnement",
+                                                      "type": "CONFERENCE",
+                                                      "startDateTime": "2025-11-20T09:00:00",
+                                                      "endDateTime": "2025-11-20T18:00:00",
+                                                      "location": "Centre de conférences de Marseille",
+                                                     "associationId": 1,
                                                       "status": "PLANNED"
                                                     }
                                                     """
                                     )
                             }
                     )
-            ) @RequestBody ActivityPayload payload) {
-        try{
-            Activity activity= new Activity();
+            ) @Valid @RequestBody ActivityPayload payload) {
+        try {
+            Activity activity = new Activity();
             
             // Set activity fields from payload
             activity.setTitle(payload.getTitle());
             activity.setDescription(payload.getDescription());
-            activity.setStartDateTime(payload.getStartDateTime());
+           activity.setStartDateTime(payload.getStartDateTime());
             activity.setEndDateTime(payload.getEndDateTime());
             activity.setLocation(payload.getLocation());
-            activity.setDeleted(payload.getDeleted() != null ? payload.getDeleted(): false);
+            activity.setDeleted(payload.getDeleted() != null ? payload.getDeleted() : false);
             
-           // Handle enum conversions with proper error handling
+            // Handle enum conversions with proper error handling
             if (payload.getType() != null) {
                 try {
                     activity.setType(Activity.ActivityType.valueOf(payload.getType().toUpperCase()));
                 } catch (IllegalArgumentException e) {
                     return ResponseEntity.badRequest().body("Invalid activity type: " + payload.getType());
-               }
-          }
+                }
+            }
             
-if(payload.getStatus() != null) {
+            if (payload.getStatus() != null) {
                 try {
                     activity.setStatus(Activity.ActivityStatus.valueOf(payload.getStatus().toUpperCase()));
                 } catch (IllegalArgumentException e) {
@@ -176,120 +136,164 @@ if(payload.getStatus() != null) {
                 }
             } else {
                 activity.setStatus(Activity.ActivityStatus.PLANNED);
-           }
-            
-            // Check if association exists when associationId is provided in the payload
-            if (payload.getAssociationId() != null) {
-                Association association = associationService.getAssociationById(payload.getAssociationId())
-                        .orElseThrow(() -> new RuntimeException("Association not found with id: " +payload.getAssociationId()));
-activity.setAssociation(association);
             }
             
-Activity savedActivity = activityService.saveActivity(activity);
+            // Check if association exists when associationId is provided in the payload
+            if(payload.getAssociationId() != null) {
+                Association association = associationService.getAssociationById(payload.getAssociationId())
+                        .orElseThrow(() -> new RuntimeException("Association not found with id: " + payload.getAssociationId()));
+                activity.setAssociation(association);
+            }
+            
+            // Add member participants if provided
+            if (payload.getMemberParticipantIds() != null && payload.getMemberParticipantIds().length > 0) {
+                // We'll add participants after saving the activity
+            }
+            
+            // Add user participants if provided
+            if (payload.getUserParticipantIds() != null && payload.getUserParticipantIds().length > 0) {
+                // We'll add participants after saving the activity
+            }
+            
+            Activity savedActivity = activityService.saveActivity(activity);
             return ResponseEntity.ok(savedActivity);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Error creating activity: " + e.getMessage());
-       }
-   }
+        }
+    }
 
-@PutMapping("/{id}")
-@Operation(summary = "Mettre à jour une activité", description = "Met à jour une activité existante avec les données fournies")
+   @PutMapping("/{id}")
+    @Operation(summary = "Mettre à jour uneactivité", description = "Met à jour une activité existante avec les données fournies")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Activité mise àjour avecsuccès",
-content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Activity.class))}),
+            @ApiResponse(responseCode = "200", description = "Activité mise à jour avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation =ActivityResponseDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
-            @ApiResponse(responseCode = "400", description = "Données derequêteinvalides"),
-          @ApiResponse(responseCode = "404", description = "Association non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Données derequête invalides"),
+            @ApiResponse(responseCode = "404", description = "Association nontrouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
     public ResponseEntity<?> updateActivity(
-            @Parameter(description = "ID del'activitéà mettre àjour")@PathVariable Long id,
+@Parameter(description = "ID de l'activité à mettre à jour") @PathVariable Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Données de mise à jour de l'activité",
+description = "Données de mise à jour de l'activité",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Activity.class),
-                            examples= {
+                           schema = @Schema(implementation = Activity.class),
+                            examples = {
                                    @ExampleObject(
-                                            name = "Exemple demiseà jour d'activité",
+                                            name = "Exemple demise à jour d'activité",
                                             description = "Exemple de mise à jour d'une activité avec une association",
                                             value = """
                                                     {
-                                                      "title": "Conférence sur l'environnement - Mise à jour",
+                                                      "title": "Conférencesurl'environnement - Mise à jour",
                                                       "description": "Une conférence annuelle sur la protection de l'environnement (mise à jour)",
-                                                      "type": "CONFERENCE",
+                                                     "type": "CONFERENCE",
                                                       "startDateTime": "2025-11-20T09:00:00",
                                                       "endDateTime": "2025-11-20T18:00:00",
-                                                  "location": "Centre de conférences de Marseille",
-                                                      "association": {
-                                                        "id": 1
-                                                      },
+                                                      "location": "Centrede conférences de Marseille",
+                                                     "associationId": 1,
                                                       "status": "PLANNED"
                                                     }
                                                     """
-                                    )
-                            }
+                                  )
+                          }
                     )
-            ) @RequestBody Activity activity){
+            ) @RequestBody Activity activity) {
         try {
-            // Check if association exists when associationID is provided in the activity entity
-            if (activity.getAssociation() != null && activity.getAssociation().getId() != null) {
-                Association association = associationService.getAssociationById(activity.getAssociation().getId())
-                        .orElseThrow(() -> new RuntimeException("Associationnot found with id: " + activity.getAssociation().getId()));
-                activity.setAssociation(association);
+            // Get the existing activity to preserve the association if not provided
+            Optional<Activity> existingActivityOpt = activityService.getActivityById(id);
+            if (existingActivityOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
             }
-            Activity updatedActivity = activityService.updateActivity(id, activity);
-            // Convertto DTO to avoid serialization issues with Hibernate lazy loading
+            
+Activity existingActivity = existingActivityOpt.get();
+// Preserve the existing association if not provided in the update
+            if (activity.getAssociation() == null) {
+                activity.setAssociation(existingActivity.getAssociation());
+            } else if (activity.getAssociation().getId() != null) {
+                // Check if association existswhen associationIDis providedin the activity entity
+Association association = associationService.getAssociationById(activity.getAssociation().getId())
+                        .orElseThrow(() -> new RuntimeException("Association not found with id: " + activity.getAssociation().getId()));
+                activity.setAssociation(association);
+            } else {
+                // If association object isprovided but without ID, preserveexisting
+                activity.setAssociation(existingActivity.getAssociation());
+            }
+            
+            // Preserve other fields that might not be provided in the update
+            if (activity.getMemberParticipants() == null) {
+                activity.setMemberParticipants(existingActivity.getMemberParticipants());
+            }
+            
+            if (activity.getUserParticipants() == null) {
+                activity.setUserParticipants(existingActivity.getUserParticipants());
+            }
+            
+            if (activity.getTransactions() ==null) {
+               activity.setTransactions(existingActivity.getTransactions());
+            }
+            
+           if (activity.getCreator() == null) {
+                activity.setCreator(existingActivity.getCreator());
+            }
+            
+            if (activity.getProject() == null) {
+                activity.setProject(existingActivity.getProject());
+            }
+            
+            activity.setId(id); // Ensure the ID isset forthe update
+                       Activity updatedActivity = activityService.updateActivity(id, activity);
+            // Convert to DTO to avoid serialization issues with Hibernate lazy loading
             ActivityResponseDTO responseDTO = activityMapper.toResponseDto(updatedActivity);
-           return ResponseEntity.ok(responseDTO);
-      } catch (RuntimeException e) {
+            return ResponseEntity.ok(responseDTO);
+        } catch (RuntimeException e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Error updating activity: " + e.getMessage());
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Unexpected error updating activity:" + e.getMessage());
+            return ResponseEntity.status(500).body("Unexpected error updating activity: " + e.getMessage());
         }
-}
+    }
 
-    @PutMapping("/{id}/payload")
-    @Operation(summary = "Mettre à jour une activité avec payload", description = "Met à jourune activité existante en utilisant un objet payload")
+   @PutMapping("/{id}/payload")
+@Operation(summary = "Mettre à jour une activité avec payload", description = "Met à jour une activité existante en utilisant un objet payload")
     @ApiResponses(value = {
-            @ApiResponse(responseCode ="200", description="Activité miseà jouravec succès à partir du payload",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation =Activity.class))}),
+            @ApiResponse(responseCode = "200", description = "Activité mise à jour avec succès à partir du payload",
+                    content = {@Content(mediaType ="application/json",
+                            schema = @Schema(implementation = Activity.class))}),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
-           @ApiResponse(responseCode = "400", description ="Données de payloadinvalides"),
-            @ApiResponse(responseCode = "404", description = "Association non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Données de payload invalides"),
+            @ApiResponse(responseCode ="404", description = "Association non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<?>updateActivityWithPayload(
-            @Parameter(description ="ID de l'activité à mettre à jour") @PathVariable Long id,
+    public ResponseEntity<?> updateActivityWithPayload(
+            @Parameter(description = "ID de l'activité à mettre à jour") @PathVariable Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Données du payload pour mettre à jour l'activité",
+                    description = "Données dupayload pour mettre à jour l'activité",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation= ActivityPayload.class),
-                            examples = {
-                                   @ExampleObject(
-                                           name = "Exemple de miseà jour depayload d'activité",
+                            schema = @Schema(implementation = ActivityPayload.class),
+examples= {
+                                  @ExampleObject(
+                                            name = "Exemple demise à jour de payload d'activité",
                                             description = "Exemple de mise à jour d'un payload d'activité avec associationId",
                                             value = """
                                                   {
                                                       "title": "Nettoyage de la plage - Mise à jour",
-                                                      "description": "Activitéde nettoyage de la plageorganisée parl'association pour protéger l'environnement côtier (mise à jour)",
+"description": "Activité de nettoyage de la plage organisée par l'association pour protéger l'environnement côtier (mise à jour)",
                                                       "type": "SOCIAL_EVENT",
-                                                      "startDateTime": "2025-10-15T09:00:00",
-                                                      "endDateTime": "2025-10-15T13:00:00",
-"location": "Plage du Port de Plaisance",
+                                                      "startDateTime": "2025-11-15T09:00:00",
+                                                      "endDateTime": "2025-11-15T13:00:00",
+                                                      "location": "Plage du Port de Plaisance",
                                                       "associationId": 1,
                                                       "status": "PLANNED"
                                                     }
-                                                    """
-                                    )
-                            }
-                    )
+                                                   """
+                                  )
+}
+)
             ) @Valid @RequestBody ActivityPayload payload) {
         try {
             Optional<Activity> activityOpt = activityService.getActivityById(id);
@@ -299,101 +303,287 @@ content = {@Content(mediaType = "application/json",
             
             Activity activity = activityOpt.get();
             
-            // Update association if associationId is provided in payload
-            if (payload.getAssociationId() != null) {
+            // Preserve the existing association if not provided in the payload
+            if (payload.getAssociationId() == null) {
+// Do nothing, keep the existing association
+            } else {
+                // Update association if associationId is provided in payload
                 try{
-Association association = associationService.getAssociationById(payload.getAssociationId())
+                                        Association association = associationService.getAssociationById(payload.getAssociationId())
                             .orElseThrow(() -> new RuntimeException("Association not found with id: " + payload.getAssociationId()));
                     activity.setAssociation(association);
                 } catch (RuntimeException e) {
                     return ResponseEntity.badRequest().body(e.getMessage());
                 }
-           }
-//If no associationId is provided in payload, preserve the existing association
-            // This is important because the association field is required (nullable= false)
+            }
             
             // Update project if projectId is provided in payload
-            if (payload.getProjectId() != null) {
+                        if (payload.getProjectId() != null) {
                 try {
                     Project project = projectService.getProjectById(payload.getProjectId())
                             .orElseThrow(() -> new RuntimeException("Project not found with id: " + payload.getProjectId()));
                     activity.setProject(project);
                 } catch (RuntimeException e) {
                     return ResponseEntity.badRequest().body(e.getMessage());
-                }
-            }
-            // If no projectId is provided in payload,leavetheexisting project unchanged (itcan be null)
+}
+           }
+           // If no projectId is provided in payload, leave the existing project unchanged (it can be null)
             
             // Manually update activity fields from payload instead of using mapper
-            if (payload.getTitle() != null) {
+            if(payload.getTitle() != null) {
                 activity.setTitle(payload.getTitle());
             }
-            if (payload.getDescription() != null){
-                activity.setDescription(payload.getDescription());
+            if (payload.getDescription() != null) {
+               activity.setDescription(payload.getDescription());
             }
-            if (payload.getType()!=null) {
-               try{
+            if (payload.getType() != null) {
+                try {
                     activity.setType(Activity.ActivityType.valueOf(payload.getType().toUpperCase()));
                 } catch (IllegalArgumentException e) {
-                    return ResponseEntity.badRequest().body("Invalid activity type: " + payload.getType());
+                                        return ResponseEntity.badRequest().body("Invalid activity type: " + payload.getType());
                 }
             }
-            if (payload.getStartDateTime() != null) {
+                        if (payload.getStartDateTime() != null) {
                 activity.setStartDateTime(payload.getStartDateTime());
             }
-if (payload.getEndDateTime() != null) {
+            if (payload.getEndDateTime() != null) {
                 activity.setEndDateTime(payload.getEndDateTime());
             }
             if (payload.getLocation() != null) {
                 activity.setLocation(payload.getLocation());
             }
-            if (payload.getDeleted() != null) {
+                        if (payload.getDeleted() != null) {
                 activity.setDeleted(payload.getDeleted());
-}
-if(payload.getStatus() != null) {
-                try{
+            }
+            
+            // Handle enum conversions with proper error handling
+            if (payload.getStatus() != null) {
+                try {
                     activity.setStatus(Activity.ActivityStatus.valueOf(payload.getStatus().toUpperCase()));
-                } catch (IllegalArgumentException e) {
-                    return ResponseEntity.badRequest().body("Invalid activity status: " + payload.getStatus());
+                } catch(IllegalArgumentException e) {
+                                        return ResponseEntity.badRequest().body("Invalid activity status: " + payload.getStatus());
                 }
             }
             
             Activity updatedActivity = activityService.updateActivity(id, activity);
-          return ResponseEntity.ok(updatedActivity);
-        }catch (Exception e) {
+            return ResponseEntity.ok(updatedActivity);
+        } catch (jakarta.validation.ConstraintViolationException e) {
+            return ResponseEntity.badRequest().body("Validation error: " + e.getMessage());
+        } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Error updating activity: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error updating activity with payload: " + e.getMessage());
         }
     }
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Supprimer une activité",description ="Supprimedéfinitivement une activité")
+      @DeleteMapping("/{id}")
+    @Operation(summary = "Supprimer une activité", description = "Supprime une activité par son identifiant")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Activité supprimée avec succès"),
+            @ApiResponse(responseCode = "200", description = "Activité supprimée avec succès"),
             @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
-           @ApiResponse(responseCode= "500", description = "Erreur interne duserveur")
-    })
-    public ResponseEntity<Void> deleteActivity(
-            @Parameter(description = "ID de l'activité à supprimer") @PathVariable Long id) {
-        activityService.deleteActivity(id);
-        return ResponseEntity.noContent().build();
-}
-
-   @DeleteMapping("/{id}/soft")
-    @Operation(summary= "Supprimer logiquement une activité",description = "Marque une activité comme supprimée sans la retirer de la base de données")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204",description = "Activitésupprimée logiquement avec succès"),
-            @ApiResponse(responseCode = "404", description= "Activité non trouvée"),
             @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
     })
-    public ResponseEntity<?>softDeleteActivity(
-            @Parameter(description= "ID del'activité à supprimerlogiquement") @PathVariable Long id) {
+    public ResponseEntity<?> deleteActivity(
+            @Parameter(description = "ID de l'activité à supprimer") @PathVariable Long id) {
         try {
-            activityService.softDeleteActivity(id);
-            return ResponseEntity.noContent().build();
+            activityService.deleteActivity(id);
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Error softdeleting activity: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error deleting activity: " + e.getMessage());
+        }
+    }
+
+ @GetMapping("/association/{associationId}")
+    @Operation(summary = "Lister les activités d'une association", description = "Récupère la liste des activités d'une association spécifique")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des activités de l'association récupérée avec succès",
+                    content= {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation= Activity.class))}),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<Activity>> getActivitiesByAssociation(
+            @Parameter(description = "ID de l'association") @PathVariable Long associationId) {
+                    List<Activity> activities = activityService.getActivitiesByAssociationId(associationId);
+        return ResponseEntity.ok(activities);
+    }
+
+    @GetMapping("/project/{projectId}")
+    @Operation(summary = "Lister les activités d'un projet", description = "Récupère la liste des activités d'un projet spécifique")
+    @ApiResponses(value = {
+@ApiResponse(responseCode = "200", description = "Liste des activités du projet récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+schema= @Schema(implementation = Activity.class))}),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<Activity>> getActivitiesByProject(
+            @Parameter(description = "ID du projet") @PathVariable Long projectId) {
+        List<Activity> activities = activityService.getActivitiesByProjectId(projectId);
+return ResponseEntity.ok(activities);
+    }
+
+    @GetMapping("/user/{userId}")
+        @Operation(summary = "Lister les activités d'un utilisateur", description = "Récupère la liste des activités auxquelles un utilisateur participe")
+    @ApiResponses(value = {
+           @ApiResponse(responseCode = "200", description = "Liste des activités de l'utilisateur récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+schema= @Schema(implementation = Activity.class))}),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+ })
+        public ResponseEntity<List<Activity>> getActivitiesByUser(
+           @Parameter(description = "ID de l'utilisateur") @PathVariable Long userId) {
+        List<Activity> activities = activityService.getActivitiesByUserId(userId);
+        return ResponseEntity.ok(activities);
+    }
+
+    @GetMapping("/member/{memberId}")
+    @Operation(summary = "Lister les activités d'un membre", description = "Récupère la liste des activités auxquelles un membre participe")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des activités du membre récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Activity.class))}),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<List<Activity>> getActivitiesByMember(
+            @Parameter(description = "ID du membre") @PathVariable Long memberId) {
+        List<Activity> activities = activityService.getActivitiesByMemberId(memberId);
+        return ResponseEntity.ok(activities);
+    }
+
+    // Member participant endpoints
+    @PostMapping("/{id}/member-participants")
+    @Operation(summary = "Ajouter des membres participants à une activité", description = "Ajoute un ou plusieurs membres comme participants à une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Membres participants ajoutés avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ActivityResponseDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> addMemberParticipants(
+            @Parameter(description = "ID de l'activité") @PathVariable Long id,
+            @Parameter(description = "Liste des IDs des membres à ajouter comme participants") @RequestBody List<Long> memberIds) {
+       try {
+            Activity updatedActivity = activityService.addMemberParticipants(id, memberIds);
+            // Convert to DTO to avoid serialization issues with Hibernate lazy loading
+            ActivityResponseDTO responseDTO = activityMapper.toResponseDto(updatedActivity);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error adding member participants: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/member-participants")
+    @Operation(summary = "Supprimer des membres participants d'une activité", description = "Supprime un ou plusieurs membres participants d'une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Membres participants supprimés avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ActivityResponseDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> removeMemberParticipants(
+            @Parameter(description = "ID de l'activité") @PathVariable Long id,
+            @Parameter(description = "Liste des IDs des membres à supprimer des participants") @RequestBody List<Long> memberIds) {
+        try {
+            Activity updatedActivity = activityService.removeMemberParticipants(id, memberIds);
+            // Convert to DTO to avoid serialization issues with Hibernate lazy loading
+            ActivityResponseDTO responseDTO = activityMapper.toResponseDto(updatedActivity);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error removing member participants: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/member-participants")
+    @Operation(summary = "Lister les membres participants d'une activité", description = "Récupère la liste des membres participants d'une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des membres participants récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Member.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> getMemberParticipants(
+            @Parameter(description = "ID de l'activité") @PathVariable Long id) {
+        try {
+            List<Member> participants = activityService.getMemberParticipantsByActivityId(id);
+            return ResponseEntity.ok(participants);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error retrieving member participants: " + e.getMessage());
+        }
+    }
+
+    // User participant endpoints
+    @PostMapping("/{id}/user-participants")
+    @Operation(summary = "Ajouter des utilisateurs participants à une activité", description = "Ajoute un ou plusieurs utilisateurs comme participants à une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateurs participants ajoutés avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ActivityResponseDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> addUserParticipants(
+            @Parameter(description = "ID de l'activité") @PathVariable Long id,
+            @Parameter(description = "Liste des IDs des utilisateurs à ajouter comme participants") @RequestBody List<Long> userIds) {
+       try {
+            Activity updatedActivity = activityService.addUserParticipants(id, userIds);
+            // Convert to DTO to avoid serialization issues with Hibernate lazy loading
+            ActivityResponseDTO responseDTO = activityMapper.toResponseDto(updatedActivity);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error adding user participants: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/user-participants")
+    @Operation(summary = "Supprimer des utilisateurs participants d'une activité", description = "Supprime un ou plusieurs utilisateurs participants d'une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateurs participants supprimés avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ActivityResponseDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Données de requête invalides"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> removeUserParticipants(
+            @Parameter(description = "ID de l'activité") @PathVariable Long id,
+            @Parameter(description = "Liste des IDs des utilisateurs à supprimer des participants") @RequestBody List<Long> userIds) {
+        try {
+            Activity updatedActivity = activityService.removeUserParticipants(id, userIds);
+            // Convert to DTO to avoid serialization issues with Hibernate lazy loading
+            ActivityResponseDTO responseDTO = activityMapper.toResponseDto(updatedActivity);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error removing user participants: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/user-participants")
+    @Operation(summary = "Lister les utilisateurs participants d'une activité", description = "Récupère la liste des utilisateurs participants d'une activité")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des utilisateurs participants récupérée avec succès",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = User.class))}),
+            @ApiResponse(responseCode = "404", description = "Activité non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
+    public ResponseEntity<?> getUserParticipants(
+            @Parameter(description = "ID de l'activité") @PathVariable Long id) {
+        try {
+            List<User> participants = activityService.getUserParticipantsByActivityId(id);
+            return ResponseEntity.ok(participants);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error retrieving user participants: " + e.getMessage());
         }
     }
 }

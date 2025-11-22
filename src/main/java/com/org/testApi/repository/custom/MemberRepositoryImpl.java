@@ -1,6 +1,7 @@
 package com.org.testApi.repository.custom;
 
 import com.org.testApi.models.Member;
+import com.org.testApi.models.MemberType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -16,12 +17,12 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     private EntityManager entityManager;
 
     @Override
-    public List<Member> searchMembersComplexQuery(String name, String email, Member.MemberType memberType, Long associationId, Boolean isActive) {
+    public List<Member> searchMembersComplexQuery(String name, String email, MemberType memberType, Long associationId, Boolean isActive) {
         StringBuilder jpql = new StringBuilder("SELECT m FROM Member m WHERE 1=1");
         if (name != null && !name.isEmpty()) {
             jpql.append(" AND LOWER(m.user.username) LIKE LOWER(CONCAT('%', :name, '%'))");
         }
-        if (email != null && !email.isEmpty()) {
+        if (email != null && !email.isEmpty()){
             jpql.append(" AND LOWER(m.user.email) LIKE LOWER(CONCAT('%', :email, '%'))");
         }
         if (memberType != null) {
@@ -46,7 +47,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
         }
         if (email != null && !email.isEmpty()) {
             query.setParameter("email", email);
-        }
+       }
         if (memberType != null) {
             query.setParameter("memberType", memberType);
         }
@@ -66,7 +67,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
             """;
         return entityManager.createQuery(jpql, Member.class)
                 .setParameter("associationId", associationId)
-                .setMaxResults(limit)
+               .setMaxResults(limit)
                 .getResultList();
     }
 

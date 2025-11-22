@@ -27,19 +27,30 @@ public abstract class MembershipFeeMapper implements BaseMapper<MembershipFee, M
     protected MemberRepository memberRepository;
 
     @Mapping(target = "member", ignore = true)
+    @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract MembershipFee toEntity(MembershipFeeDTO dto);
 
     @Mapping(target = "memberId", source = "member.id")
+    @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract MembershipFeeDTO toDto(MembershipFee entity);
 
     // Payload mappings
     @Mapping(target = "member", ignore = true)
+    @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract MembershipFee toEntityFromPayload(MembershipFeePayload payload);
 
     @Mapping(target = "memberId", source = "member.id")
+    @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract MembershipFeePayload toPayload(MembershipFee entity);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "member", ignore = true)
+    @Mapping(target = "currency", source = "currency")
+    @Mapping(target = "feeType", source = "feeType")
     public abstract void updateEntityFromPayload(MembershipFeePayload payload, @MappingTarget MembershipFee entity);
 
     /**
@@ -101,9 +112,14 @@ public abstract class MembershipFeeMapper implements BaseMapper<MembershipFee, M
         // Handle member update
         if (payload.getMemberId() != null) {
             logger.info("Looking up member with id: {}", payload.getMemberId());
-            Member member = memberRepository.findById(payload.getMemberId()).orElse(null);
-            entity.setMember(member);
-            logger.info("Set member: {}", member);
+            try {
+                Member member = memberRepository.findById(payload.getMemberId()).orElse(null);
+                entity.setMember(member);
+                logger.info("Set member: {}", member);
+            } catch (Exception e) {
+                logger.error("Error looking up member with id: {}", payload.getMemberId(), e);
+                throw new RuntimeException("Error looking up member with id: " + payload.getMemberId(), e);
+            }
         } else {
             // Restore existing member if not provided in payload
             entity.setMember(existingMember);

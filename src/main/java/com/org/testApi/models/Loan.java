@@ -26,7 +26,7 @@ import java.time.LocalDate;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Loan extends BaseEntity {
 
-/**
+    /**
      * Membre ayant effectué le prêt.
      * Ce lien est obligatoire.
      */
@@ -37,7 +37,7 @@ public class Loan extends BaseEntity {
 
     /**
      * Document ou objet prêté.
-    * Ce lien est optionnel.
+     * Ce lien est optionnel.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id", nullable = true)
@@ -45,9 +45,34 @@ public class Loan extends BaseEntity {
     private Document document;
 
     /**
+     * Type de prêt
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loan_type_id")
+    @ToString.Exclude
+    private LoanType loanType;
+
+    /**
+     * Demande de prêt associée
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loan_application_id")
+    @ToString.Exclude
+    private LoanApplication loanApplication;
+
+    /**
      * Montant du prêt.
      */
     private BigDecimal amount;
+
+    /**
+     * Devise du montant du prêt.
+     * Par défaut, CDF (Franc congolais).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency", nullable = false)
+    @Builder.Default
+    private Currency currency = Currency.CDF;
 
     /**
      * Taux d'intérêt appliqué au prêt.
@@ -81,7 +106,7 @@ public class Loan extends BaseEntity {
     private BigDecimal amountRepaid;
 
     /**
-* Date de remboursement.
+     * Date de remboursement.
      */
     private LocalDate repaymentDate;
 
@@ -90,6 +115,7 @@ public class Loan extends BaseEntity {
      * Par défaut, un prêt est actif.
      */
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private LoanStatus status = LoanStatus.ACTIVE;
 
     /**
@@ -127,8 +153,13 @@ public class Loan extends BaseEntity {
         BigDecimal penalty = BigDecimal.ZERO;
         if (status == LoanStatus.OVERDUE ||
                 (status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now()))) {
-            penalty = amount.multiply(penaltyRate != null ? penaltyRate : BigDecimal.ZERO);
-}
+            // Utiliser le taux de pénalité du type de prêt s'il est disponible
+            if (loanType != null && loanType.getMonthlyInterestRate() != null) {
+                penalty = amount.multiply(loanType.getMonthlyInterestRate());
+            } else {
+                penalty = amount.multiply(penaltyRate != null ? penaltyRate : BigDecimal.ZERO);
+            }
+        }
 
         return amount.add(interest).add(penalty);
     }
@@ -138,7 +169,7 @@ public class Loan extends BaseEntity {
      *
      * @return true si la date deretour prévue est dépassée et que le prêt n'est pas encore terminé, false sinon
      */
-   public boolean isOverdue() {
+    public boolean isOverdue() {
         return status == LoanStatus.OVERDUE ||
                 (status == LoanStatus.ACTIVE && dueDate != null && dueDate.isBefore(LocalDate.now()));
     }
@@ -151,10 +182,7 @@ public class Loan extends BaseEntity {
     public boolean hasOverdueLoans() {
         if (member != null) {
             return member.getLoans().stream()
-                    .anyMatch(loan -> loan.getStatus() == LoanStatus.OVERDUE ||
-                           (loan.getStatus() == LoanStatus.ACTIVE &&
-                                    loan.getDueDate() != null &&
-                                    loan.getDueDate().isBefore(LocalDate.now())));
+                    .anyMatch(loan -> loan.isOverdue());
         }
         return false;
     }
@@ -163,12 +191,12 @@ public class Loan extends BaseEntity {
      * Met à jour le statut du prêt.
      */
     @PrePersist
-    /*@PreUpdate*/
-   protected void updateStatus() {
+    @PreUpdate
+    protected void updateStatus() {
         // Ne pas modifier le statut si le prêt est déjà marqué comme remboursé
         if (status == LoanStatus.REPAID) {
             // Vérifier si le montant remboursé correspond au montant total dû
-            BigDecimal totalAmountDue= getTotalAmountDue();
+            BigDecimal totalAmountDue = getTotalAmountDue();
             if (amountRepaid != null && amountRepaid.compareTo(totalAmountDue) >= 0) {
                 return; // Le prêt est correctement marqué comme remboursé
             }
@@ -196,6 +224,6 @@ public class Loan extends BaseEntity {
     public enum LoanStatus {
         ACTIVE,  // Prêt en cours
         OVERDUE,  // Prêt en retard
-        REPAID    // Prêt remboursé}
+        REPAID    // Prêt remboursé
     }
 }

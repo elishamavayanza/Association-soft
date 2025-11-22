@@ -1,22 +1,16 @@
 package com.org.testApi.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.org.testApi.dto.LoanEligibilityResult;
+import com.org.testApi.models.Currency;
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.org.testApi.models.Loan;
-
-/**
- * Représente un membre d'une association.
- * <p>
- * Un membre est lié à un {@link User} et une {@link Association}.
- * Il peut avoir différents types (régulier, honoraire, bénévole, etc.)
- * et possède une historique des rôles ainsi que des cotisations.
- * </p>
- */
 @Entity
 @Table(name = "members")
 @Data
@@ -34,139 +28,118 @@ public class Member extends BaseEntity {
     @Column(name = "member_code", unique = true)
     private String memberCode;
 
-    /**
-     * Utilisateur associé au membre.
-     * Ce lien est obligatoire.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "photo", length = 255)
+    private String photo;
+
+    @Column(name = "join_date")
+    private LocalDate joinDate;
+
+    @Column(name = "leave_date")
+    private LocalDate leaveDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type")
+    @Builder.Default
+    private MemberType type = MemberType.REGULAR;
+
+    @Column(name = "is_admin")
+    private Boolean isAdmin;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "user_id", nullable = true)
     @ToString.Exclude
     @JsonIgnore
     private User user;
-
-    /**
-     * Association à laquelle appartient ce membre.
-     * Ce lien est obligatoire.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "association_id", nullable = false)
+    
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "association_id", nullable = true)
     @ToString.Exclude
     @JsonIgnore
     private Association association;
 
-    /**
-     * Date d'adhésion du membre à l'association.
-     * Si non renseignée, sera initialisée à la date courante lors de la création.
-     */
-    private LocalDate joinDate;
-
-    /**
-     * Date de départ ou de désinscription du membre.
-     * Permet de savoir si un membre est actif ou non.
-     */
-    private LocalDate leaveDate;
-
-    /**
-     * Type du membre (régulier, honoraire, bénévole, etc.).
-     * Par défaut, un membre est de type REGULAR.
-     */
-    @Enumerated(EnumType.STRING)
-    private MemberType type = MemberType.REGULAR;
-
-    /**
-     * Liste des cotisations (fees) associées à ce membre.
-     */
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
     private List<MembershipFee> fees = new ArrayList<>();
-
-    /**
-     * Historique des rôles que ce membre a eus au sein de l'association.
-     */
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
     private List<MemberRoleHistory> roleHistory = new ArrayList<>();
-
-
-    /**
-     * Liste des prêts associés à ce membre.
-     */
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @JsonIgnore
     private List<Loan> loans = new ArrayList<>();
 
-    /**
-     * Indique si ce membre a des droits d'administrateur.
-     */
-    @Column(columnDefinition = "boolean default false")
-    private boolean isAdmin;
+    @ManyToMany(mappedBy = "members", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<RotatingGroup> rotatingGroups = new ArrayList<>();
 
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Contribution> contributions = new ArrayList<>();
 
-    /**
-     * Initialise la date d'adhésion si elle n'a pas été définie avant la persistance.
-     */
-    @PrePersist
-    protected void onCreate() {
-        if (this.joinDate == null) {
-            this.joinDate = LocalDate.now();
-        }
-        
-        // Générer un code unique si ce n'est pas déjà fait
-        if (this.memberCode == null) {
-            this.memberCode = generateMemberCode();
-        }
-    }
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Penalty> penalties = new ArrayList<>();
 
-    /**
-     * Génère un code unique pour le membre.
-     * Format: MBR-XXX-YYYYY (où XXX est l'ID de l'association et YYYYY est l'ID du membre)
-     * 
-     * @return Le code unique généré
-     */
-    private String generateMemberCode() {
-        // À implémenter correctement dans le service
-        // Cette implémentation basique sera remplacée par une plus robuste
-        return "MBR-" + System.currentTimeMillis();
-    }
+    @ManyToMany(mappedBy = "beneficiaries", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Round> roundsAsBeneficiary = new ArrayList<>();
+    
+    @ManyToMany(mappedBy = "memberParticipants", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    @JsonIgnore
+    private List<Activity> attendedActivities = new ArrayList<>();
 
     /**
-     * Indique si le membre est actuellement actif (pas de date de départ définie).
+     * Checks if the member is eligible for a loan.
+     * A member is eligible if they are active, have paid fees, and have no overdue loans.
      *
-     * @return true si le membre est actif, false sinon.
-     */
-    public boolean isActive() {
-        return leaveDate == null;
-    }
-
-    /**
-     * Vérifie si le membre est éligible pour emprunter.
-     * Un membre est éligible s'il:
-     * 1. Est actif
-     * 2. A payé au moins une cotisation
-     * 3. N'a pas de prêts en retard
-     *
-     * @return true si le membre est éligible, false sinon
+     * @return true if the member is eligible for a loan, false otherwise
      */
     public boolean isEligibleForLoan() {
-        // Vérifier si le membre est actif
-        if (!isActive()) {
+        // Check if member is active (has not left the association)
+        if (this.leaveDate != null) {
             return false;
         }
 
-        // Vérifier si le membre a payé au moins une cotisation
-        if (fees == null || fees.isEmpty()) {
+        // Check if member has paid any fees
+        if (this.fees == null || this.fees.isEmpty()) {
             return false;
         }
 
-        // Vérifier si le membre a des prêts en retard
-        if (loans != null) {
-            boolean hasOverdueLoans = loans.stream()
+        // Check if member has any overdue loans
+        if (this.loans != null) {
+            boolean hasOverdueLoans = this.loans.stream()
                     .filter(loan -> loan != null)
                     .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
             if (hasOverdueLoans) {
@@ -174,19 +147,74 @@ public class Member extends BaseEntity {
             }
         }
 
-        // Si toutes les conditions sont remplies, le membre est éligible
         return true;
     }
-
-
+    
     /**
-     * Enumération des différents types de membres possibles.
+     * Performs a detailed loan eligibility check with reasons for ineligibility.
+     *
+     * @return LoanEligibilityResult with detailed information
      */
-    public enum MemberType {
-        REGULAR,       // Membre régulier
-        HONORARY,      // Membre honoraire
-        BENEFACTOR,    // Bienfaiteur
-        VOLUNTEER,     // Bénévole
-        BOARD_MEMBER   // Membre du conseil d'administration
+    public LoanEligibilityResult checkLoanEligibility() {
+        LoanEligibilityResult result = new LoanEligibilityResult();
+        
+        // Check if member is active (has not left the association)
+        if (this.leaveDate != null) {
+            result.addReason("Le membre a quitté l'association");
+        }
+
+        // Check if member has paid any fees
+        if (this.fees == null || this.fees.isEmpty()) {
+            result.addReason("Le membre n'a payé aucune cotisation");
+        }
+        
+        // Check membership duration (minimum 3 months)
+        if (this.joinDate != null) {
+            LocalDate minimumJoinDate = LocalDate.now().minusMonths(3);
+            if (this.joinDate.isAfter(minimumJoinDate)) {
+                result.addReason("Le membre n'est pas dans l'association depuis assez longtemps (minimum 3 mois)");
+            }
+        }
+        
+        // Check for recent payments (within last 3 months)
+        LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
+        boolean recentPayments = this.fees.stream()
+                .filter(fee -> fee != null && fee.getPaymentDate() != null)
+                .anyMatch(fee -> !fee.getPaymentDate().isBefore(threeMonthsAgo));
+        
+        if (!recentPayments) {
+            result.addReason("Le membre n'a pas payé de cotisation récemment (derniers 3 mois)");
+        }
+
+        // Check if member has any overdue loans
+        if (this.loans != null) {
+            boolean hasOverdueLoans = this.loans.stream()
+                    .filter(loan -> loan != null)
+                    .anyMatch(loan -> loan.getStatus() == Loan.LoanStatus.OVERDUE);
+            if (hasOverdueLoans) {
+                result.addReason("Le membre a des prêts en retard");
+            }
+        }
+        
+        boolean isEligible = result.getReasons().isEmpty();
+        result.setEligible(isEligible);
+        
+        // Calculate maximum loan amount if eligible
+        if (isEligible) {
+            BigDecimal totalFees = this.fees.stream()
+                    .filter(fee -> fee != null && fee.getAmount() != null)
+                    .map(MembershipFee::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            result.setMaxLoanAmount(totalFees.multiply(BigDecimal.valueOf(3)));
+            
+            // Set currency based on member's fees (use the currency of the first fee, or default to CDF)
+            if (!this.fees.isEmpty() && this.fees.get(0) != null && this.fees.get(0).getCurrency() != null) {
+                result.setCurrency(this.fees.get(0).getCurrency());
+            } else {
+                result.setCurrency(Currency.CDF); // Default to Congolese Franc
+            }
+        }
+        
+        return result;
     }
 }

@@ -11,4 +11,8 @@ public interface ActivityRepositoryCustom {
     void updateActivityStats(Long activityId);
     
     void softDeleteActivity(Activity activity);
+    
+    List<Activity> findByMemberParticipantsId(Long memberId);
+    
+    List<Activity> findByUserParticipantsId(Long userId);
 }

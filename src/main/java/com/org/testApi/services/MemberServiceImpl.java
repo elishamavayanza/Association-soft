@@ -1,6 +1,7 @@
 package com.org.testApi.services;
 
 import com.org.testApi.models.Member;
+import com.org.testApi.models.MemberType;
 import com.org.testApi.repository.MemberRepository;
 import com.org.testApi.services.Observer;
 import org.slf4j.Logger;
@@ -26,7 +27,7 @@ public class MemberServiceImpl implements MemberService {
     @Override
     public List<Member> getAllMembers() {
         return memberRepository.findAll();
-    }
+   }
 
     @Override
     public Optional<Member> getMemberById(Long id) {
@@ -62,7 +63,7 @@ public class MemberServiceImpl implements MemberService {
             notifyObservers("UPDATE", updatedMember);
             return updatedMember;
         }
-        throw new RuntimeException("Member not found with id: " + id);
+throw new RuntimeException("Member not found with id: " + id);
     }
 
     @Override
@@ -71,7 +72,7 @@ public class MemberServiceImpl implements MemberService {
         memberRepository.deleteById(id);
         if (member != null) {
             notifyObservers("DELETE", member);
-        }
+       }
     }
 
     @Override
@@ -84,7 +85,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public List<Member> searchMembersComplexQuery(String name, String email, Member.MemberType memberType, Long associationId, Boolean isActive) {
+    public List<Member> searchMembersComplexQuery(String name, String email, MemberType memberType, Long associationId, Boolean isActive) {
         return memberRepository.searchMembersComplexQuery(name, email, memberType, associationId, isActive);
     }
 
@@ -95,7 +96,7 @@ public class MemberServiceImpl implements MemberService {
                 .orElse(false);
     }
 
-    @Override
+@Override
     public Optional<Member> findByMemberCode(String memberCode) {
         return memberRepository.findByMemberCode(memberCode);
     }

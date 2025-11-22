@@ -1,6 +1,7 @@
 package com.org.testApi.services;
 
 import com.org.testApi.models.MembershipFee;
+import com.org.testApi.models.MembershipFeeType;
 import com.org.testApi.repository.MembershipFeeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +88,10 @@ public class MembershipFeeServiceImpl implements MembershipFeeService {
                 existingFee.setEndDate(membershipFee.getEndDate());
                 logger.info("Updated endDate to: {}", membershipFee.getEndDate());
             }
+            if (membershipFee.getFeeType() != null) {
+                existingFee.setFeeType(membershipFee.getFeeType());
+                logger.info("Updated feeType to: {}", membershipFee.getFeeType());
+            }
             
             logger.info("About to save updated membership fee: {}", existingFee);
             try {
@@ -120,6 +125,38 @@ public class MembershipFeeServiceImpl implements MembershipFeeService {
         membershipFeeRepository.softDelete(id);
         if (membershipFee != null) {
             notifyObservers("SOFT_DELETE", membershipFee);
+        }
+    }
+
+    @Override
+    public List<MembershipFee> getMembershipFeesByType(MembershipFeeType feeType) {
+        logger.info("Fetching membership fees by type: {}", feeType);
+        return membershipFeeRepository.findByFeeType(feeType);
+    }
+
+    @Override
+    public List<MembershipFee> getMembershipFeesByMemberIdAndType(Long memberId, MembershipFeeType feeType) {
+        logger.info("Fetching membership fees by member id: {} and type: {}", memberId, feeType);
+        return membershipFeeRepository.findByMemberIdAndFeeType(memberId, feeType);
+    }
+
+    @Override
+    public void deleteMembershipFeesByMemberIdAndType(Long memberId, MembershipFeeType feeType) {
+        logger.info("Deleting membership fees by member id: {} and type: {}", memberId, feeType);
+        List<MembershipFee> fees = membershipFeeRepository.findByMemberIdAndFeeType(memberId, feeType);
+        for (MembershipFee fee : fees) {
+            membershipFeeRepository.deleteById(fee.getId());
+            notifyObservers("DELETE", fee);
+        }
+    }
+
+    @Override
+    public void softDeleteMembershipFeesByMemberIdAndType(Long memberId, MembershipFeeType feeType) {
+        logger.info("Soft deleting membership fees by member id: {} and type: {}", memberId, feeType);
+        List<MembershipFee> fees = membershipFeeRepository.findByMemberIdAndFeeType(memberId, feeType);
+        for (MembershipFee fee : fees) {
+            membershipFeeRepository.softDelete(fee.getId());
+            notifyObservers("SOFT_DELETE", fee);
         }
     }
 

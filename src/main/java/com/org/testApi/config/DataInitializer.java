@@ -39,12 +39,18 @@ public class DataInitializer implements CommandLineRunner {
             roleRepository.save(memberRole);
         }
 
+        if (!roleRepository.existsByName(Role.ERole.ROLE_MODERATOR)) {
+            Role moderatorRole = new Role();
+            moderatorRole.setName(Role.ERole.ROLE_MODERATOR);
+            roleRepository.save(moderatorRole);
+        }
+
         // Créer un utilisateur admin par défaut s'il n'existe pas
         if (!userRepository.existsByUsername("admin")) {
             User adminUser = new User();
             adminUser.setUsername("admin");
             adminUser.setEmail("admin@association.org");
-            adminUser.setPassword(passwordEncoder.encode("admin123"));
+            adminUser.setPassword(passwordEncoder.encode("admin1234"));
             adminUser.setFirstName("Admin");
             adminUser.setLastName("User");
 
@@ -56,6 +62,14 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setRoles(roles);
 
             userRepository.save(adminUser);
+        } 
+        // Si l'utilisateur admin existe déjà, mettre à jour son mot de passe
+        else {
+            User existingAdmin = userRepository.findByUsername("admin").orElse(null);
+            if (existingAdmin != null) {
+                existingAdmin.setPassword(passwordEncoder.encode("admin1234"));
+                userRepository.save(existingAdmin);
+            }
         }
     }
 }

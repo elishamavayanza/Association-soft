@@ -7,5 +7,5 @@ import java.io.Serializable;
 
 @NoRepositoryBean
 public interface BaseRepository<T, ID extends Serializable> extends JpaRepository<T, ID>, CustomJpaRepository<T, ID> {
-    // Retirer les méthodes personnalisées - elles doivent être dans CustomJpaRepository
+    // Base repository extending both JpaRepository and our custom repository with soft delete functionality
 }

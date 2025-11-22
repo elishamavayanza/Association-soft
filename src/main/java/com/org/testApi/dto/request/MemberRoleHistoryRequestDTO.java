@@ -1,8 +1,11 @@
 package com.org.testApi.dto.request;
 
 import com.org.testApi.dto.BaseEntityDTO;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDate;
 
 /**
@@ -10,6 +13,9 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
 public class MemberRoleHistoryRequestDTO extends BaseEntityDTO {
 
     private Long memberId;
